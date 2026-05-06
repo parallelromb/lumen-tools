@@ -3,29 +3,78 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cron Expression Builder & Scheduler</title>
+<title>Cron Builder — visual editor with crontab, launchd, systemd, GitHub Actions, Kubernetes & node-cron exports</title>
+<meta name="description" content="A visual cron expression builder that exports to 6 formats: crontab, macOS launchd, Linux systemd, GitHub Actions workflows, Kubernetes CronJob, and node-cron. Free, open source, no signup, no tracking. All in your browser.">
+<meta name="keywords" content="cron, crontab, cron expression, cron builder, cron generator, cron to systemd, cron to launchd, cron to github actions, cron to kubernetes cronjob, scheduler">
+<meta name="author" content="Sri (parallelromb)">
+<meta name="theme-color" content="#f8f9fc" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0f1419" media="(prefers-color-scheme: dark)">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Cron Builder — visual editor + 6 export formats">
+<meta property="og:description" content="Build cron expressions visually. Export to crontab, launchd, systemd, GitHub Actions, Kubernetes, and node-cron. Free + open source.">
+<meta property="og:url" content="https://cron.parallelromb.dev">
+<meta property="og:image" content="https://cron.parallelromb.dev/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Cron Builder — visual editor + 6 export formats">
+<meta name="twitter:description" content="Build cron expressions visually. Exports to crontab, launchd, systemd, GitHub Actions, Kubernetes, and node-cron.">
+<meta name="twitter:image" content="https://cron.parallelromb.dev/og-image.png">
+<link rel="canonical" href="https://cron.parallelromb.dev/">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #f8f9fc;
+  --text: #1a1a2e;
+  --text-muted: #6b7280;
+  --text-subtle: #9ca3af;
+  --surface: rgba(255,255,255,0.72);
+  --surface-strong: rgba(255,255,255,0.92);
+  --surface-dim: rgba(255,255,255,0.55);
+  --border: rgba(255,255,255,0.6);
+  --border-soft: rgba(0,0,0,0.06);
+  --accent: #3b82f6;
+  --accent-strong: #2563eb;
+  --success: #10b981;
+  --success-strong: #059669;
+  --danger: #dc2626;
+  --code-bg: #1e293b;
+  --code-text: #f1f5f9;
+}
+[data-theme="dark"] {
+  --bg: #0f1419;
+  --text: #e5e7eb;
+  --text-muted: #94a3b8;
+  --text-subtle: #64748b;
+  --surface: rgba(30, 41, 59, 0.55);
+  --surface-strong: rgba(30, 41, 59, 0.85);
+  --surface-dim: rgba(30, 41, 59, 0.35);
+  --border: rgba(148, 163, 184, 0.15);
+  --border-soft: rgba(148, 163, 184, 0.10);
+  --code-bg: #0a0e13;
+  --code-text: #e2e8f0;
+}
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  background: #f8f9fc;
-  color: #1a1a2e;
+  background: var(--bg);
+  color: var(--text);
   min-height: 100vh;
   padding: 1.5rem;
+  transition: background 0.2s, color 0.2s;
 }
 .container { max-width: 1100px; margin: 0 auto; }
 .header { text-align: center; margin-bottom: 2rem; }
 .header h1 { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; }
-.header p { color: #6b7280; font-size: 0.9rem; margin-top: 0.25rem; }
+.header p { color: var(--text-muted); font-size: 0.9rem; margin-top: 0.25rem; }
 .back-link { position: absolute; top: 1.5rem; left: 1.5rem; color: #3b82f6; text-decoration: none; font-size: 0.875rem; font-weight: 500; }
 .back-link:hover { text-decoration: underline; }
 
 .glass {
-  background: rgba(255,255,255,0.72);
+  background: var(--surface);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255,255,255,0.6);
+  border: 1px solid var(--border);
   border-radius: 16px;
   padding: 1.5rem;
   margin-bottom: 1.25rem;
@@ -39,13 +88,13 @@ body {
   font-family: 'SF Mono', 'Fira Code', monospace;
   font-size: 2rem;
   font-weight: 700;
-  color: #1a1a2e;
+  color: var(--text);
   letter-spacing: 0.05em;
   margin-bottom: 0.5rem;
   word-break: break-all;
 }
 .expression-display .human-text {
-  color: #6b7280;
+  color: var(--text-muted);
   font-size: 0.95rem;
   margin-bottom: 1rem;
 }
@@ -55,15 +104,15 @@ body {
   padding: 0.5rem 1rem;
   border: 1px solid rgba(0,0,0,0.1);
   border-radius: 8px;
-  background: rgba(255,255,255,0.8);
+  background: var(--surface-strong);
   font-family: inherit;
   font-size: 0.8rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.15s;
-  color: #1a1a2e;
+  color: var(--text);
 }
-.btn:hover { background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.btn:hover { background: var(--surface-strong); box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
 .btn-primary { background: #3b82f6; color: #fff; border-color: #3b82f6; }
 .btn-primary:hover { background: #2563eb; }
 .btn-success { background: #10b981; color: #fff; border-color: #10b981; }
@@ -95,7 +144,7 @@ body {
   border-radius: 8px;
   font-family: 'SF Mono', 'Fira Code', monospace;
   font-size: 0.9rem;
-  background: rgba(255,255,255,0.6);
+  background: var(--surface);
   outline: none;
 }
 .manual-input input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
@@ -109,7 +158,7 @@ body {
 @media (max-width: 700px) { .fields-grid { grid-template-columns: repeat(2, 1fr); } }
 
 .field-card {
-  background: rgba(255,255,255,0.5);
+  background: var(--surface-dim);
   border: 1px solid rgba(0,0,0,0.06);
   border-radius: 12px;
   padding: 1rem;
@@ -119,7 +168,7 @@ body {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #6b7280;
+  color: var(--text-muted);
   margin-bottom: 0.5rem;
 }
 .field-card .field-value {
@@ -136,7 +185,7 @@ body {
   border-radius: 6px;
   font-family: inherit;
   font-size: 0.78rem;
-  background: #fff;
+  background: var(--surface-strong);
   margin-bottom: 0.35rem;
   outline: none;
 }
@@ -157,12 +206,12 @@ body {
   padding: 0.35rem 0.75rem;
   border: 1px solid rgba(0,0,0,0.08);
   border-radius: 6px;
-  background: rgba(255,255,255,0.6);
+  background: var(--surface);
   font-family: inherit;
   font-size: 0.75rem;
   cursor: pointer;
   transition: all 0.15s;
-  color: #374151;
+  color: var(--text);
 }
 .preset-btn:hover { background: #3b82f6; color: #fff; border-color: #3b82f6; }
 
@@ -185,7 +234,7 @@ body {
 .next-runs li:last-child { border-bottom: none; }
 .next-runs .run-num {
   font-size: 0.65rem;
-  color: #9ca3af;
+  color: var(--text-subtle);
   font-family: 'Inter', sans-serif;
   width: 1.5rem;
   text-align: right;
@@ -201,12 +250,12 @@ body {
   font-family: inherit;
   font-size: 0.75rem;
   cursor: pointer;
-  color: #6b7280;
+  color: var(--text-muted);
 }
 .export-tab.active { background: #3b82f6; color: #fff; border-color: #3b82f6; }
 .export-output {
   background: #1a1a2e;
-  color: #e2e8f0;
+  color: var(--code-text);
   border-radius: 8px;
   padding: 1rem;
   font-family: 'SF Mono', 'Fira Code', monospace;
@@ -226,7 +275,7 @@ body {
   background: rgba(255,255,255,0.15);
   border: none;
   border-radius: 4px;
-  color: #e2e8f0;
+  color: var(--code-text);
   font-size: 0.7rem;
   cursor: pointer;
 }
@@ -252,13 +301,13 @@ body {
 }
 .saved-item .expr:hover, .history-item .expr:hover { text-decoration: underline; }
 .saved-item .name { font-size: 0.82rem; font-weight: 500; }
-.saved-item .desc { font-size: 0.72rem; color: #9ca3af; }
+.saved-item .desc { font-size: 0.72rem; color: var(--text-subtle); }
 .saved-item .meta { flex: 1; min-width: 0; }
 .saved-item .actions-group, .history-item .actions-group { display: flex; gap: 0.25rem; flex-shrink: 0; }
 
 /* Guide */
 .guide-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
-.guide-table th { text-align: left; font-weight: 600; padding: 0.4rem 0.5rem; border-bottom: 2px solid rgba(0,0,0,0.08); color: #6b7280; font-size: 0.72rem; text-transform: uppercase; }
+.guide-table th { text-align: left; font-weight: 600; padding: 0.4rem 0.5rem; border-bottom: 2px solid rgba(0,0,0,0.08); color: var(--text-muted); font-size: 0.72rem; text-transform: uppercase; }
 .guide-table td { padding: 0.4rem 0.5rem; border-bottom: 1px solid rgba(0,0,0,0.04); }
 .guide-table code { background: rgba(59,130,246,0.08); padding: 0.15rem 0.4rem; border-radius: 4px; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.78rem; }
 
@@ -271,17 +320,54 @@ body {
 .valid-badge.valid { background: rgba(16,185,129,0.1); color: #059669; }
 .valid-badge.invalid { background: rgba(239,68,68,0.1); color: #dc2626; }
 
-.footer { text-align: center; margin-top: 2rem; color: #9ca3af; font-size: 0.8rem; }
+.footer { text-align: center; margin-top: 2rem; color: var(--text-subtle); font-size: 0.8rem; }
 
-.empty-state { text-align: center; color: #9ca3af; font-size: 0.82rem; padding: 1.5rem 0; }
+.empty-state { text-align: center; color: var(--text-subtle); font-size: 0.82rem; padding: 1.5rem 0; }
+
+/* Top bar (standalone) */
+.top-bar { display: flex; align-items: center; justify-content: space-between; max-width: 1100px; margin: 0 auto 1.5rem; padding: 0 0.25rem; }
+.brand { font-size: 0.85rem; font-weight: 600; color: var(--text); text-decoration: none; display: flex; align-items: center; gap: 0.4rem; }
+.brand .dot { width: 6px; height: 6px; border-radius: 50%; background: #10b981; }
+.top-actions { display: flex; gap: 0.4rem; align-items: center; }
+.top-link { font-size: 0.78rem; font-weight: 500; color: var(--text-muted); text-decoration: none; padding: 0.3rem 0.7rem; border-radius: 6px; transition: all 0.15s; }
+.top-link:hover { color: var(--accent); background: var(--surface-dim); }
+.theme-toggle { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 0.35rem 0.5rem; cursor: pointer; color: var(--text); font-size: 0.85rem; line-height: 1; }
+.theme-toggle:hover { border-color: var(--accent); }
+
+/* Field tooltips */
+.field-card { position: relative; }
+.field-hint-btn { position: absolute; top: 0.55rem; right: 0.55rem; width: 16px; height: 16px; border-radius: 50%; background: var(--border-soft); color: var(--text-muted); font-size: 10px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; cursor: help; border: 0; transition: all 0.15s; }
+.field-hint-btn:hover { background: var(--accent); color: #fff; }
+.field-hint { position: absolute; top: calc(100% + 6px); right: 0; min-width: 240px; max-width: 280px; padding: 0.7rem 0.85rem; background: var(--code-bg); color: var(--code-text); font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.7rem; line-height: 1.55; border-radius: 8px; box-shadow: 0 8px 24px rgba(0,0,0,0.18); z-index: 10; opacity: 0; pointer-events: none; transform: translateY(-4px); transition: all 0.15s; }
+.field-card:hover .field-hint, .field-hint-btn:focus + .field-hint { opacity: 1; transform: translateY(0); pointer-events: auto; }
+.field-hint code { background: rgba(255,255,255,0.08); padding: 1px 5px; border-radius: 3px; color: #fbbf24; }
+.field-hint .row { display: flex; gap: 0.5rem; margin: 0.2rem 0; }
+.field-hint .row code { flex-shrink: 0; min-width: 50px; }
+
+/* Timezone selector */
+.tz-row { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.75rem; padding: 0.5rem 0.75rem; background: var(--surface-dim); border-radius: 8px; font-size: 0.78rem; color: var(--text-muted); }
+.tz-row label { font-weight: 500; }
+.tz-row select { flex: 1; padding: 0.3rem 0.5rem; border: 1px solid var(--border-soft); border-radius: 6px; background: var(--surface-strong); font-size: 0.78rem; font-family: inherit; outline: none; color: var(--text); }
+.tz-row select:focus { border-color: var(--accent); }
+
+/* Share button */
+.share-btn { background: transparent; border: 1px solid var(--border-soft); border-radius: 6px; padding: 0.3rem 0.65rem; font-size: 0.72rem; color: var(--text-muted); cursor: pointer; font-family: inherit; transition: all 0.15s; }
+.share-btn:hover { color: var(--accent); border-color: var(--accent); }
 </style>
 </head>
 <body>
-<a href="index.html" class="back-link">&larr; Back to Analytics</a>
+<div class="top-bar">
+  <a href="https://github.com/parallelromb/cron-builder" class="brand"><span class="dot"></span>Cron Builder</a>
+  <div class="top-actions">
+    <a href="https://github.com/parallelromb/cron-builder" class="top-link" target="_blank" rel="noopener">GitHub</a>
+    <a href="https://parallelromb.dev" class="top-link" target="_blank" rel="noopener">parallelromb.dev</a>
+    <button class="theme-toggle" id="themeToggle" title="Toggle dark mode" aria-label="Toggle dark mode">🌓</button>
+  </div>
+</div>
 <div class="container">
   <div class="header">
     <h1>Cron Expression Builder</h1>
-    <p>Build, validate, and export cron schedules visually</p>
+    <p>Build, validate, and export to <strong>6 formats</strong> — crontab · launchd · systemd · GitHub Actions · Kubernetes · node-cron</p>
   </div>
 
   <!-- Live Expression Display -->
@@ -322,6 +408,13 @@ body {
     </div>
     <div class="fields-grid">
       <div class="field-card" data-field="minute">
+        <button class="field-hint-btn" tabindex="0" aria-label="Minute (0-59) syntax help">?</button>
+        <div class="field-hint"><div class="row"><code>*</code><span>every minute</span></div>
+<div class="row"><code>*/5</code><span>every 5 minutes</span></div>
+<div class="row"><code>0,30</code><span>at minutes 0 and 30</span></div>
+<div class="row"><code>0-15</code><span>minutes 0 through 15</span></div>
+<div class="row"><code>0-30/5</code><span>0, 5, 10, 15, 20, 25, 30</span></div></div>
+        <!-- field body below -->
         <div class="field-label">Minute (0-59)</div>
         <div class="field-value" id="minuteValue">*</div>
         <select class="type-select" onchange="onTypeChange('minute', this.value)">
@@ -348,6 +441,13 @@ body {
       </div>
 
       <div class="field-card" data-field="hour">
+        <button class="field-hint-btn" tabindex="0" aria-label="Hour (0-23) syntax help">?</button>
+        <div class="field-hint"><div class="row"><code>*</code><span>every hour</span></div>
+<div class="row"><code>9</code><span>at 9 AM</span></div>
+<div class="row"><code>9-17</code><span>9 AM through 5 PM</span></div>
+<div class="row"><code>*/2</code><span>every 2 hours</span></div>
+<div class="row"><code>0,12</code><span>at midnight and noon</span></div></div>
+        <!-- field body below -->
         <div class="field-label">Hour (0-23)</div>
         <div class="field-value" id="hourValue">*</div>
         <select class="type-select" onchange="onTypeChange('hour', this.value)">
@@ -374,6 +474,13 @@ body {
       </div>
 
       <div class="field-card" data-field="dom">
+        <button class="field-hint-btn" tabindex="0" aria-label="Day of Month (1-31) syntax help">?</button>
+        <div class="field-hint"><div class="row"><code>*</code><span>every day</span></div>
+<div class="row"><code>1</code><span>1st of month</span></div>
+<div class="row"><code>1,15</code><span>1st and 15th</span></div>
+<div class="row"><code>*/2</code><span>every 2 days</span></div>
+<div class="row"><span>Note: combine with weekday — both must match unless one is *</span></div></div>
+        <!-- field body below -->
         <div class="field-label">Day of Month (1-31)</div>
         <div class="field-value" id="domValue">*</div>
         <select class="type-select" onchange="onTypeChange('dom', this.value)">
@@ -400,6 +507,12 @@ body {
       </div>
 
       <div class="field-card" data-field="month">
+        <button class="field-hint-btn" tabindex="0" aria-label="Month (1-12) syntax help">?</button>
+        <div class="field-hint"><div class="row"><code>*</code><span>every month</span></div>
+<div class="row"><code>1</code><span>January only</span></div>
+<div class="row"><code>1,4,7,10</code><span>quarterly</span></div>
+<div class="row"><code>3-9</code><span>March through September</span></div></div>
+        <!-- field body below -->
         <div class="field-label">Month (1-12)</div>
         <div class="field-value" id="monthValue">*</div>
         <select class="type-select" onchange="onTypeChange('month', this.value)">
@@ -429,6 +542,13 @@ body {
       </div>
 
       <div class="field-card" data-field="dow">
+        <button class="field-hint-btn" tabindex="0" aria-label="Day of Week (0-6) syntax help">?</button>
+        <div class="field-hint"><div class="row"><code>0</code><span>Sunday</span></div>
+<div class="row"><code>1-5</code><span>weekdays</span></div>
+<div class="row"><code>0,6</code><span>weekends</span></div>
+<div class="row"><code>*/2</code><span>every other day</span></div>
+<div class="row"><span>Note: 0 and 7 both mean Sunday in some implementations</span></div></div>
+        <!-- field body below -->
         <div class="field-label">Day of Week (0-6)</div>
         <div class="field-value" id="dowValue">*</div>
         <select class="type-select" onchange="onTypeChange('dow', this.value)">
@@ -474,6 +594,10 @@ body {
         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="8" r="6"/><polyline points="8 4 8 8 11 9"/></svg>
         Next 10 Executions
       </div>
+      <div class="tz-row">
+        <label for="tzSelect">Timezone</label>
+        <select id="tzSelect" onchange="onTimezoneChange()"></select>
+      </div>
       <ul class="next-runs" id="nextRuns"></ul>
     </div>
 
@@ -481,12 +605,15 @@ body {
       <div class="section-title">
         <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v2h8v-2"/><polyline points="8 2 8 10"/><polyline points="5 7 8 10 11 7"/></svg>
         Generate As
+        <button class="share-btn" style="margin-left:auto" onclick="copyShareUrl()" title="Copy a URL that opens this exact expression">🔗 Share URL</button>
       </div>
       <div class="export-tabs">
         <button class="export-tab active" onclick="setExportTab('crontab')">Crontab</button>
         <button class="export-tab" onclick="setExportTab('launchd')">Launchd</button>
         <button class="export-tab" onclick="setExportTab('systemd')">Systemd</button>
         <button class="export-tab" onclick="setExportTab('github')">GitHub Actions</button>
+        <button class="export-tab" onclick="setExportTab('kubernetes')">Kubernetes</button>
+        <button class="export-tab" onclick="setExportTab('nodecron')">node-cron</button>
       </div>
       <div class="export-wrapper">
         <pre class="export-output" id="exportOutput"></pre>
@@ -537,7 +664,16 @@ body {
     </div>
   </div>
 
-  <div class="footer">Lumen Analytics &middot; Cron Builder &middot; Data stored in localStorage</div>
+  <div class="footer">
+    <p style="margin-bottom:0.4rem">No backend. No tracking. Your data lives in <code>localStorage</code>.</p>
+    <p>
+      <a href="https://github.com/parallelromb/cron-builder" style="color:var(--text-muted);text-decoration:none">⭐ Star on GitHub</a>
+      &middot;
+      <a href="https://github.com/parallelromb/cron-builder/issues" style="color:var(--text-muted);text-decoration:none">Report a bug</a>
+      &middot;
+      Built by <a href="https://parallelromb.dev" style="color:var(--text-muted)">Sri</a> · MIT
+    </p>
+  </div>
 </div>
 
 <script>
@@ -583,13 +719,93 @@ const PRESETS = [
 ];
 
 // --- Init ---
+// Common timezones — 'browser' is the default (whatever the user's local TZ is)
+const TIMEZONES = [
+  { id: 'browser', label: 'Browser local' },
+  { id: 'UTC', label: 'UTC' },
+  { id: 'America/Los_Angeles', label: 'America / Los Angeles (PT)' },
+  { id: 'America/Denver', label: 'America / Denver (MT)' },
+  { id: 'America/Chicago', label: 'America / Chicago (CT)' },
+  { id: 'America/New_York', label: 'America / New York (ET)' },
+  { id: 'America/Toronto', label: 'America / Toronto' },
+  { id: 'America/Sao_Paulo', label: 'America / Sao Paulo' },
+  { id: 'Europe/London', label: 'Europe / London' },
+  { id: 'Europe/Berlin', label: 'Europe / Berlin' },
+  { id: 'Europe/Paris', label: 'Europe / Paris' },
+  { id: 'Africa/Lagos', label: 'Africa / Lagos' },
+  { id: 'Asia/Dubai', label: 'Asia / Dubai' },
+  { id: 'Asia/Kolkata', label: 'Asia / Kolkata' },
+  { id: 'Asia/Singapore', label: 'Asia / Singapore' },
+  { id: 'Asia/Shanghai', label: 'Asia / Shanghai' },
+  { id: 'Asia/Tokyo', label: 'Asia / Tokyo' },
+  { id: 'Australia/Sydney', label: 'Australia / Sydney' },
+  { id: 'Pacific/Auckland', label: 'Pacific / Auckland' },
+];
+
+let currentTz = 'browser';
+
 function init() {
+  // Theme
+  const savedTheme = localStorage.getItem('cron_theme');
+  const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+  if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+    document.documentElement.setAttribute('data-theme', 'dark');
+  }
+  document.getElementById('themeToggle').addEventListener('click', toggleTheme);
+
+  // Timezone selector
+  const tzSel = document.getElementById('tzSelect');
+  tzSel.innerHTML = TIMEZONES.map(t => `<option value="${t.id}">${t.label}</option>`).join('');
+  currentTz = localStorage.getItem('cron_tz') || 'browser';
+  tzSel.value = currentTz;
+
   renderPresets();
   loadHistory();
   loadSaved();
+
+  // Hydrate from URL — ?expr=0+9+*+*+1-5
+  const url = new URL(window.location.href);
+  const exprParam = url.searchParams.get('expr');
+  if (exprParam) {
+    const decoded = decodeURIComponent(exprParam).replace(/\+/g, ' ').trim();
+    if (decoded.split(/\s+/).length === 5) {
+      applyPreset(decoded);
+      return;
+    }
+  }
   updateAll();
+
   document.getElementById('manualInput').addEventListener('keydown', e => {
     if (e.key === 'Enter') parseManualInput();
+  });
+}
+
+function toggleTheme() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  if (isDark) {
+    document.documentElement.removeAttribute('data-theme');
+    localStorage.setItem('cron_theme', 'light');
+  } else {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    localStorage.setItem('cron_theme', 'dark');
+  }
+}
+
+function onTimezoneChange() {
+  currentTz = document.getElementById('tzSelect').value;
+  localStorage.setItem('cron_tz', currentTz);
+  renderNextRuns(getExpression());
+}
+
+function copyShareUrl() {
+  const expr = getExpression();
+  const url = new URL(window.location.href);
+  url.search = '?expr=' + encodeURIComponent(expr);
+  navigator.clipboard.writeText(url.toString()).then(() => {
+    const btn = document.querySelector('.share-btn');
+    const orig = btn.textContent;
+    btn.textContent = '✓ Copied';
+    setTimeout(() => btn.textContent = orig, 1500);
   });
 }
 
@@ -841,7 +1057,28 @@ function expandField(val, min, max) {
   return [+val];
 }
 
-function getNextRuns(expr, count = 10) {
+// Get fields-of-a-Date AS IF interpreted in the given timezone
+function tzParts(date, timezone) {
+  const tz = timezone === 'browser' ? undefined : timezone;
+  const fmt = new Intl.DateTimeFormat('en-US', {
+    timeZone: tz,
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit',
+    hour12: false, weekday: 'short',
+  });
+  const parts = fmt.formatToParts(date).reduce((a, p) => (a[p.type] = p.value, a), {});
+  const dowMap = { Sun: 0, Mon: 1, Tue: 2, Wed: 3, Thu: 4, Fri: 5, Sat: 6 };
+  return {
+    year: +parts.year,
+    month: +parts.month, // 1-12
+    day: +parts.day,     // 1-31
+    hour: parts.hour === '24' ? 0 : +parts.hour, // Intl emits 24 for midnight in some locales
+    minute: +parts.minute,
+    dow: dowMap[parts.weekday] ?? 0,
+  };
+}
+
+function getNextRuns(expr, count = 10, timezone = 'browser') {
   const parts = expr.split(/\s+/);
   if (parts.length !== 5) return [];
   const [minF, hrF, domF, monF, dowF] = parts;
@@ -855,43 +1092,43 @@ function getNextRuns(expr, count = 10) {
 
   const results = [];
   const now = new Date();
-  let d = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), now.getMinutes() + 1, 0, 0);
+  // Start one minute in the future
+  let d = new Date(now.getTime() + 60 * 1000);
+  d.setSeconds(0, 0);
   const maxIter = 525960; // ~1 year of minutes
   let iter = 0;
 
   while (results.length < count && iter < maxIter) {
     iter++;
-    const mo = d.getMonth() + 1;
-    const dm = d.getDate();
-    const dw = d.getDay();
-    const hr = d.getHours();
-    const mn = d.getMinutes();
+    const tp = tzParts(d, timezone);
 
-    if (!months.includes(mo)) { d = new Date(d.getFullYear(), d.getMonth() + 1, 1, 0, 0); continue; }
-    if (!hours.includes(hr)) { d = new Date(d.getTime() + 60 * 60 * 1000); d.setMinutes(0); continue; }
-    if (!minutes.includes(mn)) { d = new Date(d.getTime() + 60 * 1000); continue; }
+    if (months.includes(tp.month) &&
+        hours.includes(tp.hour) &&
+        minutes.includes(tp.minute)) {
+      const domMatch = domIsWild || doms.includes(tp.day);
+      const dowMatch = dowIsWild || dows.includes(tp.dow);
+      let dateMatch;
+      if (domIsWild && dowIsWild) dateMatch = true;
+      else if (!domIsWild && !dowIsWild) dateMatch = domMatch || dowMatch;
+      else dateMatch = domMatch && dowMatch;
 
-    // DOM/DOW logic: if both specified, match either; if only one, match it
-    let domMatch = domIsWild || doms.includes(dm);
-    let dowMatch = dowIsWild || dows.includes(dw);
-    let dateMatch;
-    if (domIsWild && dowIsWild) dateMatch = true;
-    else if (!domIsWild && !dowIsWild) dateMatch = domMatch || dowMatch;
-    else dateMatch = domMatch && dowMatch;
-
-    if (dateMatch) {
-      results.push(new Date(d));
+      if (dateMatch) results.push(new Date(d));
     }
+
     d = new Date(d.getTime() + 60 * 1000);
   }
   return results;
 }
 
 function renderNextRuns(expr) {
-  const runs = getNextRuns(expr);
+  const runs = getNextRuns(expr, 10, currentTz);
   const ul = document.getElementById('nextRuns');
-  if (!runs.length) { ul.innerHTML = '<li style="color:#9ca3af">No upcoming runs found</li>'; return; }
-  const opts = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true };
+  if (!runs.length) { ul.innerHTML = '<li style="color:var(--text-subtle)">No upcoming runs found</li>'; return; }
+  const tz = currentTz === 'browser' ? undefined : currentTz;
+  const opts = {
+    weekday: 'short', year: 'numeric', month: 'short', day: 'numeric',
+    hour: '2-digit', minute: '2-digit', hour12: true, timeZone: tz,
+  };
   ul.innerHTML = runs.map((r, i) => `<li><span class="run-num">${i+1}.</span>${r.toLocaleString('en-US', opts)}</li>`).join('');
 }
 
@@ -918,10 +1155,57 @@ function renderExport() {
       out = systemdTimer(expr);
       break;
     case 'github':
-      out = `# ${describeExpression(expr)}\non:\n  schedule:\n    - cron: '${expr}'\n\njobs:\n  scheduled-job:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - name: Run scheduled task\n        run: echo "Running scheduled task"`;
+      out = `# ${describeExpression(expr)}\n# Note: GitHub Actions schedules always run in UTC.\non:\n  schedule:\n    - cron: '${expr}'\n\njobs:\n  scheduled-job:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - name: Run scheduled task\n        run: echo "Running scheduled task"`;
+      break;
+    case 'kubernetes':
+      out = kubernetesCronJob(expr);
+      break;
+    case 'nodecron':
+      out = nodeCronSnippet(expr);
       break;
   }
   document.getElementById('exportOutput').textContent = out;
+}
+
+function kubernetesCronJob(expr) {
+  const desc = describeExpression(expr);
+  return `# ${desc}
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: my-scheduled-job
+spec:
+  schedule: "${expr}"
+  timeZone: "Etc/UTC"          # K8s 1.27+ — remove this line for older versions
+  concurrencyPolicy: Forbid    # Forbid | Allow | Replace
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 1
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: my-job
+              image: busybox:latest
+              command:
+                - /bin/sh
+                - -c
+                - echo "Running scheduled task"`;
+}
+
+function nodeCronSnippet(expr) {
+  const desc = describeExpression(expr);
+  return `// ${desc}
+// npm install node-cron
+import cron from 'node-cron';
+
+cron.schedule('${expr}', () => {
+  console.log('Running scheduled task');
+}, {
+  scheduled: true,
+  timezone: 'Etc/UTC',  // change as needed
+});`;
 }
 
 function launchdPlist(min, hr, dom, mon, dow) {
