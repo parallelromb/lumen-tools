@@ -3,10 +3,10 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Lumen Tools — 58 free, no-signup utilities</title>
-<meta name="description" content="58 self-contained browser tools — dev utilities, productivity, planners, trackers. No signup, no tracking, no backend. All data lives in your browser. Built in one night for Lumen, free for everyone.">
-<meta property="og:title" content="Lumen Tools — 58 free, no-signup utilities">
-<meta property="og:description" content="58 self-contained browser tools. No signup, no tracking, no backend. Built in one night.">
+<title>Lumen Tools — a working developer's toolkit</title>
+<meta name="description" content="A practical toolkit for the work between the work — JSON, regex, cron expressions, kanban, OKRs, project health, system monitoring, and 50+ more. Single-file HTML each, MIT-licensed, fork into your repo or bookmark and forget. No backend, no signup, no telemetry.">
+<meta property="og:title" content="Lumen Tools — a working developer's toolkit">
+<meta property="og:description" content="58 single-file dev utilities. Fork, embed, self-host. No backend, no signup, no telemetry.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://tools.parallelromb.dev">
 <meta name="theme-color" content="#f5f5f7">
@@ -139,17 +139,17 @@ footer a:hover{color:var(--accent)}
 
 <header class="hero">
   <div class="eyebrow"><span class="dot"></span>open source · MIT</div>
-  <h1>58 tools you'll actually use,<br><span class="gradient">zero accounts to make.</span></h1>
+  <h1>Work smart,<br><span class="gradient">locally.</span></h1>
   <p class="lede">
-    Built in <strong>one marathon night</strong> for my self-hosted AI system.
-    Each one is a single HTML file. <strong>No signup</strong>, <strong>no tracking</strong>,
-    <strong>no backend</strong> — your data stays in your browser. Free forever.
+    A practical toolkit for the work between the work — formatting, validation, scheduling, planning, monitoring.
+    <strong>58 single-file utilities</strong>, ready to fork into your repo, embed in your docs, or bookmark and forget.
+    Each tool is one HTML file. No backend, no accounts, no telemetry — your data stays in your browser.
   </p>
   <div class="hero-stats">
     <div class="stat"><strong>58</strong>tools</div>
-    <div class="stat"><strong>0</strong>accounts</div>
+    <div class="stat"><strong>7</strong>categories</div>
     <div class="stat"><strong>0</strong>backend calls</div>
-    <div class="stat"><strong>1</strong>night</div>
+    <div class="stat"><strong>fork</strong>friendly</div>
     <div class="stat"><strong>MIT</strong>licensed</div>
   </div>
 
@@ -163,21 +163,44 @@ footer a:hover{color:var(--accent)}
 <div id="results"></div>
 
 <section class="about">
-  <h2>What is this?</h2>
+  <h2>What's inside</h2>
   <p>
-    I run a self-hosted AI system at home called <a href="https://parallelromb.dev" target="_blank" rel="noopener">Lumen</a>.
-    On the night of April 29, 2026, I built 58 small browser tools to fill in the gaps in my daily workflow —
-    JSON formatters, cron builders, kanban boards, habit trackers, the works.
-    Each one is a single self-contained HTML file. No frameworks, no build step, no telemetry.
-    Open one, use it, close the tab. Your data lives in your browser's localStorage.
+    Developers spend minutes a dozen times a day on the same small problems — formatting a JSON blob,
+    decoding a JWT, working out a cron expression, jotting a standup note, comparing two text snippets.
+    Each tool here targets one of those moments. <strong>Built for individual developers and small teams,</strong>
+    not for an enterprise procurement cycle.
   </p>
   <p>
-    I'm publishing them under MIT so anyone can <a href="https://github.com/parallelromb/lumen-tools" target="_blank" rel="noopener">fork, embed, or self-host</a> them.
-    They're not novel — there's a JSON formatter on every dev's bookmarks bar — but they're the ones <em>I</em> built,
-    polished enough to use every day, and packaged together so you don't need 58 different tabs.
+    Categories: <strong>Dev Tools</strong> (JSON, regex, cron, encoders, diff, chmod, IP utilities),
+    <strong>Productivity</strong> (kanban, planner, standup, retro, presenter, meeting notes),
+    <strong>Strategy</strong> (OKRs, decision log, ideas board, A/B testing),
+    <strong>Operations</strong> (system health, project health, secrets reference, network CRM),
+    plus Wellness, Finance, and Learning. <a href="#" onclick="document.getElementById('search').focus();return false;">Search</a> or browse the categories above.
   </p>
+
+  <h3 style="margin-top:1.5rem;font-size:18px;font-weight:600">Built for git workflows</h3>
   <p>
-    Stars and forks welcome. Issues and PRs even more welcome.
+    Three tools wire directly into how repos and CI actually run:
+  </p>
+  <ul style="color:var(--muted);font-size:15px;line-height:1.75;padding-left:1.4rem;margin-bottom:1rem">
+    <li><strong>Cron Builder</strong> exports GitHub Actions <code style="font-family:var(--mono);background:var(--accent-light);color:var(--accent);padding:1px 6px;border-radius:4px;font-size:13px">on: schedule:</code> blocks alongside crontab, launchd, systemd, Kubernetes, and node-cron</li>
+    <li><strong>Git Activity</strong> turns commit history into a contribution heatmap and cadence chart</li>
+    <li><strong>Project Health</strong> tracks deploys, uptime, and revenue across your repo portfolio</li>
+  </ul>
+  <p>
+    And every tool is a single HTML file. <strong>Fork the repo</strong> →
+    deploy to your own GitHub Pages in 30 seconds → embed any individual tool as an iframe in your team wiki or internal docs.
+    No build step. No framework lock-in. Customize freely.
+  </p>
+
+  <h3 style="margin-top:1.5rem;font-size:18px;font-weight:600">Why this exists</h3>
+  <p>
+    These were built as part of <a href="https://parallelromb.dev" target="_blank" rel="noopener">Lumen</a>,
+    a self-hosted personal AI system, then extracted as a standalone open-source bundle so others can use them.
+    The principle: <em>the tools you reach for daily shouldn't require an account, ship telemetry, or run on someone else's server</em>.
+  </p>
+  <p style="margin-top:0.5rem">
+    Stars, forks, and PRs welcome on <a href="https://github.com/parallelromb/lumen-tools" target="_blank" rel="noopener">GitHub</a>.
   </p>
 </section>
 
