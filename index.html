@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lumen Tools — 58 free, no-signup utilities</title>
+<meta name="description" content="58 self-contained browser tools — dev utilities, productivity, planners, trackers. No signup, no tracking, no backend. All data lives in your browser. Built in one night for Lumen, free for everyone.">
+<meta property="og:title" content="Lumen Tools — 58 free, no-signup utilities">
+<meta property="og:description" content="58 self-contained browser tools. No signup, no tracking, no backend. Built in one night.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://tools.parallelromb.dev">
+<meta name="theme-color" content="#f5f5f7">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#f5f5f7; --surface:rgba(255,255,255,0.72);
+  --border:rgba(0,0,0,0.06); --border-h:rgba(0,0,0,0.12);
+  --text:#1d1d1f; --muted:#6e6e73; --subtle:#86868b;
+  --accent:#0071e3; --accent-light:rgba(0,113,227,0.08);
+  --green:#34c759; --amber:#ff9f0a; --cyan:#32ade6;
+  --radius:14px; --blur:blur(20px);
+  --sans:-apple-system,BlinkMacSystemFont,'SF Pro Display','Inter',sans-serif;
+  --mono:'JetBrains Mono','SF Mono',monospace;
+  --shadow:0 2px 12px rgba(0,0,0,0.04),0 0.5px 1px rgba(0,0,0,0.03);
+  --shadow-h:0 8px 24px rgba(0,0,0,0.06);
+}
+html{font-size:15px;scroll-behavior:smooth}
+body{background:var(--bg);color:var(--text);font-family:var(--sans);line-height:1.65;
+  -webkit-font-smoothing:antialiased;min-height:100vh;position:relative;}
+body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
+  background:
+    radial-gradient(ellipse 80% 60% at 20% 10%,rgba(0,113,227,0.05) 0%,transparent 60%),
+    radial-gradient(ellipse 60% 80% at 80% 30%,rgba(52,199,89,0.04) 0%,transparent 60%),
+    radial-gradient(ellipse 70% 50% at 50% 100%,rgba(50,173,230,0.03) 0%,transparent 60%);}
+.container{max-width:1100px;margin:0 auto;padding:0 24px;position:relative;z-index:1}
+a{color:var(--accent);text-decoration:none;transition:color .15s}
+a:hover{color:#0077ED}
+
+/* ── Hero ──────────────────────────── */
+header.hero{padding:80px 0 50px}
+.eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:12px;font-weight:600;
+  letter-spacing:0.08em;text-transform:uppercase;color:var(--accent);
+  background:var(--accent-light);padding:6px 12px;border-radius:999px;margin-bottom:20px}
+.eyebrow .dot{width:6px;height:6px;border-radius:50%;background:var(--green);
+  box-shadow:0 0 0 3px rgba(52,199,89,0.2)}
+h1{font-size:52px;font-weight:700;letter-spacing:-0.025em;line-height:1.1;
+  margin-bottom:20px;max-width:800px}
+h1 .gradient{background:linear-gradient(135deg,#0071e3 0%,#003d99 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.lede{font-size:18px;color:var(--muted);max-width:680px;line-height:1.6;margin-bottom:30px}
+.lede strong{color:var(--text);font-weight:600}
+.hero-stats{display:flex;flex-wrap:wrap;gap:10px;margin-top:20px}
+.stat{padding:10px 16px;background:var(--surface);backdrop-filter:var(--blur);
+  -webkit-backdrop-filter:var(--blur);border:1px solid var(--border);
+  border-radius:10px;font-size:13px;color:var(--muted)}
+.stat strong{color:var(--text);font-weight:700;margin-right:4px}
+
+/* ── Search ──────────────────────────── */
+.search-wrap{position:relative;margin-top:36px;max-width:600px}
+.search-wrap input{width:100%;padding:14px 18px 14px 46px;font-size:15px;
+  border:1px solid var(--border);border-radius:12px;background:var(--surface);
+  backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);outline:none;
+  font-family:var(--sans);transition:all .2s}
+.search-wrap input:focus{border-color:rgba(0,113,227,0.35);
+  box-shadow:0 4px 18px rgba(0,113,227,0.08)}
+.search-wrap svg{position:absolute;left:16px;top:50%;transform:translateY(-50%);
+  color:var(--subtle)}
+.kbd{display:inline-block;border:1px solid var(--border);border-radius:4px;
+  padding:1px 6px;font-family:var(--mono);font-size:11px;color:var(--muted);
+  background:rgba(0,0,0,0.02)}
+
+/* ── Categories ──────────────────────────── */
+.cats{display:flex;flex-wrap:wrap;gap:8px;margin:30px 0 28px}
+.cat{padding:7px 14px;border-radius:999px;font-size:13px;font-weight:500;
+  background:var(--surface);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);
+  border:1px solid var(--border);color:var(--text);cursor:pointer;
+  transition:all .15s;font-family:var(--sans)}
+.cat:hover{border-color:var(--border-h)}
+.cat.active{background:var(--accent);color:#fff;border-color:var(--accent);
+  box-shadow:0 2px 8px rgba(0,113,227,0.25)}
+.cat .count{opacity:0.6;margin-left:4px}
+.cat.active .count{opacity:0.85}
+
+/* ── Tool grid ──────────────────────────── */
+.section-label{font-size:11px;font-weight:600;letter-spacing:0.12em;
+  text-transform:uppercase;color:var(--subtle);margin:36px 0 14px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.tool{display:block;padding:18px 20px;background:var(--surface);
+  backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);
+  border:1px solid var(--border);border-radius:var(--radius);
+  transition:all .2s;color:var(--text);text-decoration:none}
+.tool:hover{transform:translateY(-2px);box-shadow:var(--shadow-h);
+  border-color:var(--border-h);text-decoration:none;color:var(--text)}
+.tool .name{font-weight:600;font-size:14px;margin-bottom:4px;color:var(--text);
+  display:flex;align-items:center;justify-content:space-between;gap:8px}
+.tool:hover .name{color:var(--accent)}
+.tool .cat-tag{font-size:10px;font-weight:600;letter-spacing:0.06em;
+  text-transform:uppercase;color:var(--subtle);flex-shrink:0}
+.tool .desc{font-size:12.5px;color:var(--muted);line-height:1.5;
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.empty{padding:60px 20px;text-align:center;color:var(--muted);font-size:14px;
+  background:var(--surface);border:1px solid var(--border);border-radius:var(--radius)}
+.empty code{font-family:var(--mono);background:var(--accent-light);color:var(--accent);
+  padding:2px 6px;border-radius:4px;font-size:12px}
+
+/* ── Story / about ──────────────────────────── */
+.about{margin:80px 0 60px;padding:40px 44px;background:var(--surface);
+  backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);
+  border:1px solid var(--border);border-radius:18px}
+.about h2{font-size:26px;font-weight:700;letter-spacing:-0.01em;margin-bottom:14px}
+.about p{color:var(--muted);font-size:15px;line-height:1.75;margin-bottom:14px;max-width:780px}
+.about p strong{color:var(--text);font-weight:600}
+.about p:last-child{margin-bottom:0}
+.about a{font-weight:500}
+
+/* ── Footer ──────────────────────────── */
+footer{padding:40px 0 60px;text-align:center;color:var(--subtle);font-size:13px;
+  border-top:1px solid var(--border);margin-top:40px}
+footer a{color:var(--muted)}
+footer a:hover{color:var(--accent)}
+
+@media(max-width:720px){
+  header.hero{padding:48px 0 32px}
+  h1{font-size:34px}
+  .lede{font-size:16px}
+  .about{padding:28px 22px;margin:48px 0}
+  .grid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:480px){
+  .grid{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<header class="hero">
+  <div class="eyebrow"><span class="dot"></span>open source · MIT</div>
+  <h1>58 tools you'll actually use,<br><span class="gradient">zero accounts to make.</span></h1>
+  <p class="lede">
+    Built in <strong>one marathon night</strong> for my self-hosted AI system.
+    Each one is a single HTML file. <strong>No signup</strong>, <strong>no tracking</strong>,
+    <strong>no backend</strong> — your data stays in your browser. Free forever.
+  </p>
+  <div class="hero-stats">
+    <div class="stat"><strong>58</strong>tools</div>
+    <div class="stat"><strong>0</strong>accounts</div>
+    <div class="stat"><strong>0</strong>backend calls</div>
+    <div class="stat"><strong>1</strong>night</div>
+    <div class="stat"><strong>MIT</strong>licensed</div>
+  </div>
+
+  <div class="search-wrap">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+    <input id="search" type="text" placeholder="Search 58 tools — try 'json', 'cron', 'pomodoro'…" autofocus>
+  </div>
+</header>
+
+<div id="cats" class="cats"></div>
+<div id="results"></div>
+
+<section class="about">
+  <h2>What is this?</h2>
+  <p>
+    I run a self-hosted AI system at home called <a href="https://parallelromb.dev" target="_blank" rel="noopener">Lumen</a>.
+    On the night of April 29, 2026, I built 58 small browser tools to fill in the gaps in my daily workflow —
+    JSON formatters, cron builders, kanban boards, habit trackers, the works.
+    Each one is a single self-contained HTML file. No frameworks, no build step, no telemetry.
+    Open one, use it, close the tab. Your data lives in your browser's localStorage.
+  </p>
+  <p>
+    I'm publishing them under MIT so anyone can <a href="https://github.com/parallelromb/lumen-tools" target="_blank" rel="noopener">fork, embed, or self-host</a> them.
+    They're not novel — there's a JSON formatter on every dev's bookmarks bar — but they're the ones <em>I</em> built,
+    polished enough to use every day, and packaged together so you don't need 58 different tabs.
+  </p>
+  <p>
+    Stars and forks welcome. Issues and PRs even more welcome.
+  </p>
+</section>
+
+<footer>
+  <p>
+    <a href="https://github.com/parallelromb/lumen-tools">GitHub</a> ·
+    <a href="https://parallelromb.dev">parallelromb.dev</a> ·
+    Built by <a href="https://parallelromb.dev">Sri</a> · MIT
+  </p>
+</footer>
+
+</div>
+
+<script id="manifest" type="application/json">[{"href": "startpage.html", "name": "Start Page", "desc": "Browser new-tab dashboard: greeting, clock, weather, quick links, search, daily focus, todos, bookmarks, quotes, and recently visited. Set as your homepage.", "category": "Productivity"}, {"href": "morning.html", "name": "Morning Dashboard", "desc": "Your daily home screen: weather, focus, stats, quick links, habits, and motivation. Start every day here.", "category": "Operations"}, {"href": "system-health.html", "name": "System Health Monitor", "desc": "Real-time status of all Lumen services: Lumen Dashboard, Gateway, Smara, PJ Tales, Ollama, and more. Auto-refresh, response time charts, uptime tracking, alerts, and custom service monitoring.", "category": "Operations"}, {"href": "kanban.html", "name": "Personal Kanban Board", "desc": "Full task management across all projects: Backlog, In Progress, Review, Done. Priority badges, project tags, drag-and-drop, WIP limits, burndown chart, aging indicators, and stats. Quick-add with Enter.", "category": "Productivity"}, {"href": "api-tester.html", "name": "REST API Tester", "desc": "Mini Postman: send requests with custom headers, params, and body. Response viewer with syntax highlighting, history, saved requests, collections, environment variables, and cURL export.", "category": "Dev Tools"}, {"href": "api-usage-tracker.html", "name": "API Usage Tracker", "desc": "Requests per day, error rates, response times across Smara, MCP Doctor, and other services. Parse logs or enter data manually.", "category": "Operations"}, {"href": "cost-dashboard.html", "name": "Cost Dashboard", "desc": "Monthly cost tracker for Railway, Cloudflare, domains, LLM tokens. Burn rate, projections, and savings vs cloud alternatives.", "category": "Finance"}, {"href": "project-health.html", "name": "Project Health", "desc": "Status cards for Smara, MCP Doctor, Scoper, PJ Tales, and Lumen. Uptime, deploys, traffic, and revenue tracking.", "category": "Operations"}, {"href": "wealth-dashboard.html", "name": "Family Wealth Dashboard", "desc": "Net worth tracker, account balances, asset allocation, passive income, savings rate, and financial goals. All data stored locally.", "category": "Finance"}, {"href": "pomodoro.html", "name": "Pomodoro Timer", "desc": "Focus timer with session tracking, task logging, daily stats, streak counter, and weekly focus chart. Keyboard shortcuts included.", "category": "Productivity"}, {"href": "habits.html", "name": "Daily Habit Tracker", "desc": "Track 7 daily habits with streak counters, weekly completion rates, monthly heatmap, daily score ring, and journal notes.", "category": "Wellness"}, {"href": "weekly-review.html", "name": "Weekly Review", "desc": "Structured weekly reflection: wins, challenges, lessons, metrics, priorities, energy ratings, and 8-week trend charts.", "category": "Operations"}, {"href": "reading-list.html", "name": "Reading List", "desc": "Bookmark articles, papers, and resources. Category filters, read/unread tracking, archive, search, and export to JSON or Markdown.", "category": "Learning"}, {"href": "okr-tracker.html", "name": "OKR Tracker", "desc": "Track Objectives & Key Results by quarter. Progress bars, trend charts, color-coded completion, and markdown export.", "category": "Strategy"}, {"href": "learning.html", "name": "Learning & Courses", "desc": "Track courses, study sessions, certificates, weekly goals, spaced review, and skill development across platforms and categories.", "category": "Learning"}, {"href": "skill-matrix.html", "name": "Skill Matrix", "desc": "Interactive skill assessment with radar, bar, and heatmap views. Set targets, track gaps, and plan career growth across 30+ skills.", "category": "Learning"}, {"href": "timezone.html", "name": "Time Zone Planner", "desc": "Live clocks for Toronto, Mumbai, London &amp; Stockholm. Meeting planner with business-hour overlaps, quick calculator, and upcoming holidays.", "category": "Operations"}, {"href": "standup.html", "name": "Daily Standup", "desc": "Write daily standup notes with project tags. Auto-carry yesterday's plans, copy formatted for Slack/Teams, search history, and track streaks.", "category": "Productivity"}, {"href": "retro.html", "name": "Sprint Retrospective", "desc": "Run sprint retros with 3 templates, voting, discussion timer, action tracking, trends chart, and history. Copy formatted for Slack/Teams.", "category": "Productivity"}, {"href": "expenses.html", "name": "Expense Tracker", "desc": "Track daily spending, set category budgets, view trends, recurring expenses, search and export. All data local.", "category": "Finance"}, {"href": "budget.html", "name": "Monthly Budget Planner", "desc": "Plan monthly budgets by category, track actuals vs targets, 50/30/20 rule check, savings rate, trends, and year summary. Different from expense tracker.", "category": "Productivity"}, {"href": "meeting-notes.html", "name": "Meeting Notes", "desc": "Capture meeting agendas, notes, action items, and decisions. Calendar view, templates, action tracker, and copy for Slack/Teams.", "category": "Productivity"}, {"href": "goals.html", "name": "Goals & Milestones", "desc": "Track personal goals with milestones, progress bars, streaks, timeline view, priority filters, journal notes, and category charts.", "category": "Strategy"}, {"href": "invoices.html", "name": "Freelance Invoices", "desc": "Track clients, projects, time, and invoices. Auto-generate invoices with HST, revenue charts, tax summary for CRA filing.", "category": "Productivity"}, {"href": "decisions.html", "name": "Decision Journal", "desc": "Record decisions with context, alternatives, and reasoning. Set review dates, track outcomes, extract lessons, and analyze decision quality over time.", "category": "Strategy"}, {"href": "ab-tester.html", "name": "A/B Headline Tester", "desc": "Compare headlines, taglines, and copy variations side-by-side. Vote, score on clarity/emotion/urgency/uniqueness, best practices checks, templates, and export winners.", "category": "Strategy"}, {"href": "content-calendar.html", "name": "Content Calendar", "desc": "Plan and schedule content across Twitter, LinkedIn, dev.to, YouTube, Reddit, Product Hunt, and more. Kanban pipeline, recurring templates, and weekly planner.", "category": "Productivity"}, {"href": "secrets.html", "name": "Secrets Reference", "desc": "Map of where credentials are stored: API keys, tokens, passwords, database creds. Rotation reminders, audit log, and storage location tracking.", "category": "Operations"}, {"href": "notes.html", "name": "Quick Notes", "desc": "Fast, frictionless scratchpad with markdown preview, color labels, pinning, search, code mode, and keyboard shortcuts. Apple Notes meets VS Code.", "category": "Operations"}, {"href": "bookmarks.html", "name": "Bookmark Manager", "desc": "Save and organize links, tools, and resources. Grid/list views, collections, favorites, search, tags, category filters, and export to JSON/HTML/Markdown.", "category": "Learning"}, {"href": "ideas.html", "name": "Project Ideas Board", "desc": "Brainstorm and prioritize project ideas. Kanban board, opportunity scoring, pros/cons, voting, tags, and export to JSON or Markdown pitch deck.", "category": "Strategy"}, {"href": "network-crm.html", "name": "Network CRM", "desc": "Manage professional relationships, track interactions, set follow-up reminders, and visualize your network by category and strength.", "category": "Operations"}, {"href": "planner.html", "name": "Daily Planner", "desc": "Time blocking with day/week views, templates, priorities, evening reviews, stats, and export. Color-coded by category and project.", "category": "Productivity"}, {"href": "fitness.html", "name": "Fitness & Water Tracker", "desc": "Hydration tracking with progress rings, exercise log with calorie estimates, step counter, weight trends, body measurements, streaks, and weekly charts.", "category": "Wellness"}, {"href": "sleep.html", "name": "Sleep Tracker", "desc": "Log sleep duration, quality, and factors. Weekly/monthly charts, sleep score, bedtime consistency, debt tracking, and factor correlations.", "category": "Wellness"}, {"href": "gratitude.html", "name": "Gratitude Journal", "desc": "Daily gratitude practice with streak tracking, calendar view, word cloud themes, monthly reviews, and inspirational quotes. Beautiful evening dark mode.", "category": "Wellness"}, {"href": "journal.html", "name": "Daily Journal", "desc": "Private daily journal for longer-form writing and reflection. Mood tags, writing prompts, calendar view, streaks, search, and export. Auto-saves as you type.", "category": "Wellness"}, {"href": "competitors.html", "name": "Competitor Intelligence", "desc": "Track and compare competitors across Smara, Scoper, and PJ Tales. SWOT analysis, pricing charts, market positioning map, activity log, and alerts.", "category": "Strategy"}, {"href": "git-activity.html", "name": "Git Activity", "desc": "Track commits, contribution heatmaps, coding patterns, repo breakdowns, branch activity, and streaks across all projects.", "category": "Productivity"}, {"href": "energy.html", "name": "Energy & Mood Tracker", "desc": "Track energy, mood, and productivity with emoji ratings. Daily/weekly/monthly views, heatmap, pattern insights, tag analysis, and sleep correlations.", "category": "Wellness"}, {"href": "markdown.html", "name": "Markdown Editor", "desc": "Split-pane markdown editor with live preview, multi-document tabs, toolbar, find & replace, dark mode, focus mode, and download/export.", "category": "Dev Tools"}, {"href": "affirmations.html", "name": "Daily Affirmations", "desc": "Morning affirmation generator, mood check-in with trends, personal journal, streak tracking, favorites collection, and category browsing.", "category": "Wellness"}, {"href": "presenter.html", "name": "Presentation Timer", "desc": "Speaker coach with countdown timer, color-coded time zones, section tracking, pace indicators, speaker notes, practice history with timing charts, and fullscreen mode.", "category": "Productivity"}, {"href": "meals.html", "name": "Meal Planner & Recipe Book", "desc": "Weekly meal planner, recipe collection with 15+ recipes, grocery list generator, nutrition summary, favorites, and tag-based search. Indian, Italian, quick & healthy options.", "category": "Productivity"}, {"href": "colors.html", "name": "Color Palette Generator", "desc": "Generate harmonious color palettes with contrast checker, UI preview, gradient builder, export to CSS/Tailwind/JSON, and 10 presets. Drag to reorder, lock to keep.", "category": "Dev Tools"}, {"href": "passwords.html", "name": "Password Generator", "desc": "Generate strong passwords and passphrases. Strength checker with entropy, crack time, and pattern analysis. Bulk mode, history, and security tips.", "category": "Dev Tools"}, {"href": "encoder.html", "name": "Text Encoder / Decoder", "desc": "Swiss Army Knife: Base64, URL, HTML entities, JWT decoder, hash generator (MD5/SHA), Unicode, Hex, and Binary conversions. Auto-convert, history, and file drag-drop.", "category": "Dev Tools"}, {"href": "regex.html", "name": "Regex Tester & Debugger", "desc": "Live match highlighting, named groups, replace & split modes, regex explanation, 24 common patterns, cheat sheet, save patterns, copy as JS/Python/Go.", "category": "Dev Tools"}, {"href": "units.html", "name": "Developer Unit Converter", "desc": "Convert CSS units, colors, time, data sizes, temperature, angles, resolution. Spacing & typography scale generators, box model visualizer, copy buttons, and history.", "category": "Dev Tools"}, {"href": "diff.html", "name": "Text Diff Checker", "desc": "Compare text side-by-side with inline, unified, and side-by-side diff views. Character-level highlighting, merge tool, copy as unified diff, and download as .patch file.", "category": "Dev Tools"}, {"href": "json.html", "name": "JSON Formatter & Validator", "desc": "Format, validate, minify, and explore JSON. Tree view with JSONPath, side-by-side diff, convert to YAML/CSV/TypeScript, stats, syntax highlighting, and history.", "category": "Dev Tools"}, {"href": "cron.html", "name": "Cron Expression Builder", "desc": "Build, validate, and export cron schedules visually. Presets, next-run preview, human-readable descriptions, and export to crontab, launchd, systemd, and GitHub Actions.", "category": "Dev Tools"}, {"href": "lorem.html", "name": "Lorem Ipsum & Placeholders", "desc": "Generate placeholder text (Lorem, Hipster, Tech, Office, Pirate), image URLs, fake data (names, emails, UUIDs), and random color palettes for prototyping.", "category": "Dev Tools"}, {"href": "chmod.html", "name": "Unix Permissions (chmod)", "desc": "Interactive permission calculator with visual toggle grid, numeric &amp; symbolic input, presets, special permissions (setuid/setgid/sticky), ls -la preview, and command generator.", "category": "Dev Tools"}, {"href": "ip-tools.html", "name": "IP Address & Network Tools", "desc": "IP lookup, subnet calculator, IPv4/IPv6 converter, DNS lookup, binary converter, IP range calculator, and private ranges reference. All local-first.", "category": "Dev Tools"}, {"href": "epoch.html", "name": "Epoch & Timestamp Converter", "desc": "Live epoch clock, epoch/human conversions, relative time, timezone converter, duration calculator, date math, and common epoch values. Copy everything.", "category": "Dev Tools"}]</script>
+<script>
+const MANIFEST = JSON.parse(document.getElementById('manifest').textContent);
+const CATEGORIES = ['Dev Tools','Productivity','Strategy','Wellness','Finance','Learning','Operations'];
+
+const $ = sel => document.querySelector(sel);
+const search = $('#search');
+const catsEl = $('#cats');
+const resultsEl = $('#results');
+
+let activeCat = null;
+let query = '';
+
+function render() {
+  // Category chips
+  catsEl.innerHTML = '';
+  const all = document.createElement('button');
+  all.className = 'cat' + (activeCat === null ? ' active' : '');
+  all.innerHTML = `All <span class="count">${MANIFEST.length}</span>`;
+  all.onclick = () => { activeCat = null; render(); };
+  catsEl.appendChild(all);
+  for (const c of CATEGORIES) {
+    const count = MANIFEST.filter(t => t.category === c).length;
+    if (!count) continue;
+    const btn = document.createElement('button');
+    btn.className = 'cat' + (activeCat === c ? ' active' : '');
+    btn.innerHTML = `${c} <span class="count">${count}</span>`;
+    btn.onclick = () => { activeCat = (activeCat === c ? null : c); render(); };
+    catsEl.appendChild(btn);
+  }
+
+  // Filter
+  const q = query.trim().toLowerCase();
+  const filtered = MANIFEST.filter(t => {
+    if (activeCat && t.category !== activeCat) return false;
+    if (!q) return true;
+    return t.name.toLowerCase().includes(q) ||
+           t.desc.toLowerCase().includes(q) ||
+           t.href.toLowerCase().includes(q);
+  });
+
+  if (filtered.length === 0) {
+    resultsEl.innerHTML = `<div class="empty">No tools match <code>${escapeHtml(query)}</code>${activeCat ? ' in ' + activeCat : ''}.</div>`;
+    return;
+  }
+
+  // Group by category when no filter active
+  let html = '';
+  if (!q && !activeCat) {
+    for (const c of CATEGORIES) {
+      const items = filtered.filter(t => t.category === c);
+      if (!items.length) continue;
+      html += `<div class="section-label">${c} · ${items.length}</div><div class="grid">`;
+      html += items.map(toolCard).join('');
+      html += `</div>`;
+    }
+  } else {
+    html += `<div class="section-label">${q || activeCat} · ${filtered.length} ${filtered.length === 1 ? 'result' : 'results'}</div><div class="grid">`;
+    html += filtered.map(toolCard).join('');
+    html += `</div>`;
+  }
+  resultsEl.innerHTML = html;
+}
+
+function toolCard(t) {
+  return `<a class="tool" href="${t.href}">
+    <div class="name"><span>${escapeHtml(t.name)}</span><span class="cat-tag">${t.category || ''}</span></div>
+    <div class="desc">${escapeHtml(t.desc)}</div>
+  </a>`;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+}
+
+search.addEventListener('input', () => { query = search.value; render(); });
+
+// Cmd-K / Ctrl-K focuses search
+document.addEventListener('keydown', e => {
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+    e.preventDefault();
+    search.focus();
+    search.select();
+  }
+});
+
+render();
+</script>
+</body>
+</html>

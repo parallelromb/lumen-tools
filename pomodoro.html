@@ -1,0 +1,660 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pomodoro Timer - Lumen Analytics</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #f8f9fc;
+    color: #1a1a2e;
+    min-height: 100vh;
+    padding: 1.5rem;
+  }
+  a { color: #3b82f6; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  .back { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; font-weight: 500; margin-bottom: 1.5rem; }
+  .back svg { width: 16px; height: 16px; }
+
+  .header { text-align: center; margin-bottom: 2rem; }
+  .header h1 { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; }
+  .header p { color: #6b7280; font-size: 0.9rem; margin-top: 0.3rem; }
+
+  .layout {
+    max-width: 1100px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    gap: 1.5rem;
+    align-items: start;
+  }
+  @media (max-width: 860px) {
+    .layout { grid-template-columns: 1fr; }
+  }
+
+  .glass {
+    background: rgba(255,255,255,0.72);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.6);
+    border-radius: 16px;
+    padding: 1.75rem;
+  }
+
+  /* Timer section */
+  .timer-section { display: flex; flex-direction: column; align-items: center; gap: 1.5rem; }
+
+  .task-input-wrap { width: 100%; max-width: 400px; }
+  .task-input {
+    width: 100%;
+    padding: 0.7rem 1rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 0.95rem;
+    background: rgba(255,255,255,0.6);
+    outline: none;
+    transition: border-color 0.2s;
+    text-align: center;
+  }
+  .task-input:focus { border-color: #3b82f6; }
+  .task-input::placeholder { color: #9ca3af; }
+
+  /* Mode tabs */
+  .mode-tabs { display: flex; gap: 0.5rem; }
+  .mode-tab {
+    padding: 0.5rem 1.1rem;
+    border-radius: 8px;
+    border: none;
+    font-family: inherit;
+    font-size: 0.82rem;
+    font-weight: 500;
+    cursor: pointer;
+    background: rgba(0,0,0,0.04);
+    color: #6b7280;
+    transition: all 0.2s;
+  }
+  .mode-tab.active { background: #1a1a2e; color: #fff; }
+  .mode-tab:hover:not(.active) { background: rgba(0,0,0,0.08); }
+
+  /* Ring */
+  .ring-wrap { position: relative; width: 260px; height: 260px; }
+  .ring-svg { transform: rotate(-90deg); }
+  .ring-bg { fill: none; stroke: #e5e7eb; stroke-width: 8; }
+  .ring-progress { fill: none; stroke-width: 8; stroke-linecap: round; transition: stroke-dashoffset 0.5s ease, stroke 0.3s; }
+  .ring-time {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+  }
+  .ring-time .time { font-size: 3.2rem; font-weight: 300; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+  .ring-time .session-label { font-size: 0.8rem; color: #6b7280; margin-top: 0.2rem; }
+
+  /* Controls */
+  .controls { display: flex; gap: 0.6rem; align-items: center; }
+  .btn {
+    border: none; border-radius: 10px; font-family: inherit; font-weight: 500;
+    cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center; gap: 0.4rem;
+  }
+  .btn-primary { padding: 0.7rem 2rem; font-size: 0.95rem; background: #1a1a2e; color: #fff; }
+  .btn-primary:hover { background: #2d2d4a; }
+  .btn-secondary { padding: 0.55rem 1rem; font-size: 0.82rem; background: rgba(0,0,0,0.05); color: #6b7280; }
+  .btn-secondary:hover { background: rgba(0,0,0,0.1); }
+
+  .shortcuts-hint { font-size: 0.72rem; color: #9ca3af; margin-top: 0.25rem; }
+  kbd { background: rgba(0,0,0,0.06); padding: 0.1rem 0.35rem; border-radius: 4px; font-family: inherit; font-size: 0.7rem; }
+
+  /* Stats */
+  .stats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; width: 100%; max-width: 420px; }
+  .stat-card {
+    background: rgba(0,0,0,0.02);
+    border-radius: 10px;
+    padding: 0.8rem;
+    text-align: center;
+  }
+  .stat-card .value { font-size: 1.5rem; font-weight: 600; }
+  .stat-card .label { font-size: 0.7rem; color: #6b7280; margin-top: 0.15rem; }
+
+  /* Sidebar */
+  .sidebar { display: flex; flex-direction: column; gap: 1.5rem; }
+  .sidebar h3 { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.75rem; }
+
+  /* Chart */
+  .chart-wrap { height: 180px; }
+
+  /* Task log */
+  .task-log { max-height: 280px; overflow-y: auto; }
+  .task-log::-webkit-scrollbar { width: 4px; }
+  .task-log::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 2px; }
+  .log-item {
+    padding: 0.6rem 0;
+    border-bottom: 1px solid rgba(0,0,0,0.04);
+    display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem;
+  }
+  .log-item:last-child { border-bottom: none; }
+  .log-task { font-size: 0.85rem; font-weight: 500; flex: 1; }
+  .log-meta { font-size: 0.72rem; color: #9ca3af; text-align: right; white-space: nowrap; }
+
+  .empty-state { color: #9ca3af; font-size: 0.85rem; text-align: center; padding: 1.5rem 0; }
+
+  /* Settings */
+  .settings-toggle {
+    display: flex; align-items: center; justify-content: space-between;
+    cursor: pointer; font-size: 0.85rem; font-weight: 500; color: #6b7280;
+    padding: 0.5rem 0; border: none; background: none; width: 100%; font-family: inherit;
+  }
+  .settings-toggle svg { transition: transform 0.2s; }
+  .settings-toggle.open svg { transform: rotate(180deg); }
+  .settings-body { display: none; padding-top: 0.75rem; }
+  .settings-body.open { display: block; }
+  .setting-row {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0.5rem 0; border-bottom: 1px solid rgba(0,0,0,0.04);
+  }
+  .setting-row:last-child { border-bottom: none; }
+  .setting-label { font-size: 0.82rem; color: #4b5563; }
+  .setting-input {
+    width: 60px; padding: 0.3rem 0.5rem; border: 1px solid #e5e7eb;
+    border-radius: 6px; font-family: inherit; font-size: 0.82rem;
+    text-align: center; outline: none;
+  }
+  .setting-input:focus { border-color: #3b82f6; }
+
+  /* Toggle switch */
+  .toggle { position: relative; width: 40px; height: 22px; cursor: pointer; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle .slider {
+    position: absolute; inset: 0; background: #d1d5db;
+    border-radius: 11px; transition: background 0.2s;
+  }
+  .toggle .slider::before {
+    content: ''; position: absolute; width: 16px; height: 16px;
+    left: 3px; top: 3px; background: #fff; border-radius: 50%;
+    transition: transform 0.2s;
+  }
+  .toggle input:checked + .slider { background: #3b82f6; }
+  .toggle input:checked + .slider::before { transform: translateX(18px); }
+
+  /* Colors per mode */
+  .mode-focus { --ring-color: #3b82f6; }
+  .mode-short { --ring-color: #10b981; }
+  .mode-long { --ring-color: #8b5cf6; }
+</style>
+</head>
+<body>
+  <a href="index.html" class="back">
+    <svg fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+    Analytics
+  </a>
+
+  <div class="header">
+    <h1>Pomodoro Timer</h1>
+    <p>Stay focused, take breaks, track your progress</p>
+  </div>
+
+  <div class="layout">
+    <!-- Main column -->
+    <div style="display:flex;flex-direction:column;gap:1.5rem;">
+      <div class="glass timer-section" id="timerCard">
+        <div class="task-input-wrap">
+          <input type="text" class="task-input" id="taskInput" placeholder="What are you working on?" maxlength="100">
+        </div>
+
+        <div class="mode-tabs">
+          <button class="mode-tab active" data-mode="focus">Focus</button>
+          <button class="mode-tab" data-mode="short">Short Break</button>
+          <button class="mode-tab" data-mode="long">Long Break</button>
+        </div>
+
+        <div class="ring-wrap">
+          <svg class="ring-svg" width="260" height="260" viewBox="0 0 260 260">
+            <circle class="ring-bg" cx="130" cy="130" r="115"/>
+            <circle class="ring-progress" id="ringProgress" cx="130" cy="130" r="115"
+              stroke-dasharray="722.57" stroke-dashoffset="0"/>
+          </svg>
+          <div class="ring-time">
+            <div class="time" id="timeDisplay">25:00</div>
+            <div class="session-label" id="sessionLabel">Session 1 of 4</div>
+          </div>
+        </div>
+
+        <div class="controls">
+          <button class="btn btn-secondary" id="resetBtn">Reset</button>
+          <button class="btn btn-primary" id="startBtn">Start</button>
+          <button class="btn btn-secondary" id="skipBtn">Skip</button>
+        </div>
+        <div class="shortcuts-hint">
+          <kbd>Space</kbd> start/pause &nbsp; <kbd>R</kbd> reset &nbsp; <kbd>S</kbd> skip
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="value" id="statSessions">0</div>
+            <div class="label">Sessions Today</div>
+          </div>
+          <div class="stat-card">
+            <div class="value" id="statTime">0m</div>
+            <div class="label">Focus Time</div>
+          </div>
+          <div class="stat-card">
+            <div class="value" id="statStreak">0</div>
+            <div class="label">Day Streak</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="glass">
+        <h3>Weekly Focus</h3>
+        <div class="chart-wrap">
+          <canvas id="weeklyChart"></canvas>
+        </div>
+      </div>
+
+      <div class="glass">
+        <h3>Completed Tasks</h3>
+        <div class="task-log" id="taskLog">
+          <div class="empty-state">No completed tasks yet</div>
+        </div>
+      </div>
+
+      <div class="glass" style="padding:1rem 1.75rem;">
+        <button class="settings-toggle" id="settingsToggle">
+          Settings
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l4 4 4-4"/></svg>
+        </button>
+        <div class="settings-body" id="settingsBody">
+          <div class="setting-row">
+            <span class="setting-label">Focus (min)</span>
+            <input type="number" class="setting-input" id="setFocus" min="1" max="90" value="25">
+          </div>
+          <div class="setting-row">
+            <span class="setting-label">Short Break (min)</span>
+            <input type="number" class="setting-input" id="setShort" min="1" max="30" value="5">
+          </div>
+          <div class="setting-row">
+            <span class="setting-label">Long Break (min)</span>
+            <input type="number" class="setting-input" id="setLong" min="1" max="60" value="15">
+          </div>
+          <div class="setting-row">
+            <span class="setting-label">Auto-start Breaks</span>
+            <label class="toggle"><input type="checkbox" id="setAutoBreak"><span class="slider"></span></label>
+          </div>
+          <div class="setting-row">
+            <span class="setting-label">Sound</span>
+            <label class="toggle"><input type="checkbox" id="setSound" checked><span class="slider"></span></label>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+// ---- State ----
+const CIRCUMFERENCE = 2 * Math.PI * 115;
+const LS_KEY = 'pomodoro_data';
+
+let state = {
+  mode: 'focus',        // focus | short | long
+  running: false,
+  timeLeft: 25 * 60,
+  totalTime: 25 * 60,
+  sessionNum: 1,        // 1-4 focus sessions
+  interval: null,
+};
+
+let settings = { focus: 25, short: 5, long: 15, autoBreak: false, sound: true };
+let data = loadData();
+
+// ---- Elements ----
+const $time = document.getElementById('timeDisplay');
+const $label = document.getElementById('sessionLabel');
+const $ring = document.getElementById('ringProgress');
+const $startBtn = document.getElementById('startBtn');
+const $resetBtn = document.getElementById('resetBtn');
+const $skipBtn = document.getElementById('skipBtn');
+const $taskInput = document.getElementById('taskInput');
+const $card = document.getElementById('timerCard');
+const $statSessions = document.getElementById('statSessions');
+const $statTime = document.getElementById('statTime');
+const $statStreak = document.getElementById('statStreak');
+const $taskLog = document.getElementById('taskLog');
+
+// ---- Data persistence ----
+function todayKey() { return new Date().toISOString().slice(0, 10); }
+
+function loadData() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (raw) {
+      const d = JSON.parse(raw);
+      // Migrate old format
+      if (!d.days) d.days = {};
+      if (!d.tasks) d.tasks = [];
+      if (!d.settings) d.settings = null;
+      return d;
+    }
+  } catch(e) {}
+  return { days: {}, tasks: [], settings: null };
+}
+
+function saveData() {
+  data.settings = settings;
+  localStorage.setItem(LS_KEY, JSON.stringify(data));
+}
+
+function getTodayData() {
+  const key = todayKey();
+  if (!data.days[key]) data.days[key] = { sessions: 0, focusMinutes: 0 };
+  return data.days[key];
+}
+
+// ---- Settings ----
+function loadSettings() {
+  if (data.settings) {
+    settings = { ...settings, ...data.settings };
+  }
+  document.getElementById('setFocus').value = settings.focus;
+  document.getElementById('setShort').value = settings.short;
+  document.getElementById('setLong').value = settings.long;
+  document.getElementById('setAutoBreak').checked = settings.autoBreak;
+  document.getElementById('setSound').checked = settings.sound;
+}
+
+document.getElementById('settingsToggle').addEventListener('click', function() {
+  this.classList.toggle('open');
+  document.getElementById('settingsBody').classList.toggle('open');
+});
+
+['setFocus','setShort','setLong'].forEach(id => {
+  document.getElementById(id).addEventListener('change', function() {
+    const key = id.replace('set','').toLowerCase();
+    settings[key] = Math.max(1, parseInt(this.value) || 1);
+    this.value = settings[key];
+    if (!state.running) { setMode(state.mode); }
+    saveData();
+  });
+});
+document.getElementById('setAutoBreak').addEventListener('change', function() { settings.autoBreak = this.checked; saveData(); });
+document.getElementById('setSound').addEventListener('change', function() { settings.sound = this.checked; saveData(); });
+
+// ---- Mode & Timer ----
+function setMode(mode) {
+  state.mode = mode;
+  const durations = { focus: settings.focus, short: settings.short, long: settings.long };
+  state.totalTime = durations[mode] * 60;
+  state.timeLeft = state.totalTime;
+  state.running = false;
+  clearInterval(state.interval);
+
+  // Update UI
+  document.querySelectorAll('.mode-tab').forEach(t => t.classList.toggle('active', t.dataset.mode === mode));
+  $card.className = 'glass timer-section mode-' + mode;
+  updateDisplay();
+  $startBtn.textContent = 'Start';
+}
+
+function updateDisplay() {
+  const m = Math.floor(state.timeLeft / 60);
+  const s = state.timeLeft % 60;
+  $time.textContent = `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+
+  const progress = 1 - (state.timeLeft / state.totalTime);
+  $ring.style.strokeDasharray = CIRCUMFERENCE;
+  $ring.style.strokeDashoffset = CIRCUMFERENCE * (1 - progress);
+
+  const colors = { focus: '#3b82f6', short: '#10b981', long: '#8b5cf6' };
+  $ring.style.stroke = colors[state.mode];
+
+  if (state.mode === 'focus') {
+    $label.textContent = `Session ${state.sessionNum} of 4`;
+  } else if (state.mode === 'short') {
+    $label.textContent = 'Short break';
+  } else {
+    $label.textContent = 'Long break';
+  }
+
+  // Page title
+  document.title = `${$time.textContent} - ${state.mode === 'focus' ? 'Focus' : 'Break'} | Pomodoro`;
+}
+
+function tick() {
+  if (state.timeLeft <= 0) {
+    clearInterval(state.interval);
+    state.running = false;
+    $startBtn.textContent = 'Start';
+    onTimerEnd();
+    return;
+  }
+  state.timeLeft--;
+  updateDisplay();
+}
+
+function startTimer() {
+  if (state.running) {
+    state.running = false;
+    clearInterval(state.interval);
+    $startBtn.textContent = 'Start';
+    return;
+  }
+  state.running = true;
+  $startBtn.textContent = 'Pause';
+  state._startedAt = Date.now() - ((state.totalTime - state.timeLeft) * 1000);
+  state.interval = setInterval(tick, 1000);
+}
+
+function resetTimer() {
+  state.timeLeft = state.totalTime;
+  state.running = false;
+  clearInterval(state.interval);
+  $startBtn.textContent = 'Start';
+  updateDisplay();
+}
+
+function skipTimer() {
+  state.timeLeft = 0;
+  clearInterval(state.interval);
+  state.running = false;
+  $startBtn.textContent = 'Start';
+  onTimerEnd();
+}
+
+function onTimerEnd() {
+  if (settings.sound) playChime();
+
+  if (state.mode === 'focus') {
+    // Record session
+    const today = getTodayData();
+    today.sessions++;
+    today.focusMinutes += settings.focus;
+
+    // Log task
+    const taskName = $taskInput.value.trim() || 'Untitled focus session';
+    data.tasks.unshift({
+      task: taskName,
+      duration: settings.focus,
+      timestamp: new Date().toISOString(),
+    });
+    // Keep last 100 tasks
+    if (data.tasks.length > 100) data.tasks = data.tasks.slice(0, 100);
+
+    saveData();
+    updateStats();
+    renderTaskLog();
+    renderChart();
+
+    // Next mode
+    if (state.sessionNum >= 4) {
+      state.sessionNum = 1;
+      setMode('long');
+    } else {
+      state.sessionNum++;
+      setMode('short');
+    }
+  } else {
+    // Break ended, go to focus
+    setMode('focus');
+  }
+
+  if (settings.autoBreak && (state.mode === 'short' || state.mode === 'long')) {
+    setTimeout(() => startTimer(), 500);
+  }
+
+  updateDisplay();
+}
+
+// ---- Sound (Web Audio API) ----
+function playChime() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const notes = [523.25, 659.25, 783.99]; // C5, E5, G5
+    notes.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0, ctx.currentTime + i * 0.2);
+      gain.gain.linearRampToValueAtTime(0.15, ctx.currentTime + i * 0.2 + 0.05);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.2 + 0.8);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(ctx.currentTime + i * 0.2);
+      osc.stop(ctx.currentTime + i * 0.2 + 0.8);
+    });
+  } catch(e) {}
+}
+
+// ---- Stats ----
+function updateStats() {
+  const today = getTodayData();
+  $statSessions.textContent = today.sessions;
+  const mins = today.focusMinutes;
+  $statTime.textContent = mins >= 60 ? `${(mins/60).toFixed(1)}h` : `${mins}m`;
+  $statStreak.textContent = calcStreak();
+}
+
+function calcStreak() {
+  let streak = 0;
+  const d = new Date();
+  // Check today first
+  const todayData = data.days[todayKey()];
+  if (todayData && todayData.sessions >= 4) {
+    streak = 1;
+    d.setDate(d.getDate() - 1);
+  } else if (!todayData || todayData.sessions < 4) {
+    // Today doesn't count yet, check from yesterday
+    d.setDate(d.getDate() - 1);
+  }
+  for (let i = 0; i < 365; i++) {
+    const key = d.toISOString().slice(0, 10);
+    const dayData = data.days[key];
+    if (dayData && dayData.sessions >= 4) {
+      streak++;
+      d.setDate(d.getDate() - 1);
+    } else {
+      break;
+    }
+  }
+  return streak;
+}
+
+// ---- Task log ----
+function renderTaskLog() {
+  const todayTasks = data.tasks.filter(t => t.timestamp && t.timestamp.startsWith(todayKey()));
+  if (todayTasks.length === 0) {
+    $taskLog.innerHTML = '<div class="empty-state">No completed tasks yet</div>';
+    return;
+  }
+  $taskLog.innerHTML = todayTasks.map(t => {
+    const time = new Date(t.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return `<div class="log-item">
+      <span class="log-task">${escapeHtml(t.task)}</span>
+      <span class="log-meta">${t.duration}m &middot; ${time}</span>
+    </div>`;
+  }).join('');
+}
+
+function escapeHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// ---- Chart ----
+let chart;
+function renderChart() {
+  const labels = [];
+  const values = [];
+  const d = new Date();
+  for (let i = 6; i >= 0; i--) {
+    const dd = new Date(d);
+    dd.setDate(dd.getDate() - i);
+    const key = dd.toISOString().slice(0, 10);
+    labels.push(dd.toLocaleDateString([], { weekday: 'short' }));
+    const dayData = data.days[key];
+    values.push(dayData ? +(dayData.focusMinutes / 60).toFixed(2) : 0);
+  }
+
+  if (chart) chart.destroy();
+  const ctx = document.getElementById('weeklyChart').getContext('2d');
+  chart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        data: values,
+        backgroundColor: 'rgba(59,130,246,0.2)',
+        borderColor: '#3b82f6',
+        borderWidth: 1.5,
+        borderRadius: 6,
+        borderSkipped: false,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { display: false }, tooltip: {
+        callbacks: { label: c => `${c.parsed.y.toFixed(1)} hrs` }
+      }},
+      scales: {
+        y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)' },
+          ticks: { font: { family: 'Inter', size: 11 }, callback: v => v + 'h' } },
+        x: { grid: { display: false },
+          ticks: { font: { family: 'Inter', size: 11 } } }
+      }
+    }
+  });
+}
+
+// ---- Event listeners ----
+document.querySelectorAll('.mode-tab').forEach(tab => {
+  tab.addEventListener('click', () => { if (!state.running) setMode(tab.dataset.mode); });
+});
+
+$startBtn.addEventListener('click', startTimer);
+$resetBtn.addEventListener('click', resetTimer);
+$skipBtn.addEventListener('click', skipTimer);
+
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT') return;
+  if (e.code === 'Space') { e.preventDefault(); startTimer(); }
+  if (e.key === 'r' || e.key === 'R') resetTimer();
+  if (e.key === 's' || e.key === 'S') skipTimer();
+});
+
+// ---- Init ----
+loadSettings();
+setMode('focus');
+updateStats();
+renderTaskLog();
+renderChart();
+</script>
+</body>
+</html>

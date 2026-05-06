@@ -1,0 +1,1419 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Competitor Intelligence Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #f8f9fc;
+  color: #1a1a2e;
+  min-height: 100vh;
+  padding: 1.5rem;
+}
+.header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+.header h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+.header p { color: #6b7280; font-size: 0.9rem; margin-top: 0.25rem; }
+.back-link {
+  position: absolute;
+  top: 1.5rem;
+  left: 1.5rem;
+  color: #3b82f6;
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+.back-link:hover { text-decoration: underline; }
+
+/* Glass card */
+.glass {
+  background: rgba(255,255,255,0.72);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.6);
+  border-radius: 16px;
+  padding: 1.5rem;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 0.25rem;
+  max-width: 1200px;
+  margin: 0 auto 1.5rem;
+  flex-wrap: wrap;
+  background: rgba(255,255,255,0.5);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  padding: 0.25rem;
+}
+.tab-btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  background: none;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.tab-btn:hover { color: #1a1a2e; background: rgba(255,255,255,0.5); }
+.tab-btn.active { background: #fff; color: #1a1a2e; box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+
+/* Content area */
+.content { max-width: 1200px; margin: 0 auto; }
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* Search bar */
+.search-bar {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  align-items: center;
+}
+.search-bar input {
+  flex: 1;
+  padding: 0.625rem 1rem;
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 0.875rem;
+  background: rgba(255,255,255,0.8);
+  outline: none;
+}
+.search-bar input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+
+/* Buttons */
+.btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+.btn-primary { background: #3b82f6; color: #fff; }
+.btn-primary:hover { background: #2563eb; }
+.btn-secondary { background: rgba(0,0,0,0.05); color: #374151; }
+.btn-secondary:hover { background: rgba(0,0,0,0.1); }
+.btn-danger { background: #fef2f2; color: #dc2626; }
+.btn-danger:hover { background: #fee2e2; }
+.btn-sm { padding: 0.35rem 0.75rem; font-size: 0.75rem; }
+
+/* Stats row */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+.stat-card {
+  background: rgba(255,255,255,0.72);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.6);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  text-align: center;
+}
+.stat-card .stat-value {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: #1a1a2e;
+}
+.stat-card .stat-label {
+  font-size: 0.75rem;
+  color: #6b7280;
+  margin-top: 0.25rem;
+}
+
+/* Alert badge */
+.alert-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-weight: 600;
+}
+.alert-stale { background: #fef3c7; color: #92400e; }
+.alert-ok { background: #d1fae5; color: #065f46; }
+
+/* Product filter pills */
+.filter-pills {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+}
+.pill {
+  padding: 0.3rem 0.75rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1.5px solid transparent;
+  transition: all 0.2s;
+}
+.pill.active { border-color: currentColor; }
+.pill-all { background: #f3f4f6; color: #374151; }
+.pill-smara { background: #ede9fe; color: #7c3aed; }
+.pill-scoper { background: #dbeafe; color: #2563eb; }
+.pill-pjtales { background: #fce7f3; color: #db2777; }
+
+/* Table */
+.comp-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.8rem;
+}
+.comp-table th {
+  background: rgba(0,0,0,0.03);
+  padding: 0.6rem 0.75rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6b7280;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+.comp-table td {
+  padding: 0.6rem 0.75rem;
+  border-bottom: 1px solid rgba(0,0,0,0.04);
+  vertical-align: top;
+}
+.comp-table tr:hover td { background: rgba(59,130,246,0.03); }
+
+/* Competitor cards grid */
+.comp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 1rem;
+}
+.comp-card {
+  background: rgba(255,255,255,0.72);
+  backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.6);
+  border-radius: 14px;
+  padding: 1.25rem;
+  transition: transform 0.2s, box-shadow 0.2s;
+}
+.comp-card:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,0,0,0.06); }
+.comp-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+}
+.comp-card-name {
+  font-weight: 700;
+  font-size: 1rem;
+}
+.comp-card-product {
+  font-size: 0.7rem;
+  font-weight: 600;
+  padding: 0.15rem 0.5rem;
+  border-radius: 12px;
+}
+.comp-card-section {
+  margin-top: 0.75rem;
+}
+.comp-card-section h4 {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6b7280;
+  margin-bottom: 0.3rem;
+}
+.comp-card-section p, .comp-card-section ul {
+  font-size: 0.8rem;
+  color: #374151;
+  line-height: 1.5;
+}
+.comp-card-section ul {
+  list-style: none;
+  padding: 0;
+}
+.comp-card-section ul li::before {
+  content: "\2022 ";
+  color: #9ca3af;
+}
+.comp-card-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(0,0,0,0.05);
+}
+
+/* SWOT grid */
+.swot-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+.swot-cell {
+  border-radius: 10px;
+  padding: 0.75rem;
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+.swot-s { background: #d1fae5; color: #065f46; }
+.swot-w { background: #fee2e2; color: #991b1b; }
+.swot-o { background: #dbeafe; color: #1e40af; }
+.swot-t { background: #fef3c7; color: #92400e; }
+.swot-cell h5 {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.3rem;
+  opacity: 0.8;
+}
+
+/* Activity log */
+.activity-item {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid rgba(0,0,0,0.04);
+  font-size: 0.8rem;
+}
+.activity-date {
+  color: #6b7280;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  min-width: 80px;
+}
+.activity-type {
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 0.15rem 0.4rem;
+  border-radius: 6px;
+  white-space: nowrap;
+}
+.type-feature { background: #dbeafe; color: #1d4ed8; }
+.type-pricing { background: #d1fae5; color: #065f46; }
+.type-funding { background: #ede9fe; color: #6d28d9; }
+.type-other { background: #f3f4f6; color: #374151; }
+
+/* Modal */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.3);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+}
+.modal-overlay.show { display: flex; }
+.modal {
+  background: #fff;
+  border-radius: 20px;
+  padding: 2rem;
+  width: 90%;
+  max-width: 600px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 25px 50px rgba(0,0,0,0.15);
+}
+.modal h2 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  margin-bottom: 1.25rem;
+}
+.form-row {
+  margin-bottom: 0.75rem;
+}
+.form-row label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #6b7280;
+  margin-bottom: 0.25rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.form-row input, .form-row select, .form-row textarea {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid rgba(0,0,0,0.1);
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  outline: none;
+}
+.form-row input:focus, .form-row select:focus, .form-row textarea:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+}
+.form-row textarea { resize: vertical; min-height: 60px; }
+.form-actions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  margin-top: 1.25rem;
+}
+
+/* Chart containers */
+.chart-container {
+  position: relative;
+  height: 350px;
+  width: 100%;
+}
+.chart-container-sm {
+  position: relative;
+  height: 400px;
+  width: 100%;
+}
+
+/* Market map */
+.market-map-container {
+  position: relative;
+  width: 100%;
+  height: 500px;
+  border: 1px solid rgba(0,0,0,0.06);
+  border-radius: 12px;
+  overflow: hidden;
+  background: rgba(255,255,255,0.5);
+}
+.quadrant-label {
+  position: absolute;
+  font-size: 0.65rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #9ca3af;
+  pointer-events: none;
+}
+.map-dot {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+  transition: all 0.2s;
+  z-index: 2;
+}
+.map-dot:hover { transform: translate(-50%, -50%) scale(1.5); }
+.map-label {
+  position: absolute;
+  font-size: 0.7rem;
+  font-weight: 600;
+  white-space: nowrap;
+  transform: translate(-50%, 10px);
+  pointer-events: none;
+  z-index: 2;
+}
+.map-axis {
+  position: absolute;
+  background: rgba(0,0,0,0.08);
+}
+.map-axis-h { left: 0; right: 0; top: 50%; height: 1px; }
+.map-axis-v { top: 0; bottom: 0; left: 50%; width: 1px; }
+.map-axis-label {
+  position: absolute;
+  font-size: 0.65rem;
+  color: #9ca3af;
+  font-weight: 500;
+}
+
+/* Comparison table */
+.comparison-section { margin-bottom: 2rem; }
+.comparison-section h3 {
+  font-size: 1rem;
+  font-weight: 700;
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  body { padding: 1rem; }
+  .tabs { gap: 0.125rem; }
+  .tab-btn { padding: 0.4rem 0.6rem; font-size: 0.7rem; }
+  .comp-grid { grid-template-columns: 1fr; }
+  .swot-grid { grid-template-columns: 1fr; }
+  .stats-row { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+<a href="index.html" class="back-link">&larr; Analytics</a>
+
+<div class="header">
+  <h1>
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10.5" cy="10.5" r="5.5"/><circle cx="10.5" cy="10.5" r="2"/><line x1="21" y1="21" x2="14.5" y2="14.5"/><line x1="10.5" cy="2" y1="2" x2="10.5" y2="5"/><line x1="10.5" y1="16" x2="10.5" y2="19"/><line x1="3" y1="10.5" x2="5" y2="10.5"/></svg>
+    Competitor Intelligence
+  </h1>
+  <p>Track, compare, and analyze competitors across Smara, Scoper, and PJ Tales</p>
+</div>
+
+<!-- Stats -->
+<div class="stats-row" id="statsRow"></div>
+
+<!-- Search -->
+<div class="search-bar">
+  <input type="text" id="searchInput" placeholder="Search competitors, features, notes...">
+  <button class="btn btn-primary" onclick="openAddModal()">+ Add Competitor</button>
+  <button class="btn btn-secondary" onclick="openActivityModal()">+ Log Activity</button>
+</div>
+
+<!-- Product filter -->
+<div class="filter-pills">
+  <span class="pill pill-all active" data-product="all" onclick="filterProduct('all')">All</span>
+  <span class="pill pill-smara" data-product="Smara" onclick="filterProduct('Smara')">Smara</span>
+  <span class="pill pill-scoper" data-product="Scoper" onclick="filterProduct('Scoper')">Scoper</span>
+  <span class="pill pill-pjtales" data-product="PJ Tales" onclick="filterProduct('PJ Tales')">PJ Tales</span>
+</div>
+
+<!-- Tabs -->
+<div class="tabs">
+  <button class="tab-btn active" data-tab="overview" onclick="switchTab('overview')">Overview</button>
+  <button class="tab-btn" data-tab="comparison" onclick="switchTab('comparison')">Comparison</button>
+  <button class="tab-btn" data-tab="pricing" onclick="switchTab('pricing')">Pricing</button>
+  <button class="tab-btn" data-tab="swot" onclick="switchTab('swot')">SWOT</button>
+  <button class="tab-btn" data-tab="activity" onclick="switchTab('activity')">Activity Log</button>
+  <button class="tab-btn" data-tab="alerts" onclick="switchTab('alerts')">Alerts</button>
+  <button class="tab-btn" data-tab="market" onclick="switchTab('market')">Market Map</button>
+  <button class="tab-btn" data-tab="export" onclick="switchTab('export')">Export</button>
+</div>
+
+<div class="content">
+  <!-- Overview Tab -->
+  <div class="tab-content active" id="tab-overview">
+    <div class="comp-grid" id="compGrid"></div>
+  </div>
+
+  <!-- Comparison Tab -->
+  <div class="tab-content" id="tab-comparison">
+    <div id="comparisonContent"></div>
+  </div>
+
+  <!-- Pricing Tab -->
+  <div class="tab-content" id="tab-pricing">
+    <div class="glass">
+      <h3 style="margin-bottom:1rem;font-weight:700;">Pricing Comparison</h3>
+      <div class="chart-container">
+        <canvas id="pricingChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- SWOT Tab -->
+  <div class="tab-content" id="tab-swot">
+    <div id="swotContent"></div>
+  </div>
+
+  <!-- Activity Tab -->
+  <div class="tab-content" id="tab-activity">
+    <div class="glass">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+        <h3 style="font-weight:700;">Activity Log</h3>
+        <button class="btn btn-primary btn-sm" onclick="openActivityModal()">+ Log Activity</button>
+      </div>
+      <div id="activityList"></div>
+      <div id="activityEmpty" style="text-align:center;color:#9ca3af;padding:2rem;font-size:0.85rem;">No activity logged yet</div>
+    </div>
+  </div>
+
+  <!-- Alerts Tab -->
+  <div class="tab-content" id="tab-alerts">
+    <div class="glass">
+      <h3 style="font-weight:700;margin-bottom:1rem;">Stale Competitor Alerts</h3>
+      <p style="font-size:0.8rem;color:#6b7280;margin-bottom:1rem;">Competitors not checked in 30+ days need review.</p>
+      <div id="alertsList"></div>
+    </div>
+  </div>
+
+  <!-- Market Map Tab -->
+  <div class="tab-content" id="tab-market">
+    <div class="glass">
+      <h3 style="font-weight:700;margin-bottom:0.5rem;">Market Positioning Map</h3>
+      <p style="font-size:0.8rem;color:#6b7280;margin-bottom:1rem;">Price (Y-axis) vs Feature breadth (X-axis). Drag dots to reposition.</p>
+      <div class="market-map-container" id="marketMap">
+        <div class="map-axis map-axis-h"></div>
+        <div class="map-axis map-axis-v"></div>
+        <div class="quadrant-label" style="top:25%;left:25%;transform:translate(-50%,-50%)">Low Price / Few Features</div>
+        <div class="quadrant-label" style="top:25%;left:75%;transform:translate(-50%,-50%)">Low Price / Many Features</div>
+        <div class="quadrant-label" style="top:75%;left:25%;transform:translate(-50%,-50%)">High Price / Few Features</div>
+        <div class="quadrant-label" style="top:75%;left:75%;transform:translate(-50%,-50%)">High Price / Many Features</div>
+        <div class="map-axis-label" style="bottom:4px;right:8px;">More Features &rarr;</div>
+        <div class="map-axis-label" style="top:8px;left:8px;">&uarr; Higher Price</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Export Tab -->
+  <div class="tab-content" id="tab-export">
+    <div class="glass">
+      <h3 style="font-weight:700;margin-bottom:1rem;">Export Data</h3>
+      <div style="display:flex;gap:1rem;flex-wrap:wrap;">
+        <button class="btn btn-primary" onclick="exportJSON()">Export JSON</button>
+        <button class="btn btn-secondary" onclick="exportMarkdown()">Export Markdown Report</button>
+      </div>
+      <div id="exportPreview" style="margin-top:1.5rem;display:none;">
+        <label style="font-size:0.75rem;font-weight:600;color:#6b7280;">PREVIEW</label>
+        <textarea id="exportText" readonly style="width:100%;height:400px;margin-top:0.5rem;padding:1rem;border:1px solid rgba(0,0,0,0.1);border-radius:10px;font-family:'SF Mono',monospace;font-size:0.75rem;background:#fafafa;resize:vertical;"></textarea>
+        <button class="btn btn-secondary btn-sm" style="margin-top:0.5rem;" onclick="copyExport()">Copy to Clipboard</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Add/Edit Competitor Modal -->
+<div class="modal-overlay" id="compModal">
+  <div class="modal">
+    <h2 id="modalTitle">Add Competitor</h2>
+    <input type="hidden" id="editId">
+    <div class="form-row">
+      <label>Name</label>
+      <input type="text" id="fName" placeholder="Competitor name">
+    </div>
+    <div class="form-row">
+      <label>Product Category</label>
+      <select id="fProduct">
+        <option value="Smara">Smara</option>
+        <option value="Scoper">Scoper</option>
+        <option value="PJ Tales">PJ Tales</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label>Website</label>
+      <input type="text" id="fWebsite" placeholder="https://...">
+    </div>
+    <div class="form-row">
+      <label>Pricing ($/mo or description)</label>
+      <input type="text" id="fPricing" placeholder="e.g. $249/mo, Free tier, Enterprise">
+    </div>
+    <div class="form-row">
+      <label>Price Value (number for charts)</label>
+      <input type="number" id="fPriceValue" placeholder="e.g. 249">
+    </div>
+    <div class="form-row">
+      <label>Features (comma-separated)</label>
+      <textarea id="fFeatures" placeholder="SDK, API, Dashboard, Analytics..."></textarea>
+    </div>
+    <div class="form-row">
+      <label>Strengths</label>
+      <textarea id="fStrengths" placeholder="What they do well..."></textarea>
+    </div>
+    <div class="form-row">
+      <label>Weaknesses</label>
+      <textarea id="fWeaknesses" placeholder="Where they fall short..."></textarea>
+    </div>
+    <div class="form-row">
+      <label>Opportunities</label>
+      <textarea id="fOpportunities" placeholder="Where we can beat them..."></textarea>
+    </div>
+    <div class="form-row">
+      <label>Threats</label>
+      <textarea id="fThreats" placeholder="Risks they pose..."></textarea>
+    </div>
+    <div class="form-row">
+      <label>Notes</label>
+      <textarea id="fNotes" placeholder="Additional notes..."></textarea>
+    </div>
+    <div class="form-row">
+      <label>Feature Breadth (1-10, for market map X-axis)</label>
+      <input type="number" id="fMapX" min="1" max="10" placeholder="5">
+    </div>
+    <div class="form-row">
+      <label>Price Level (1-10, for market map Y-axis)</label>
+      <input type="number" id="fMapY" min="1" max="10" placeholder="5">
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="closeModal('compModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveCompetitor()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Activity Log Modal -->
+<div class="modal-overlay" id="activityModal">
+  <div class="modal">
+    <h2>Log Competitor Activity</h2>
+    <div class="form-row">
+      <label>Competitor</label>
+      <select id="aCompetitor"></select>
+    </div>
+    <div class="form-row">
+      <label>Type</label>
+      <select id="aType">
+        <option value="feature">Feature Launch</option>
+        <option value="pricing">Pricing Change</option>
+        <option value="funding">Funding</option>
+        <option value="other">Other</option>
+      </select>
+    </div>
+    <div class="form-row">
+      <label>Date</label>
+      <input type="date" id="aDate">
+    </div>
+    <div class="form-row">
+      <label>Description</label>
+      <textarea id="aDescription" placeholder="What happened..."></textarea>
+    </div>
+    <div class="form-actions">
+      <button class="btn btn-secondary" onclick="closeModal('activityModal')">Cancel</button>
+      <button class="btn btn-primary" onclick="saveActivity()">Log</button>
+    </div>
+  </div>
+</div>
+
+<div style="text-align:center;margin-top:2rem;color:#9ca3af;font-size:0.75rem;">
+  Competitor Intelligence Tracker &middot; Local-first &middot; Data in localStorage
+</div>
+
+<script>
+const LS_KEY = 'lumen_competitors';
+const LS_ACT_KEY = 'lumen_competitor_activity';
+
+const PRODUCT_COLORS = {
+  'Smara': { bg: '#ede9fe', color: '#7c3aed', dot: '#7c3aed' },
+  'Scoper': { bg: '#dbeafe', color: '#2563eb', dot: '#2563eb' },
+  'PJ Tales': { bg: '#fce7f3', color: '#db2777', dot: '#db2777' }
+};
+
+// Default data
+const DEFAULT_COMPETITORS = [
+  {
+    id: '1', name: 'Mem0', product: 'Smara', website: 'https://mem0.ai',
+    pricing: 'Pro $249/mo', priceValue: 249,
+    features: 'Python SDK, REST API, Memory graphs, Enterprise SSO, Self-hosted option',
+    strengths: 'Strong enterprise focus, well-funded, good developer docs, growing community',
+    weaknesses: 'Expensive for individuals, Python-only SDK, complex setup, enterprise-heavy',
+    opportunities: 'Smara is simpler and cheaper, better for small teams and families',
+    threats: 'Could move downmarket, strong brand recognition in AI memory space',
+    notes: 'Main competitor in AI memory. Recently raised Series A.',
+    mapX: 7, mapY: 8, lastChecked: '2026-04-29'
+  },
+  {
+    id: '2', name: 'Zep', product: 'Smara', website: 'https://getzep.com',
+    pricing: 'Flex+ $475/mo', priceValue: 475,
+    features: 'Conversation memory, Fact extraction, User profiling, RAG, Cloud & self-hosted',
+    strengths: 'Specialized in conversation memory, good RAG integration, auto-summarization',
+    weaknesses: 'Very expensive, narrow focus on conversations, complex pricing tiers',
+    opportunities: 'Smara does structured + conversational memory at fraction of price',
+    threats: 'Could bundle with larger platforms, conversation memory is growing niche',
+    notes: 'Focus on conversation memory for chatbots and agents.',
+    mapX: 6, mapY: 9, lastChecked: '2026-04-29'
+  },
+  {
+    id: '3', name: 'Letta', product: 'Smara', website: 'https://letta.com',
+    pricing: 'Max $200/mo', priceValue: 200,
+    features: 'Agent framework, Persistent memory, Tool use, Multi-agent, Stateful agents',
+    strengths: 'Full agent framework not just memory, open-source core, academic roots (MemGPT)',
+    weaknesses: 'Memory is just one feature of many, agent framework can be overkill, steep learning curve',
+    opportunities: 'Smara is focused purely on memory, simpler integration, better developer UX',
+    threats: 'Bundled solution may win over separate memory service',
+    notes: 'Formerly MemGPT. Broader scope as agent framework with built-in memory.',
+    mapX: 8, mapY: 7, lastChecked: '2026-04-29'
+  },
+  {
+    id: '4', name: 'Pinecone', product: 'Smara', website: 'https://pinecone.io',
+    pricing: '$70/mo+', priceValue: 70,
+    features: 'Vector database, Serverless, Namespaces, Metadata filtering, High performance',
+    strengths: 'Industry leader in vector DB, massive scale, great performance, well-known brand',
+    weaknesses: 'Just a vector DB not memory layer, no semantic memory management, raw infrastructure',
+    opportunities: 'Smara adds intelligence layer on top of vector storage, not just raw vectors',
+    threats: 'Could add memory features, many developers default to Pinecone for anything vector-related',
+    notes: 'Partial competitor. Infrastructure layer that Smara could potentially use underneath.',
+    mapX: 5, mapY: 5, lastChecked: '2026-04-29'
+  },
+  {
+    id: '5', name: 'Langbase', product: 'Smara', website: 'https://langbase.com',
+    pricing: 'Free tier, paid plans TBD', priceValue: 0,
+    features: 'Memory pipes, Composable AI, Serverless, Free tier, Simple API',
+    strengths: 'Free tier attracts hobbyists, simple composable approach, low barrier to entry',
+    weaknesses: 'Early stage, unclear monetization, limited enterprise features, small community',
+    opportunities: 'Smara has clearer product vision, better for production use cases',
+    threats: 'Free tier could capture early adopters, may evolve quickly',
+    notes: 'Newer entrant with memory pipes concept. Worth watching.',
+    mapX: 4, mapY: 2, lastChecked: '2026-04-29'
+  },
+  {
+    id: '6', name: 'Linear', product: 'Scoper', website: 'https://linear.app',
+    pricing: '$8/user/mo', priceValue: 8,
+    features: 'Project management, Issue tracking, Estimation, Cycles, Roadmaps, API',
+    strengths: 'Beautiful UX, fast performance, loved by startups, good estimation workflow',
+    weaknesses: 'Estimation is basic (points only), no AI-powered estimation, general PM tool',
+    opportunities: 'Scoper is specialized AI estimation, can integrate with Linear as data source',
+    threats: 'Could add AI estimation features, large user base',
+    notes: 'Not a direct competitor but has estimation features within PM.',
+    mapX: 9, mapY: 3, lastChecked: '2026-04-29'
+  },
+  {
+    id: '7', name: 'Jira', product: 'Scoper', website: 'https://atlassian.com/jira',
+    pricing: '$7.75/user/mo', priceValue: 8,
+    features: 'Story points, Sprint planning, Velocity tracking, Roadmaps, Integrations, Reports',
+    strengths: 'Industry standard, massive integrations, enterprise-grade, everyone knows it',
+    weaknesses: 'Bloated, slow, estimation is manual, terrible UX, no AI capabilities',
+    opportunities: 'Scoper can be 10x better at the specific task of estimation, complement Jira',
+    threats: 'Atlassian could acquire or build AI estimation, captive audience',
+    notes: 'The elephant. Scoper should position as complement, not replacement.',
+    mapX: 10, mapY: 4, lastChecked: '2026-04-29'
+  },
+  {
+    id: '8', name: 'PlanningPoker.com', product: 'Scoper', website: 'https://planningpoker.com',
+    pricing: 'Free + Premium $5/user/mo', priceValue: 5,
+    features: 'Story point voting, Team estimation, Async mode, Jira integration',
+    strengths: 'Simple and focused, free tier, well-known in agile community, Jira integration',
+    weaknesses: 'Manual voting only, no AI suggestions, no learning from historical data, basic tool',
+    opportunities: 'Scoper uses AI agents for estimation, can suggest before team votes, learns from history',
+    threats: 'Could add AI features, strong brand in estimation niche',
+    notes: 'Closest direct competitor for estimation. Scoper is AI-first vs their manual approach.',
+    mapX: 3, mapY: 2, lastChecked: '2026-04-29'
+  }
+];
+
+function loadCompetitors() {
+  const stored = localStorage.getItem(LS_KEY);
+  if (!stored) {
+    localStorage.setItem(LS_KEY, JSON.stringify(DEFAULT_COMPETITORS));
+    return DEFAULT_COMPETITORS;
+  }
+  return JSON.parse(stored);
+}
+
+function saveCompetitors(data) {
+  localStorage.setItem(LS_KEY, JSON.stringify(data));
+}
+
+function loadActivity() {
+  const stored = localStorage.getItem(LS_ACT_KEY);
+  return stored ? JSON.parse(stored) : [];
+}
+
+function saveActivityData(data) {
+  localStorage.setItem(LS_ACT_KEY, JSON.stringify(data));
+}
+
+let currentFilter = 'all';
+let currentTab = 'overview';
+let pricingChart = null;
+
+// Tab switching
+function switchTab(tab) {
+  currentTab = tab;
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.toggle('active', c.id === 'tab-' + tab));
+  if (tab === 'pricing') renderPricingChart();
+  if (tab === 'market') renderMarketMap();
+}
+
+// Product filter
+function filterProduct(product) {
+  currentFilter = product;
+  document.querySelectorAll('.pill').forEach(p => p.classList.toggle('active', p.dataset.product === product));
+  renderAll();
+}
+
+function getFiltered() {
+  const comps = loadCompetitors();
+  if (currentFilter === 'all') return comps;
+  return comps.filter(c => c.product === currentFilter);
+}
+
+function getSearchFiltered() {
+  const q = document.getElementById('searchInput').value.toLowerCase().trim();
+  let comps = getFiltered();
+  if (!q) return comps;
+  return comps.filter(c => {
+    const searchable = [c.name, c.product, c.website, c.pricing, c.features, c.strengths, c.weaknesses, c.notes, c.opportunities, c.threats].join(' ').toLowerCase();
+    return searchable.includes(q);
+  });
+}
+
+// Render stats
+function renderStats() {
+  const all = loadCompetitors();
+  const activity = loadActivity();
+  const now = Date.now();
+  const stale = all.filter(c => {
+    if (!c.lastChecked) return true;
+    return (now - new Date(c.lastChecked).getTime()) > 30 * 86400000;
+  }).length;
+  const byProduct = {};
+  all.forEach(c => { byProduct[c.product] = (byProduct[c.product] || 0) + 1; });
+  const recentActivity = activity.filter(a => (now - new Date(a.date).getTime()) < 30 * 86400000).length;
+
+  document.getElementById('statsRow').innerHTML = `
+    <div class="stat-card">
+      <div class="stat-value">${all.length}</div>
+      <div class="stat-label">Total Competitors</div>
+    </div>
+    ${Object.entries(byProduct).map(([p, c]) => `
+      <div class="stat-card">
+        <div class="stat-value" style="color:${PRODUCT_COLORS[p]?.color || '#374151'}">${c}</div>
+        <div class="stat-label">${p}</div>
+      </div>
+    `).join('')}
+    <div class="stat-card">
+      <div class="stat-value">${recentActivity}</div>
+      <div class="stat-label">Recent Activities (30d)</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value" style="color:${stale > 0 ? '#dc2626' : '#10b981'}">${stale}</div>
+      <div class="stat-label">Stale (30+ days)</div>
+    </div>
+  `;
+}
+
+// Render overview grid
+function renderOverview() {
+  const comps = getSearchFiltered();
+  const now = Date.now();
+  const grid = document.getElementById('compGrid');
+  if (comps.length === 0) {
+    grid.innerHTML = '<div style="text-align:center;color:#9ca3af;padding:3rem;grid-column:1/-1;">No competitors found</div>';
+    return;
+  }
+  grid.innerHTML = comps.map(c => {
+    const pc = PRODUCT_COLORS[c.product] || { bg: '#f3f4f6', color: '#374151' };
+    const daysSince = c.lastChecked ? Math.floor((now - new Date(c.lastChecked).getTime()) / 86400000) : 999;
+    const stale = daysSince > 30;
+    const features = c.features ? c.features.split(',').map(f => f.trim()).filter(Boolean) : [];
+    return `
+      <div class="comp-card">
+        <div class="comp-card-header">
+          <div>
+            <div class="comp-card-name">${esc(c.name)}</div>
+            <a href="${esc(c.website)}" target="_blank" style="font-size:0.75rem;color:#3b82f6;text-decoration:none;">${esc(c.website)}</a>
+          </div>
+          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:0.25rem;">
+            <span class="comp-card-product" style="background:${pc.bg};color:${pc.color}">${esc(c.product)}</span>
+            <span class="alert-badge ${stale ? 'alert-stale' : 'alert-ok'}">${stale ? daysSince + 'd ago' : 'Current'}</span>
+          </div>
+        </div>
+        <div class="comp-card-section">
+          <h4>Pricing</h4>
+          <p style="font-weight:600;">${esc(c.pricing)}</p>
+        </div>
+        ${features.length ? `
+        <div class="comp-card-section">
+          <h4>Features</h4>
+          <div style="display:flex;flex-wrap:wrap;gap:0.25rem;">
+            ${features.slice(0, 6).map(f => `<span style="font-size:0.7rem;background:rgba(0,0,0,0.04);padding:0.15rem 0.4rem;border-radius:4px;">${esc(f)}</span>`).join('')}
+            ${features.length > 6 ? `<span style="font-size:0.7rem;color:#9ca3af;">+${features.length - 6} more</span>` : ''}
+          </div>
+        </div>` : ''}
+        ${c.strengths ? `<div class="comp-card-section"><h4>Strengths</h4><p>${esc(c.strengths).substring(0, 100)}${c.strengths.length > 100 ? '...' : ''}</p></div>` : ''}
+        ${c.weaknesses ? `<div class="comp-card-section"><h4>Weaknesses</h4><p>${esc(c.weaknesses).substring(0, 100)}${c.weaknesses.length > 100 ? '...' : ''}</p></div>` : ''}
+        <div class="comp-card-actions">
+          <button class="btn btn-secondary btn-sm" onclick="editCompetitor('${c.id}')">Edit</button>
+          <button class="btn btn-secondary btn-sm" onclick="markChecked('${c.id}')">Mark Checked</button>
+          <button class="btn btn-danger btn-sm" onclick="deleteCompetitor('${c.id}')">Delete</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// Render comparison tables (one per product)
+function renderComparison() {
+  const comps = getSearchFiltered();
+  const byProduct = {};
+  comps.forEach(c => {
+    if (!byProduct[c.product]) byProduct[c.product] = [];
+    byProduct[c.product].push(c);
+  });
+
+  const container = document.getElementById('comparisonContent');
+  if (Object.keys(byProduct).length === 0) {
+    container.innerHTML = '<div class="glass" style="text-align:center;color:#9ca3af;padding:2rem;">No competitors to compare</div>';
+    return;
+  }
+
+  container.innerHTML = Object.entries(byProduct).map(([product, comps]) => {
+    const pc = PRODUCT_COLORS[product] || { bg: '#f3f4f6', color: '#374151' };
+    // Collect all unique features
+    const allFeatures = new Set();
+    comps.forEach(c => {
+      if (c.features) c.features.split(',').map(f => f.trim()).filter(Boolean).forEach(f => allFeatures.add(f));
+    });
+    return `
+      <div class="comparison-section glass" style="margin-bottom:1.5rem;">
+        <h3><span style="background:${pc.bg};color:${pc.color};padding:0.2rem 0.6rem;border-radius:8px;font-size:0.8rem;">${esc(product)}</span> Competitors</h3>
+        <div style="overflow-x:auto;">
+          <table class="comp-table">
+            <thead>
+              <tr>
+                <th>Feature</th>
+                ${comps.map(c => `<th>${esc(c.name)}</th>`).join('')}
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td style="font-weight:600;">Pricing</td>
+                ${comps.map(c => `<td>${esc(c.pricing)}</td>`).join('')}
+              </tr>
+              <tr>
+                <td style="font-weight:600;">Website</td>
+                ${comps.map(c => `<td><a href="${esc(c.website)}" target="_blank" style="color:#3b82f6;font-size:0.75rem;">${esc(c.website)}</a></td>`).join('')}
+              </tr>
+              ${[...allFeatures].sort().map(feat => `
+                <tr>
+                  <td>${esc(feat)}</td>
+                  ${comps.map(c => {
+                    const has = c.features && c.features.toLowerCase().includes(feat.toLowerCase());
+                    return `<td style="text-align:center;">${has ? '<span style="color:#10b981;font-weight:700;">&#10003;</span>' : '<span style="color:#d1d5db;">&mdash;</span>'}</td>`;
+                  }).join('')}
+                </tr>
+              `).join('')}
+              <tr>
+                <td style="font-weight:600;">Strengths</td>
+                ${comps.map(c => `<td style="font-size:0.75rem;">${esc(c.strengths || '-')}</td>`).join('')}
+              </tr>
+              <tr>
+                <td style="font-weight:600;">Weaknesses</td>
+                ${comps.map(c => `<td style="font-size:0.75rem;">${esc(c.weaknesses || '-')}</td>`).join('')}
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// Pricing chart
+function renderPricingChart() {
+  const comps = getSearchFiltered().filter(c => c.priceValue > 0);
+  comps.sort((a, b) => b.priceValue - a.priceValue);
+
+  const ctx = document.getElementById('pricingChart').getContext('2d');
+  if (pricingChart) pricingChart.destroy();
+
+  pricingChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: comps.map(c => c.name),
+      datasets: [{
+        label: 'Price ($/mo)',
+        data: comps.map(c => c.priceValue),
+        backgroundColor: comps.map(c => {
+          const pc = PRODUCT_COLORS[c.product];
+          return pc ? pc.dot + '40' : '#6b728040';
+        }),
+        borderColor: comps.map(c => {
+          const pc = PRODUCT_COLORS[c.product];
+          return pc ? pc.dot : '#6b7280';
+        }),
+        borderWidth: 2,
+        borderRadius: 8
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      indexAxis: 'y',
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: ctx => `$${ctx.raw}/mo`
+          }
+        }
+      },
+      scales: {
+        x: {
+          grid: { color: 'rgba(0,0,0,0.04)' },
+          ticks: { callback: v => '$' + v }
+        },
+        y: {
+          grid: { display: false }
+        }
+      }
+    }
+  });
+}
+
+// SWOT view
+function renderSWOT() {
+  const comps = getSearchFiltered();
+  const container = document.getElementById('swotContent');
+  if (comps.length === 0) {
+    container.innerHTML = '<div class="glass" style="text-align:center;color:#9ca3af;padding:2rem;">No competitors to analyze</div>';
+    return;
+  }
+  container.innerHTML = comps.map(c => {
+    const pc = PRODUCT_COLORS[c.product] || { bg: '#f3f4f6', color: '#374151' };
+    return `
+      <div class="glass" style="margin-bottom:1.5rem;">
+        <div style="display:flex;justify-content:space-between;align-items:center;">
+          <h3 style="font-weight:700;">${esc(c.name)}</h3>
+          <span style="background:${pc.bg};color:${pc.color};padding:0.15rem 0.5rem;border-radius:8px;font-size:0.7rem;font-weight:600;">${esc(c.product)}</span>
+        </div>
+        <div class="swot-grid">
+          <div class="swot-cell swot-s">
+            <h5>Strengths</h5>
+            ${esc(c.strengths || 'Not documented')}
+          </div>
+          <div class="swot-cell swot-w">
+            <h5>Weaknesses</h5>
+            ${esc(c.weaknesses || 'Not documented')}
+          </div>
+          <div class="swot-cell swot-o">
+            <h5>Opportunities</h5>
+            ${esc(c.opportunities || 'Not documented')}
+          </div>
+          <div class="swot-cell swot-t">
+            <h5>Threats</h5>
+            ${esc(c.threats || 'Not documented')}
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// Activity log
+function renderActivity() {
+  const activities = loadActivity().sort((a, b) => new Date(b.date) - new Date(a.date));
+  const list = document.getElementById('activityList');
+  const empty = document.getElementById('activityEmpty');
+
+  if (activities.length === 0) {
+    list.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  list.innerHTML = activities.map((a, i) => {
+    const typeClass = { feature: 'type-feature', pricing: 'type-pricing', funding: 'type-funding', other: 'type-other' }[a.type] || 'type-other';
+    return `
+      <div class="activity-item">
+        <span class="activity-date">${a.date}</span>
+        <span class="activity-type ${typeClass}">${a.type}</span>
+        <span style="font-weight:600;min-width:80px;">${esc(a.competitor)}</span>
+        <span style="flex:1;">${esc(a.description)}</span>
+        <button class="btn btn-danger btn-sm" onclick="deleteActivity(${i})" style="padding:0.2rem 0.5rem;">x</button>
+      </div>
+    `;
+  }).join('');
+}
+
+// Alerts
+function renderAlerts() {
+  const comps = loadCompetitors();
+  const now = Date.now();
+  const container = document.getElementById('alertsList');
+
+  const stale = comps.filter(c => {
+    if (!c.lastChecked) return true;
+    return (now - new Date(c.lastChecked).getTime()) > 30 * 86400000;
+  });
+
+  if (stale.length === 0) {
+    container.innerHTML = '<div style="text-align:center;padding:2rem;color:#10b981;font-weight:600;">All competitors are up to date!</div>';
+    return;
+  }
+
+  container.innerHTML = stale.map(c => {
+    const days = c.lastChecked ? Math.floor((now - new Date(c.lastChecked).getTime()) / 86400000) : 'Never';
+    const pc = PRODUCT_COLORS[c.product] || { bg: '#f3f4f6', color: '#374151' };
+    return `
+      <div style="display:flex;justify-content:space-between;align-items:center;padding:0.75rem 0;border-bottom:1px solid rgba(0,0,0,0.04);">
+        <div>
+          <span style="font-weight:600;">${esc(c.name)}</span>
+          <span style="background:${pc.bg};color:${pc.color};padding:0.1rem 0.4rem;border-radius:6px;font-size:0.65rem;font-weight:600;margin-left:0.5rem;">${esc(c.product)}</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:0.75rem;">
+          <span class="alert-badge alert-stale">${days === 'Never' ? 'Never checked' : days + ' days ago'}</span>
+          <button class="btn btn-primary btn-sm" onclick="markChecked('${c.id}')">Mark Checked</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// Market map
+function renderMarketMap() {
+  const comps = getSearchFiltered();
+  const map = document.getElementById('marketMap');
+  // Remove old dots/labels
+  map.querySelectorAll('.map-dot, .map-label').forEach(el => el.remove());
+
+  comps.forEach(c => {
+    if (!c.mapX || !c.mapY) return;
+    const pc = PRODUCT_COLORS[c.product] || { dot: '#6b7280' };
+    const xPct = (c.mapX / 10) * 80 + 10; // 10%-90% range
+    const yPct = 100 - ((c.mapY / 10) * 80 + 10); // invert Y, 10%-90%
+
+    const dot = document.createElement('div');
+    dot.className = 'map-dot';
+    dot.style.left = xPct + '%';
+    dot.style.top = yPct + '%';
+    dot.style.backgroundColor = pc.dot;
+    dot.style.boxShadow = `0 0 0 4px ${pc.dot}30`;
+    dot.title = `${c.name} (${c.product})\nPrice: ${c.pricing}\nFeatures: ${c.mapX}/10, Price Level: ${c.mapY}/10`;
+    map.appendChild(dot);
+
+    const label = document.createElement('div');
+    label.className = 'map-label';
+    label.style.left = xPct + '%';
+    label.style.top = yPct + '%';
+    label.style.color = pc.dot;
+    label.textContent = c.name;
+    map.appendChild(label);
+  });
+}
+
+// Modal helpers
+function openAddModal() {
+  document.getElementById('modalTitle').textContent = 'Add Competitor';
+  document.getElementById('editId').value = '';
+  ['fName','fWebsite','fPricing','fPriceValue','fFeatures','fStrengths','fWeaknesses','fOpportunities','fThreats','fNotes','fMapX','fMapY'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('fProduct').value = 'Smara';
+  document.getElementById('compModal').classList.add('show');
+}
+
+function editCompetitor(id) {
+  const comp = loadCompetitors().find(c => c.id === id);
+  if (!comp) return;
+  document.getElementById('modalTitle').textContent = 'Edit Competitor';
+  document.getElementById('editId').value = id;
+  document.getElementById('fName').value = comp.name || '';
+  document.getElementById('fProduct').value = comp.product || 'Smara';
+  document.getElementById('fWebsite').value = comp.website || '';
+  document.getElementById('fPricing').value = comp.pricing || '';
+  document.getElementById('fPriceValue').value = comp.priceValue || '';
+  document.getElementById('fFeatures').value = comp.features || '';
+  document.getElementById('fStrengths').value = comp.strengths || '';
+  document.getElementById('fWeaknesses').value = comp.weaknesses || '';
+  document.getElementById('fOpportunities').value = comp.opportunities || '';
+  document.getElementById('fThreats').value = comp.threats || '';
+  document.getElementById('fNotes').value = comp.notes || '';
+  document.getElementById('fMapX').value = comp.mapX || '';
+  document.getElementById('fMapY').value = comp.mapY || '';
+  document.getElementById('compModal').classList.add('show');
+}
+
+function saveCompetitor() {
+  const name = document.getElementById('fName').value.trim();
+  if (!name) return alert('Name is required');
+
+  const comp = {
+    id: document.getElementById('editId').value || Date.now().toString(),
+    name,
+    product: document.getElementById('fProduct').value,
+    website: document.getElementById('fWebsite').value.trim(),
+    pricing: document.getElementById('fPricing').value.trim(),
+    priceValue: parseFloat(document.getElementById('fPriceValue').value) || 0,
+    features: document.getElementById('fFeatures').value.trim(),
+    strengths: document.getElementById('fStrengths').value.trim(),
+    weaknesses: document.getElementById('fWeaknesses').value.trim(),
+    opportunities: document.getElementById('fOpportunities').value.trim(),
+    threats: document.getElementById('fThreats').value.trim(),
+    notes: document.getElementById('fNotes').value.trim(),
+    mapX: parseInt(document.getElementById('fMapX').value) || 5,
+    mapY: parseInt(document.getElementById('fMapY').value) || 5,
+    lastChecked: new Date().toISOString().split('T')[0]
+  };
+
+  const comps = loadCompetitors();
+  const idx = comps.findIndex(c => c.id === comp.id);
+  if (idx >= 0) comps[idx] = comp;
+  else comps.push(comp);
+
+  saveCompetitors(comps);
+  closeModal('compModal');
+  renderAll();
+}
+
+function deleteCompetitor(id) {
+  if (!confirm('Delete this competitor?')) return;
+  const comps = loadCompetitors().filter(c => c.id !== id);
+  saveCompetitors(comps);
+  renderAll();
+}
+
+function markChecked(id) {
+  const comps = loadCompetitors();
+  const comp = comps.find(c => c.id === id);
+  if (comp) {
+    comp.lastChecked = new Date().toISOString().split('T')[0];
+    saveCompetitors(comps);
+    renderAll();
+  }
+}
+
+function openActivityModal() {
+  const comps = loadCompetitors();
+  const select = document.getElementById('aCompetitor');
+  select.innerHTML = comps.map(c => `<option value="${esc(c.name)}">${esc(c.name)} (${esc(c.product)})</option>`).join('');
+  document.getElementById('aDate').value = new Date().toISOString().split('T')[0];
+  document.getElementById('aDescription').value = '';
+  document.getElementById('activityModal').classList.add('show');
+}
+
+function saveActivity() {
+  const desc = document.getElementById('aDescription').value.trim();
+  if (!desc) return alert('Description is required');
+
+  const activities = loadActivity();
+  activities.push({
+    competitor: document.getElementById('aCompetitor').value,
+    type: document.getElementById('aType').value,
+    date: document.getElementById('aDate').value,
+    description: desc
+  });
+  saveActivityData(activities);
+  closeModal('activityModal');
+  renderAll();
+}
+
+function deleteActivity(index) {
+  const activities = loadActivity();
+  activities.splice(index, 1);
+  saveActivityData(activities);
+  renderAll();
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('show');
+}
+
+// Export
+function exportJSON() {
+  const data = {
+    competitors: loadCompetitors(),
+    activity: loadActivity(),
+    exported: new Date().toISOString()
+  };
+  const text = JSON.stringify(data, null, 2);
+  showExport(text);
+  downloadFile('competitors-export.json', text, 'application/json');
+}
+
+function exportMarkdown() {
+  const comps = loadCompetitors();
+  const activity = loadActivity();
+  const byProduct = {};
+  comps.forEach(c => {
+    if (!byProduct[c.product]) byProduct[c.product] = [];
+    byProduct[c.product].push(c);
+  });
+
+  let md = `# Competitor Intelligence Report\n\nGenerated: ${new Date().toLocaleDateString()}\n\n`;
+  md += `## Summary\n\n- **Total competitors tracked:** ${comps.length}\n`;
+  Object.entries(byProduct).forEach(([p, cs]) => { md += `- **${p}:** ${cs.length} competitors\n`; });
+  md += `- **Recent activity:** ${activity.length} events\n\n`;
+
+  Object.entries(byProduct).forEach(([product, cs]) => {
+    md += `## ${product} Competitors\n\n`;
+    md += `| Name | Pricing | Key Strengths | Key Weaknesses |\n|------|---------|---------------|----------------|\n`;
+    cs.forEach(c => {
+      md += `| [${c.name}](${c.website}) | ${c.pricing} | ${(c.strengths || '-').substring(0, 60)} | ${(c.weaknesses || '-').substring(0, 60)} |\n`;
+    });
+    md += '\n';
+
+    cs.forEach(c => {
+      md += `### ${c.name}\n\n`;
+      md += `- **Website:** ${c.website}\n`;
+      md += `- **Pricing:** ${c.pricing}\n`;
+      md += `- **Features:** ${c.features}\n`;
+      md += `- **Strengths:** ${c.strengths}\n`;
+      md += `- **Weaknesses:** ${c.weaknesses}\n`;
+      md += `- **Opportunities:** ${c.opportunities}\n`;
+      md += `- **Threats:** ${c.threats}\n`;
+      if (c.notes) md += `- **Notes:** ${c.notes}\n`;
+      md += `- **Last Checked:** ${c.lastChecked}\n\n`;
+    });
+  });
+
+  if (activity.length > 0) {
+    md += `## Activity Log\n\n| Date | Competitor | Type | Description |\n|------|-----------|------|-------------|\n`;
+    activity.sort((a, b) => new Date(b.date) - new Date(a.date)).forEach(a => {
+      md += `| ${a.date} | ${a.competitor} | ${a.type} | ${a.description} |\n`;
+    });
+  }
+
+  showExport(md);
+  downloadFile('competitors-report.md', md, 'text/markdown');
+}
+
+function showExport(text) {
+  document.getElementById('exportPreview').style.display = 'block';
+  document.getElementById('exportText').value = text;
+}
+
+function copyExport() {
+  navigator.clipboard.writeText(document.getElementById('exportText').value);
+}
+
+function downloadFile(filename, content, type) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function esc(str) {
+  if (!str) return '';
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+// Search handler
+document.getElementById('searchInput').addEventListener('input', () => renderAll());
+
+// Close modals on overlay click
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', e => {
+    if (e.target === overlay) overlay.classList.remove('show');
+  });
+});
+
+function renderAll() {
+  renderStats();
+  renderOverview();
+  renderComparison();
+  renderSWOT();
+  renderActivity();
+  renderAlerts();
+  if (currentTab === 'pricing') renderPricingChart();
+  if (currentTab === 'market') renderMarketMap();
+}
+
+// Initialize
+renderAll();
+</script>
+</body>
+</html>

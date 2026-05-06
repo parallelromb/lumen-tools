@@ -1,0 +1,1061 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Energy & Mood Tracker - Lumen Analytics</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #f8f9fc;
+  color: #1a1a2e;
+  min-height: 100vh;
+  padding: 1.5rem;
+}
+a { color: #3b82f6; text-decoration: none; }
+a:hover { text-decoration: underline; }
+.back { display: inline-flex; align-items: center; gap: 6px; font-size: 0.85rem; font-weight: 500; margin-bottom: 1rem; }
+.header { text-align: center; margin-bottom: 2rem; }
+.header h1 { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; }
+.header p { color: #6b7280; font-size: 0.9rem; margin-top: 0.25rem; }
+
+.glass {
+  background: rgba(255,255,255,0.72);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.6);
+  border-radius: 16px;
+  padding: 1.5rem;
+}
+
+.layout {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  gap: 1.5rem;
+}
+
+/* Tabs */
+.tabs {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-bottom: 1rem;
+}
+.tab-btn {
+  padding: 0.5rem 1.25rem;
+  border: none;
+  border-radius: 10px;
+  background: rgba(255,255,255,0.5);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #6b7280;
+}
+.tab-btn.active {
+  background: #1a1a2e;
+  color: #fff;
+}
+.tab-btn:hover:not(.active) { background: rgba(255,255,255,0.8); }
+
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* Form */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+}
+.form-group label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #6b7280;
+  margin-bottom: 0.4rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.form-group select, .form-group input, .form-group textarea {
+  width: 100%;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 10px;
+  font-family: inherit;
+  font-size: 0.9rem;
+  background: rgba(255,255,255,0.6);
+  outline: none;
+  transition: border-color 0.2s;
+}
+.form-group select:focus, .form-group input:focus, .form-group textarea:focus {
+  border-color: #3b82f6;
+}
+.form-group textarea { resize: vertical; min-height: 60px; }
+
+.emoji-picker {
+  display: flex;
+  gap: 0.4rem;
+}
+.emoji-btn {
+  width: 42px;
+  height: 42px;
+  border: 2px solid rgba(0,0,0,0.06);
+  border-radius: 10px;
+  background: rgba(255,255,255,0.5);
+  font-size: 1.25rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.emoji-btn:hover { transform: scale(1.1); }
+.emoji-btn.selected {
+  border-color: #3b82f6;
+  background: rgba(59,130,246,0.1);
+  transform: scale(1.1);
+}
+
+.tags-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.tag-btn {
+  padding: 0.35rem 0.75rem;
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 20px;
+  background: rgba(255,255,255,0.5);
+  font-family: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.tag-btn.selected {
+  background: #1a1a2e;
+  color: #fff;
+  border-color: #1a1a2e;
+}
+
+.btn-primary {
+  padding: 0.65rem 1.5rem;
+  border: none;
+  border-radius: 10px;
+  background: #1a1a2e;
+  color: #fff;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.btn-primary:hover { opacity: 0.85; }
+.btn-secondary {
+  padding: 0.5rem 1rem;
+  border: 1px solid rgba(0,0,0,0.1);
+  border-radius: 10px;
+  background: rgba(255,255,255,0.5);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-secondary:hover { background: rgba(255,255,255,0.8); }
+
+/* Stats */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1rem;
+}
+.stat-card {
+  text-align: center;
+  padding: 1rem;
+  background: rgba(255,255,255,0.4);
+  border-radius: 12px;
+}
+.stat-card .value { font-size: 1.5rem; font-weight: 700; }
+.stat-card .label { font-size: 0.75rem; color: #6b7280; margin-top: 0.25rem; }
+
+/* Entries list */
+.entry-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid rgba(0,0,0,0.04);
+}
+.entry-item:last-child { border-bottom: none; }
+.entry-time {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #6b7280;
+  min-width: 80px;
+}
+.entry-emojis { font-size: 1.2rem; display: flex; gap: 0.5rem; }
+.entry-tags { display: flex; gap: 0.3rem; flex-wrap: wrap; }
+.entry-tag {
+  font-size: 0.7rem;
+  padding: 0.15rem 0.5rem;
+  background: rgba(59,130,246,0.08);
+  color: #3b82f6;
+  border-radius: 10px;
+}
+.entry-notes {
+  font-size: 0.8rem;
+  color: #6b7280;
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.entry-delete {
+  background: none; border: none; cursor: pointer; font-size: 0.8rem; color: #ef4444; opacity: 0.5;
+}
+.entry-delete:hover { opacity: 1; }
+
+/* Heatmap */
+.heatmap-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+.heatmap-cell {
+  aspect-ratio: 1;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: rgba(0,0,0,0.5);
+  min-height: 36px;
+}
+.heatmap-header {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #6b7280;
+  text-align: center;
+  padding: 0.25rem 0;
+}
+
+/* Week nav */
+.week-nav {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.week-nav button {
+  background: none;
+  border: 1px solid rgba(0,0,0,0.1);
+  border-radius: 8px;
+  padding: 0.4rem 0.75rem;
+  font-family: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.week-nav span { font-weight: 600; font-size: 0.9rem; }
+
+/* Patterns */
+.pattern-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  background: rgba(255,255,255,0.4);
+  border-radius: 10px;
+  margin-bottom: 0.5rem;
+}
+.pattern-icon { font-size: 1.25rem; }
+.pattern-text { font-size: 0.85rem; }
+.pattern-text strong { color: #3b82f6; }
+
+/* Chart containers */
+.chart-container { position: relative; height: 280px; }
+
+/* Correlation */
+.correlation-value { font-size: 2rem; font-weight: 700; text-align: center; }
+.correlation-label { text-align: center; color: #6b7280; font-size: 0.85rem; }
+
+/* Tag analysis */
+.tag-analysis-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(0,0,0,0.04);
+}
+.tag-analysis-item:last-child { border-bottom: none; }
+.tag-name { font-weight: 600; font-size: 0.85rem; }
+.tag-impact {
+  font-size: 0.8rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 20px;
+}
+.tag-positive { background: rgba(16,185,129,0.1); color: #10b981; }
+.tag-negative { background: rgba(239,68,68,0.1); color: #ef4444; }
+.tag-neutral { background: rgba(107,114,128,0.1); color: #6b7280; }
+</style>
+</head>
+<body>
+<a href="index.html" class="back">&larr; Back to Analytics</a>
+<div class="header">
+  <h1>Energy & Mood Tracker</h1>
+  <p>Track your energy, mood, and productivity patterns</p>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" data-tab="log">Log Entry</button>
+  <button class="tab-btn" data-tab="daily">Daily View</button>
+  <button class="tab-btn" data-tab="weekly">Weekly Chart</button>
+  <button class="tab-btn" data-tab="monthly">Monthly Heatmap</button>
+  <button class="tab-btn" data-tab="stats">Quick Stats</button>
+  <button class="tab-btn" data-tab="patterns">Patterns</button>
+  <button class="tab-btn" data-tab="tags">Tag Analysis</button>
+  <button class="tab-btn" data-tab="export">Export</button>
+</div>
+
+<div class="layout">
+  <!-- LOG ENTRY -->
+  <div id="tab-log" class="tab-content active">
+    <div class="glass">
+      <h2 style="font-size:1.1rem; font-weight:700; margin-bottom:1rem;">New Entry</h2>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Date</label>
+          <input type="date" id="entry-date">
+        </div>
+        <div class="form-group">
+          <label>Time of Day</label>
+          <select id="entry-time">
+            <option value="Morning">Morning</option>
+            <option value="Afternoon">Afternoon</option>
+            <option value="Evening">Evening</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-grid" style="margin-top:1rem;">
+        <div class="form-group">
+          <label>Energy Level</label>
+          <div class="emoji-picker" id="energy-picker">
+            <button class="emoji-btn" data-value="1" title="Exhausted">&#x1F634;</button>
+            <button class="emoji-btn" data-value="2" title="Low">&#x1F610;</button>
+            <button class="emoji-btn" data-value="3" title="Okay">&#x1F60A;</button>
+            <button class="emoji-btn" data-value="4" title="Good">&#x1F604;</button>
+            <button class="emoji-btn" data-value="5" title="On Fire">&#x1F525;</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Mood</label>
+          <div class="emoji-picker" id="mood-picker">
+            <button class="emoji-btn" data-value="1" title="Sad">&#x1F622;</button>
+            <button class="emoji-btn" data-value="2" title="Down">&#x1F615;</button>
+            <button class="emoji-btn" data-value="3" title="Neutral">&#x1F610;</button>
+            <button class="emoji-btn" data-value="4" title="Happy">&#x1F60A;</button>
+            <button class="emoji-btn" data-value="5" title="Elated">&#x1F970;</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Productivity</label>
+          <div class="emoji-picker" id="productivity-picker">
+            <button class="emoji-btn" data-value="1" title="Sluggish">&#x1F40C;</button>
+            <button class="emoji-btn" data-value="2" title="Walking">&#x1F6B6;</button>
+            <button class="emoji-btn" data-value="3" title="Running">&#x1F3C3;</button>
+            <button class="emoji-btn" data-value="4" title="Fast">&#x1F4A8;</button>
+            <button class="emoji-btn" data-value="5" title="Rocket">&#x1F680;</button>
+          </div>
+        </div>
+      </div>
+      <div class="form-group" style="margin-top:1rem;">
+        <label>Tags</label>
+        <div class="tags-container" id="tags-container">
+          <button class="tag-btn" data-tag="exercise">exercise</button>
+          <button class="tag-btn" data-tag="coffee">coffee</button>
+          <button class="tag-btn" data-tag="social">social</button>
+          <button class="tag-btn" data-tag="nature">nature</button>
+          <button class="tag-btn" data-tag="coding">coding</button>
+          <button class="tag-btn" data-tag="meeting">meeting</button>
+          <button class="tag-btn" data-tag="meditation">meditation</button>
+          <button class="tag-btn" data-tag="poor-sleep">poor-sleep</button>
+        </div>
+      </div>
+      <div class="form-group" style="margin-top:1rem;">
+        <label>Notes</label>
+        <textarea id="entry-notes" placeholder="What's going on today?"></textarea>
+      </div>
+      <div style="margin-top:1rem; display:flex; gap:0.75rem;">
+        <button class="btn-primary" onclick="saveEntry()">Save Entry</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- DAILY VIEW -->
+  <div id="tab-daily" class="tab-content">
+    <div class="glass">
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:1rem;">
+        <h2 style="font-size:1.1rem; font-weight:700;">Daily View</h2>
+        <input type="date" id="daily-date" style="padding:0.4rem 0.6rem; border:1px solid rgba(0,0,0,0.08); border-radius:8px; font-family:inherit; font-size:0.85rem;">
+      </div>
+      <div class="chart-container" style="height:200px; margin-bottom:1rem;">
+        <canvas id="dailyChart"></canvas>
+      </div>
+      <div id="daily-entries"></div>
+    </div>
+  </div>
+
+  <!-- WEEKLY CHART -->
+  <div id="tab-weekly" class="tab-content">
+    <div class="glass">
+      <div class="week-nav">
+        <button onclick="changeWeek(-1)">&larr; Prev</button>
+        <span id="week-label"></span>
+        <button onclick="changeWeek(1)">Next &rarr;</button>
+      </div>
+      <div class="chart-container">
+        <canvas id="weeklyChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- MONTHLY HEATMAP -->
+  <div id="tab-monthly" class="tab-content">
+    <div class="glass">
+      <div class="week-nav">
+        <button onclick="changeMonth(-1)">&larr; Prev</button>
+        <span id="month-label"></span>
+        <button onclick="changeMonth(1)">Next &rarr;</button>
+      </div>
+      <div class="heatmap-grid" style="margin-bottom:0.5rem;">
+        <div class="heatmap-header">Sun</div>
+        <div class="heatmap-header">Mon</div>
+        <div class="heatmap-header">Tue</div>
+        <div class="heatmap-header">Wed</div>
+        <div class="heatmap-header">Thu</div>
+        <div class="heatmap-header">Fri</div>
+        <div class="heatmap-header">Sat</div>
+      </div>
+      <div class="heatmap-grid" id="heatmap-grid"></div>
+      <div style="display:flex; align-items:center; justify-content:center; gap:0.5rem; margin-top:1rem; font-size:0.75rem; color:#6b7280;">
+        <span>Low</span>
+        <div style="width:20px;height:14px;border-radius:3px;background:#fca5a5;"></div>
+        <div style="width:20px;height:14px;border-radius:3px;background:#fcd34d;"></div>
+        <div style="width:20px;height:14px;border-radius:3px;background:#86efac;"></div>
+        <div style="width:20px;height:14px;border-radius:3px;background:#22c55e;"></div>
+        <span>High</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- QUICK STATS -->
+  <div id="tab-stats" class="tab-content">
+    <div class="glass">
+      <h2 style="font-size:1.1rem; font-weight:700; margin-bottom:1rem;">This Week</h2>
+      <div class="stats-row" id="stats-row"></div>
+    </div>
+    <div class="glass" style="margin-top:1.5rem;">
+      <h2 style="font-size:1.1rem; font-weight:700; margin-bottom:1rem;">Streaks & Highlights</h2>
+      <div id="streaks-info"></div>
+    </div>
+  </div>
+
+  <!-- PATTERNS -->
+  <div id="tab-patterns" class="tab-content">
+    <div class="glass">
+      <h2 style="font-size:1.1rem; font-weight:700; margin-bottom:1rem;">Patterns & Insights</h2>
+      <div id="patterns-list"></div>
+    </div>
+    <div class="glass" style="margin-top:1.5rem;">
+      <h2 style="font-size:1.1rem; font-weight:700; margin-bottom:1rem;">Sleep & Energy Correlation</h2>
+      <div id="correlation-info"></div>
+    </div>
+  </div>
+
+  <!-- TAG ANALYSIS -->
+  <div id="tab-tags" class="tab-content">
+    <div class="glass">
+      <h2 style="font-size:1.1rem; font-weight:700; margin-bottom:1rem;">Tag Impact on Energy</h2>
+      <div id="tag-energy-analysis"></div>
+    </div>
+    <div class="glass" style="margin-top:1.5rem;">
+      <h2 style="font-size:1.1rem; font-weight:700; margin-bottom:1rem;">Tag Impact on Mood</h2>
+      <div id="tag-mood-analysis"></div>
+    </div>
+    <div class="glass" style="margin-top:1.5rem;">
+      <h2 style="font-size:1.1rem; font-weight:700; margin-bottom:1rem;">Tag Impact on Productivity</h2>
+      <div id="tag-prod-analysis"></div>
+    </div>
+  </div>
+
+  <!-- EXPORT -->
+  <div id="tab-export" class="tab-content">
+    <div class="glass">
+      <h2 style="font-size:1.1rem; font-weight:700; margin-bottom:1rem;">Export & Import</h2>
+      <p style="font-size:0.85rem; color:#6b7280; margin-bottom:1rem;">Download all your energy tracker data as JSON, or import a previous backup.</p>
+      <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
+        <button class="btn-primary" onclick="exportData()">Export JSON</button>
+        <label class="btn-secondary" style="cursor:pointer;">
+          Import JSON
+          <input type="file" accept=".json" style="display:none;" onchange="importData(event)">
+        </label>
+        <button class="btn-secondary" onclick="clearAllData()" style="color:#ef4444;">Clear All Data</button>
+      </div>
+      <div id="export-status" style="margin-top:1rem; font-size:0.85rem; color:#10b981;"></div>
+    </div>
+  </div>
+</div>
+
+<div style="text-align:center; margin-top:2rem; color:#9ca3af; font-size:0.8rem;">
+  Lumen Analytics &middot; Energy & Mood Tracker &middot; Data stored in localStorage
+</div>
+
+<script>
+const STORAGE_KEY = 'lumen-energy-tracker';
+const ENERGY_EMOJIS = ['','&#x1F634;','&#x1F610;','&#x1F60A;','&#x1F604;','&#x1F525;'];
+const MOOD_EMOJIS = ['','&#x1F622;','&#x1F615;','&#x1F610;','&#x1F60A;','&#x1F970;'];
+const PROD_EMOJIS = ['','&#x1F40C;','&#x1F6B6;','&#x1F3C3;','&#x1F4A8;','&#x1F680;'];
+const ENERGY_TEXT = ['\ud83d\ude34','\ud83d\ude10','\ud83d\ude0a','\ud83d\ude04','\ud83d\udd25'];
+const MOOD_TEXT = ['\ud83d\ude22','\ud83d\ude15','\ud83d\ude10','\ud83d\ude0a','\ud83e\udd70'];
+const PROD_TEXT = ['\ud83d\udc0c','\ud83d\udeb6','\ud83c\udfc3','\ud83d\udca8','\ud83d\ude80'];
+const DAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const SHORT_DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+let entries = [];
+let currentWeekOffset = 0;
+let currentMonthOffset = 0;
+let selectedValues = { energy: 0, mood: 0, productivity: 0 };
+let selectedTags = new Set();
+let dailyChart = null;
+let weeklyChart = null;
+
+function load() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  entries = raw ? JSON.parse(raw) : [];
+  if (entries.length === 0) loadSampleData();
+}
+
+function save() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+}
+
+function today() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function loadSampleData() {
+  const tags = ['exercise','coffee','social','nature','coding','meeting','meditation','poor-sleep'];
+  const notes = {
+    Morning: ['Good sleep, feeling fresh','Woke up late, groggy','Morning yoga helped','Early start, coffee ready','Meditation before work'],
+    Afternoon: ['Post-lunch slump','Deep focus session','Back-to-back meetings','Walk in the park helped','Productive coding sprint'],
+    Evening: ['Relaxing evening','Tired but satisfied','Social dinner with friends','Late coding session','Quiet reading time']
+  };
+  const times = ['Morning','Afternoon','Evening'];
+
+  for (let d = 0; d < 14; d++) {
+    const date = new Date(2026, 3, 14 + d);
+    const dateStr = date.toISOString().slice(0, 10);
+    const dayOfWeek = date.getDay();
+    const isWeekend = dayOfWeek === 0 || dayOfWeek === 6;
+
+    // Simulate realistic patterns: weekends slightly higher mood, Monday lower energy
+    const baseEnergy = isWeekend ? 3.5 : (dayOfWeek === 1 ? 2.5 : 3);
+    const baseMood = isWeekend ? 4 : 3;
+    const baseProd = isWeekend ? 2.5 : 3.5;
+
+    const numEntries = 2 + (d % 3 === 0 ? 1 : 0); // 2-3 entries per day
+    const usedTimes = times.slice(0, numEntries);
+
+    usedTimes.forEach((time, i) => {
+      let eAdj = 0, mAdj = 0, pAdj = 0;
+      if (time === 'Morning') { eAdj = 0.5; pAdj = 0.5; }
+      if (time === 'Afternoon') { eAdj = -0.3; pAdj = 0.3; }
+      if (time === 'Evening') { eAdj = -0.5; mAdj = 0.3; pAdj = -0.5; }
+
+      const energy = Math.max(1, Math.min(5, Math.round(baseEnergy + eAdj + (Math.random() - 0.3))));
+      const mood = Math.max(1, Math.min(5, Math.round(baseMood + mAdj + (Math.random() - 0.3))));
+      const productivity = Math.max(1, Math.min(5, Math.round(baseProd + pAdj + (Math.random() - 0.3))));
+
+      const entryTags = [];
+      if (time === 'Morning' && Math.random() > 0.4) entryTags.push('coffee');
+      if (Math.random() > 0.7) entryTags.push('exercise');
+      if (time === 'Afternoon' && !isWeekend && Math.random() > 0.5) entryTags.push('meeting');
+      if (!isWeekend && Math.random() > 0.4) entryTags.push('coding');
+      if (isWeekend && Math.random() > 0.5) entryTags.push('nature');
+      if (Math.random() > 0.8) entryTags.push('social');
+      if (time === 'Morning' && Math.random() > 0.7) entryTags.push('meditation');
+      if (energy <= 2 && Math.random() > 0.5) entryTags.push('poor-sleep');
+
+      const noteList = notes[time];
+      const note = noteList[Math.floor(Math.random() * noteList.length)];
+
+      entries.push({
+        id: Date.now() + Math.random(),
+        date: dateStr,
+        time,
+        energy,
+        mood,
+        productivity,
+        tags: entryTags,
+        notes: note
+      });
+    });
+  }
+  save();
+}
+
+// Tabs
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    refreshTab(btn.dataset.tab);
+  });
+});
+
+// Emoji pickers
+document.querySelectorAll('.emoji-picker').forEach(picker => {
+  const type = picker.id.replace('-picker', '');
+  picker.querySelectorAll('.emoji-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      picker.querySelectorAll('.emoji-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      selectedValues[type] = parseInt(btn.dataset.value);
+    });
+  });
+});
+
+// Tag buttons
+document.querySelectorAll('.tag-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const tag = btn.dataset.tag;
+    if (selectedTags.has(tag)) {
+      selectedTags.delete(tag);
+      btn.classList.remove('selected');
+    } else {
+      selectedTags.add(tag);
+      btn.classList.add('selected');
+    }
+  });
+});
+
+function saveEntry() {
+  const date = document.getElementById('entry-date').value;
+  const time = document.getElementById('entry-time').value;
+  if (!date || !selectedValues.energy || !selectedValues.mood || !selectedValues.productivity) {
+    alert('Please fill in date, energy, mood, and productivity.');
+    return;
+  }
+  entries.push({
+    id: Date.now(),
+    date,
+    time,
+    energy: selectedValues.energy,
+    mood: selectedValues.mood,
+    productivity: selectedValues.productivity,
+    tags: [...selectedTags],
+    notes: document.getElementById('entry-notes').value
+  });
+  save();
+  // Reset form
+  selectedValues = { energy: 0, mood: 0, productivity: 0 };
+  selectedTags.clear();
+  document.querySelectorAll('.emoji-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll('.tag-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('entry-notes').value = '';
+  alert('Entry saved!');
+}
+
+function deleteEntry(id) {
+  entries = entries.filter(e => e.id !== id);
+  save();
+  refreshTab('daily');
+}
+
+function getEntriesForDate(dateStr) {
+  return entries.filter(e => e.date === dateStr);
+}
+
+function getDayAverage(dateStr, field) {
+  const dayEntries = getEntriesForDate(dateStr);
+  if (dayEntries.length === 0) return null;
+  return dayEntries.reduce((s, e) => s + e[field], 0) / dayEntries.length;
+}
+
+function getWeekDates(offset) {
+  const now = new Date();
+  const startOfWeek = new Date(now);
+  startOfWeek.setDate(now.getDate() - now.getDay() + (offset * 7));
+  const dates = [];
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(startOfWeek);
+    d.setDate(startOfWeek.getDate() + i);
+    dates.push(d.toISOString().slice(0, 10));
+  }
+  return dates;
+}
+
+// DAILY VIEW
+function renderDaily() {
+  const dateStr = document.getElementById('daily-date').value;
+  const dayEntries = getEntriesForDate(dateStr).sort((a, b) => {
+    const order = { Morning: 0, Afternoon: 1, Evening: 2 };
+    return order[a.time] - order[b.time];
+  });
+
+  // Chart
+  if (dailyChart) dailyChart.destroy();
+  const labels = dayEntries.map(e => e.time);
+  const ctx = document.getElementById('dailyChart').getContext('2d');
+  dailyChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Energy', data: dayEntries.map(e => e.energy), borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.1)', fill: true, tension: 0.4 },
+        { label: 'Mood', data: dayEntries.map(e => e.mood), borderColor: '#8b5cf6', backgroundColor: 'rgba(139,92,246,0.1)', fill: true, tension: 0.4 },
+        { label: 'Productivity', data: dayEntries.map(e => e.productivity), borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', fill: true, tension: 0.4 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: { y: { min: 0, max: 5.5, ticks: { stepSize: 1 } } },
+      plugins: { legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 6 } } }
+    }
+  });
+
+  // Entries list
+  const container = document.getElementById('daily-entries');
+  if (dayEntries.length === 0) {
+    container.innerHTML = '<p style="color:#6b7280;font-size:0.85rem;">No entries for this date.</p>';
+    return;
+  }
+  container.innerHTML = dayEntries.map(e => `
+    <div class="entry-item">
+      <span class="entry-time">${e.time}</span>
+      <span class="entry-emojis">${ENERGY_TEXT[e.energy-1]} ${MOOD_TEXT[e.mood-1]} ${PROD_TEXT[e.productivity-1]}</span>
+      <div class="entry-tags">${e.tags.map(t => `<span class="entry-tag">${t}</span>`).join('')}</div>
+      <span class="entry-notes">${e.notes || ''}</span>
+      <button class="entry-delete" onclick="deleteEntry(${e.id})">&#x2715;</button>
+    </div>
+  `).join('');
+}
+
+// WEEKLY CHART
+function renderWeekly() {
+  const dates = getWeekDates(currentWeekOffset);
+  const start = new Date(dates[0]);
+  const end = new Date(dates[6]);
+  document.getElementById('week-label').textContent =
+    `${start.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })} - ${end.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`;
+
+  const energyAvg = dates.map(d => getDayAverage(d, 'energy'));
+  const moodAvg = dates.map(d => getDayAverage(d, 'mood'));
+  const prodAvg = dates.map(d => getDayAverage(d, 'productivity'));
+
+  if (weeklyChart) weeklyChart.destroy();
+  const ctx = document.getElementById('weeklyChart').getContext('2d');
+  weeklyChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: dates.map(d => { const dt = new Date(d + 'T12:00:00'); return SHORT_DAYS[dt.getDay()]; }),
+      datasets: [
+        { label: 'Energy', data: energyAvg, borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.1)', fill: true, tension: 0.4, pointRadius: 5 },
+        { label: 'Mood', data: moodAvg, borderColor: '#8b5cf6', backgroundColor: 'rgba(139,92,246,0.1)', fill: true, tension: 0.4, pointRadius: 5 },
+        { label: 'Productivity', data: prodAvg, borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', fill: true, tension: 0.4, pointRadius: 5 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      scales: { y: { min: 0, max: 5.5, ticks: { stepSize: 1 } } },
+      plugins: { legend: { position: 'top', labels: { usePointStyle: true, boxWidth: 6 } } }
+    }
+  });
+}
+
+function changeWeek(delta) {
+  currentWeekOffset += delta;
+  renderWeekly();
+}
+
+// MONTHLY HEATMAP
+function renderMonthly() {
+  const now = new Date();
+  const targetMonth = new Date(now.getFullYear(), now.getMonth() + currentMonthOffset, 1);
+  document.getElementById('month-label').textContent =
+    targetMonth.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+  const firstDay = new Date(targetMonth.getFullYear(), targetMonth.getMonth(), 1);
+  const lastDay = new Date(targetMonth.getFullYear(), targetMonth.getMonth() + 1, 0);
+  const startPad = firstDay.getDay();
+
+  const grid = document.getElementById('heatmap-grid');
+  grid.innerHTML = '';
+
+  // Padding cells
+  for (let i = 0; i < startPad; i++) {
+    grid.innerHTML += '<div class="heatmap-cell"></div>';
+  }
+
+  for (let d = 1; d <= lastDay.getDate(); d++) {
+    const dateStr = `${targetMonth.getFullYear()}-${String(targetMonth.getMonth()+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const avg = getDayAverage(dateStr, 'energy');
+    let bg = 'rgba(0,0,0,0.03)';
+    if (avg !== null) {
+      if (avg >= 4) bg = '#22c55e';
+      else if (avg >= 3) bg = '#86efac';
+      else if (avg >= 2) bg = '#fcd34d';
+      else bg = '#fca5a5';
+    }
+    grid.innerHTML += `<div class="heatmap-cell" style="background:${bg};" title="${dateStr}: ${avg !== null ? avg.toFixed(1) : 'no data'}">${d}</div>`;
+  }
+}
+
+function changeMonth(delta) {
+  currentMonthOffset += delta;
+  renderMonthly();
+}
+
+// QUICK STATS
+function renderStats() {
+  const dates = getWeekDates(0);
+  let totalE = 0, totalM = 0, totalP = 0, count = 0;
+  let bestDay = null, worstDay = null, bestAvg = 0, worstAvg = 6;
+
+  dates.forEach(d => {
+    const dayEntries = getEntriesForDate(d);
+    if (dayEntries.length > 0) {
+      const avgE = dayEntries.reduce((s, e) => s + e.energy, 0) / dayEntries.length;
+      const avgM = dayEntries.reduce((s, e) => s + e.mood, 0) / dayEntries.length;
+      const avgP = dayEntries.reduce((s, e) => s + e.productivity, 0) / dayEntries.length;
+      totalE += avgE; totalM += avgM; totalP += avgP; count++;
+      const combined = (avgE + avgM + avgP) / 3;
+      if (combined > bestAvg) { bestAvg = combined; bestDay = d; }
+      if (combined < worstAvg) { worstAvg = combined; worstDay = d; }
+    }
+  });
+
+  const avgE = count ? (totalE / count).toFixed(1) : '-';
+  const avgM = count ? (totalM / count).toFixed(1) : '-';
+  const avgP = count ? (totalP / count).toFixed(1) : '-';
+
+  // Streak calculation
+  let streak = 0;
+  const allDates = [...new Set(entries.map(e => e.date))].sort().reverse();
+  for (const d of allDates) {
+    const avg = getDayAverage(d, 'energy');
+    if (avg !== null && avg >= 4) streak++;
+    else break;
+  }
+
+  document.getElementById('stats-row').innerHTML = `
+    <div class="stat-card"><div class="value" style="color:#f59e0b;">${avgE}</div><div class="label">Avg Energy</div></div>
+    <div class="stat-card"><div class="value" style="color:#8b5cf6;">${avgM}</div><div class="label">Avg Mood</div></div>
+    <div class="stat-card"><div class="value" style="color:#3b82f6;">${avgP}</div><div class="label">Avg Productivity</div></div>
+    <div class="stat-card"><div class="value">${entries.length}</div><div class="label">Total Entries</div></div>
+  `;
+
+  const formatD = d => d ? new Date(d + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) : '-';
+  document.getElementById('streaks-info').innerHTML = `
+    <div class="pattern-item"><span class="pattern-icon">\u2B50</span><span class="pattern-text">Best day this week: <strong>${formatD(bestDay)}</strong> (avg ${bestAvg.toFixed(1)})</span></div>
+    <div class="pattern-item"><span class="pattern-icon">\u26A1</span><span class="pattern-text">Toughest day this week: <strong>${formatD(worstDay)}</strong> (avg ${worstAvg.toFixed(1)})</span></div>
+    <div class="pattern-item"><span class="pattern-icon">\ud83d\udd25</span><span class="pattern-text">Current high-energy streak: <strong>${streak} day${streak !== 1 ? 's' : ''}</strong> (4+ energy)</span></div>
+  `;
+}
+
+// PATTERNS
+function renderPatterns() {
+  const dayTotals = {};
+  const timeTotals = {};
+
+  entries.forEach(e => {
+    const dayName = DAYS[new Date(e.date + 'T12:00:00').getDay()];
+    if (!dayTotals[dayName]) dayTotals[dayName] = { energy: [], mood: [], productivity: [] };
+    dayTotals[dayName].energy.push(e.energy);
+    dayTotals[dayName].mood.push(e.mood);
+    dayTotals[dayName].productivity.push(e.productivity);
+
+    if (!timeTotals[e.time]) timeTotals[e.time] = { energy: [], mood: [], productivity: [] };
+    timeTotals[e.time].energy.push(e.energy);
+    timeTotals[e.time].mood.push(e.mood);
+    timeTotals[e.time].productivity.push(e.productivity);
+  });
+
+  const avg = arr => arr.length ? arr.reduce((s, v) => s + v, 0) / arr.length : 0;
+
+  let peakEnergyDay = '', peakE = 0;
+  let dipMoodDay = '', dipM = 6;
+  Object.entries(dayTotals).forEach(([day, d]) => {
+    const ae = avg(d.energy);
+    const am = avg(d.mood);
+    if (ae > peakE) { peakE = ae; peakEnergyDay = day; }
+    if (am < dipM) { dipM = am; dipMoodDay = day; }
+  });
+
+  let peakProdTime = '', peakP = 0;
+  Object.entries(timeTotals).forEach(([time, d]) => {
+    const ap = avg(d.productivity);
+    if (ap > peakP) { peakP = ap; peakProdTime = time; }
+  });
+
+  document.getElementById('patterns-list').innerHTML = `
+    <div class="pattern-item"><span class="pattern-icon">\u26A1</span><span class="pattern-text">Your energy peaks on <strong>${peakEnergyDay}s</strong> (avg ${peakE.toFixed(1)})</span></div>
+    <div class="pattern-item"><span class="pattern-icon">\ud83d\ude14</span><span class="pattern-text">Your mood dips on <strong>${dipMoodDay}s</strong> (avg ${dipM.toFixed(1)})</span></div>
+    <div class="pattern-item"><span class="pattern-icon">\ud83d\ude80</span><span class="pattern-text">Highest productivity in the <strong>${peakProdTime}</strong> (avg ${peakP.toFixed(1)})</span></div>
+  `;
+
+  // Correlation with sleep data
+  const sleepData = localStorage.getItem('lumen-sleep-tracker');
+  if (sleepData) {
+    try {
+      const sleepEntries = JSON.parse(sleepData);
+      // Attempt to correlate sleep duration with next-day energy
+      let pairs = [];
+      sleepEntries.forEach(s => {
+        if (s.duration && s.date) {
+          const nextDay = new Date(new Date(s.date).getTime() + 86400000).toISOString().slice(0, 10);
+          const nextEnergy = getDayAverage(nextDay, 'energy');
+          if (nextEnergy !== null) pairs.push({ sleep: s.duration, energy: nextEnergy });
+        }
+      });
+      if (pairs.length >= 3) {
+        const meanS = pairs.reduce((s, p) => s + p.sleep, 0) / pairs.length;
+        const meanE = pairs.reduce((s, p) => s + p.energy, 0) / pairs.length;
+        let num = 0, denS = 0, denE = 0;
+        pairs.forEach(p => {
+          num += (p.sleep - meanS) * (p.energy - meanE);
+          denS += (p.sleep - meanS) ** 2;
+          denE += (p.energy - meanE) ** 2;
+        });
+        const r = denS && denE ? num / Math.sqrt(denS * denE) : 0;
+        document.getElementById('correlation-info').innerHTML = `
+          <div class="correlation-value" style="color:${r > 0.3 ? '#10b981' : r < -0.3 ? '#ef4444' : '#6b7280'};">${r.toFixed(2)}</div>
+          <div class="correlation-label">Correlation coefficient (${pairs.length} data points)</div>
+          <p style="text-align:center;font-size:0.85rem;color:#6b7280;margin-top:0.5rem;">
+            ${r > 0.5 ? 'Strong positive: more sleep = more energy!' : r > 0.2 ? 'Mild positive correlation between sleep and energy.' : r < -0.2 ? 'Surprisingly, less sleep seems to correlate with more energy (maybe adrenaline?).' : 'No clear correlation detected yet.'}
+          </p>
+        `;
+      } else {
+        document.getElementById('correlation-info').innerHTML = '<p style="color:#6b7280;font-size:0.85rem;">Not enough paired data points yet (need 3+).</p>';
+      }
+    } catch (e) {
+      document.getElementById('correlation-info').innerHTML = '<p style="color:#6b7280;font-size:0.85rem;">Could not parse sleep tracker data.</p>';
+    }
+  } else {
+    document.getElementById('correlation-info').innerHTML = '<p style="color:#6b7280;font-size:0.85rem;">No sleep tracker data found in localStorage. Add a sleep tracker (key: <code>lumen-sleep-tracker</code>) with entries containing <code>date</code> and <code>duration</code> fields to see correlations.</p>';
+  }
+}
+
+// TAG ANALYSIS
+function renderTags() {
+  const allTags = ['exercise','coffee','social','nature','coding','meeting','meditation','poor-sleep'];
+  const globalAvg = {
+    energy: entries.reduce((s, e) => s + e.energy, 0) / entries.length,
+    mood: entries.reduce((s, e) => s + e.mood, 0) / entries.length,
+    productivity: entries.reduce((s, e) => s + e.productivity, 0) / entries.length,
+  };
+
+  function analyzeTag(field) {
+    const results = [];
+    allTags.forEach(tag => {
+      const tagged = entries.filter(e => e.tags && e.tags.includes(tag));
+      if (tagged.length < 2) return;
+      const avg = tagged.reduce((s, e) => s + e[field], 0) / tagged.length;
+      const diff = avg - globalAvg[field];
+      results.push({ tag, avg, diff, count: tagged.length });
+    });
+    results.sort((a, b) => b.diff - a.diff);
+    return results;
+  }
+
+  function renderTagList(containerId, field) {
+    const results = analyzeTag(field);
+    const container = document.getElementById(containerId);
+    if (results.length === 0) {
+      container.innerHTML = '<p style="color:#6b7280;font-size:0.85rem;">Not enough tagged data yet.</p>';
+      return;
+    }
+    container.innerHTML = results.map(r => {
+      const cls = r.diff > 0.2 ? 'tag-positive' : r.diff < -0.2 ? 'tag-negative' : 'tag-neutral';
+      const sign = r.diff > 0 ? '+' : '';
+      return `<div class="tag-analysis-item">
+        <span class="tag-name">${r.tag} <span style="color:#9ca3af;font-weight:400;">(${r.count}x)</span></span>
+        <span class="tag-impact ${cls}">${sign}${r.diff.toFixed(2)} avg ${r.avg.toFixed(1)}</span>
+      </div>`;
+    }).join('');
+  }
+
+  renderTagList('tag-energy-analysis', 'energy');
+  renderTagList('tag-mood-analysis', 'mood');
+  renderTagList('tag-prod-analysis', 'productivity');
+}
+
+// EXPORT
+function exportData() {
+  const blob = new Blob([JSON.stringify(entries, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `energy-tracker-${today()}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  document.getElementById('export-status').textContent = 'Export complete!';
+}
+
+function importData(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const imported = JSON.parse(e.target.result);
+      if (Array.isArray(imported)) {
+        entries = imported;
+        save();
+        document.getElementById('export-status').textContent = `Imported ${imported.length} entries!`;
+      }
+    } catch (err) {
+      alert('Invalid JSON file.');
+    }
+  };
+  reader.readAsText(file);
+}
+
+function clearAllData() {
+  if (confirm('Delete all energy tracker data? This cannot be undone.')) {
+    entries = [];
+    save();
+    document.getElementById('export-status').textContent = 'All data cleared.';
+  }
+}
+
+function refreshTab(tab) {
+  if (tab === 'daily') renderDaily();
+  if (tab === 'weekly') renderWeekly();
+  if (tab === 'monthly') renderMonthly();
+  if (tab === 'stats') renderStats();
+  if (tab === 'patterns') renderPatterns();
+  if (tab === 'tags') renderTags();
+}
+
+// Init
+load();
+document.getElementById('entry-date').value = today();
+document.getElementById('daily-date').value = '2026-04-20';
+document.getElementById('daily-date').addEventListener('change', renderDaily);
+
+// Auto-detect current time of day
+const hour = new Date().getHours();
+if (hour < 12) document.getElementById('entry-time').value = 'Morning';
+else if (hour < 17) document.getElementById('entry-time').value = 'Afternoon';
+else document.getElementById('entry-time').value = 'Evening';
+</script>
+</body>
+</html>

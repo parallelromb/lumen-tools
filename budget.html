@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monthly Budget Planner</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #f8f9fc;
+    color: #1a1a2e;
+    min-height: 100vh;
+    padding: 1.5rem;
+    line-height: 1.5;
+  }
+
+  .container { max-width: 1200px; margin: 0 auto; }
+
+  .page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  .page-header h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  .page-header .subtitle {
+    color: #6b7280;
+    font-size: 0.85rem;
+  }
+  .header-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+
+  .glass {
+    background: rgba(255,255,255,0.72);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.6);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .glass h2 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+
+  @media (max-width: 900px) {
+    .grid-2 { grid-template-columns: 1fr; }
+    .grid-3 { grid-template-columns: 1fr; }
+    .grid-4 { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 500px) {
+    .grid-4 { grid-template-columns: 1fr; }
+  }
+
+  .btn {
+    padding: 0.5rem 1rem;
+    border-radius: 10px;
+    border: 1px solid rgba(0,0,0,0.08);
+    background: rgba(255,255,255,0.9);
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: #1a1a2e;
+  }
+  .btn:hover { background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .btn-primary { background: #0071e3; color: #fff; border-color: #0071e3; }
+  .btn-primary:hover { background: #0077ED; }
+  .btn-danger { color: #ef4444; border-color: rgba(239,68,68,0.3); }
+  .btn-danger:hover { background: rgba(239,68,68,0.06); }
+  .btn-sm { padding: 0.35rem 0.75rem; font-size: 0.75rem; }
+  .btn-icon { padding: 0.4rem 0.6rem; }
+
+  .stat-card {
+    background: rgba(255,255,255,0.72);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.6);
+    border-radius: 14px;
+    padding: 1.25rem;
+    text-align: center;
+  }
+  .stat-card .label { font-size: 0.75rem; color: #6b7280; font-weight: 500; text-transform: uppercase; letter-spacing: 0.04em; }
+  .stat-card .value { font-size: 1.5rem; font-weight: 700; margin-top: 0.25rem; }
+  .stat-card .sub { font-size: 0.75rem; color: #6b7280; margin-top: 0.25rem; }
+  .stat-card .positive { color: #10b981; }
+  .stat-card .negative { color: #ef4444; }
+
+  input[type="number"], input[type="text"], select {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 0.85rem;
+    background: rgba(255,255,255,0.8);
+    transition: border-color 0.15s;
+  }
+  input:focus, select:focus { outline: none; border-color: #0071e3; }
+
+  .month-nav {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .month-nav .month-label {
+    font-size: 1.1rem;
+    font-weight: 600;
+    min-width: 160px;
+    text-align: center;
+  }
+
+  .budget-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+  .budget-table th {
+    text-align: left;
+    font-size: 0.72rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #6b7280;
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+  }
+  .budget-table td {
+    padding: 0.6rem 0.75rem;
+    border-bottom: 1px solid rgba(0,0,0,0.04);
+    font-size: 0.85rem;
+    vertical-align: middle;
+  }
+  .budget-table tr:last-child td { border-bottom: none; }
+  .budget-table .cat-dot {
+    display: inline-block;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    margin-right: 0.5rem;
+    vertical-align: middle;
+  }
+  .budget-table input[type="number"] {
+    width: 110px;
+    text-align: right;
+    padding: 0.35rem 0.5rem;
+  }
+
+  .bar-track {
+    height: 8px;
+    background: #e5e7eb;
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+    min-width: 120px;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s;
+  }
+
+  .bar-label { font-size: 0.72rem; color: #6b7280; margin-top: 2px; }
+
+  .diff-positive { color: #10b981; font-weight: 600; }
+  .diff-negative { color: #ef4444; font-weight: 600; }
+  .diff-zero { color: #6b7280; }
+
+  .rule-bar {
+    display: flex;
+    height: 32px;
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 0.5rem 0;
+  }
+  .rule-bar > div {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: #fff;
+    transition: width 0.3s;
+  }
+  .rule-legend {
+    display: flex;
+    gap: 1.5rem;
+    font-size: 0.78rem;
+    color: #6b7280;
+    margin-top: 0.5rem;
+  }
+  .rule-legend span { display: flex; align-items: center; gap: 0.35rem; }
+  .rule-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+
+  .chart-container { position: relative; height: 260px; }
+
+  .income-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr auto;
+    gap: 0.75rem;
+    align-items: end;
+  }
+  .income-form label {
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #6b7280;
+    display: block;
+    margin-bottom: 0.25rem;
+  }
+
+  @media (max-width: 700px) {
+    .income-form { grid-template-columns: 1fr 1fr; }
+  }
+
+  .year-table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 0.78rem;
+    overflow-x: auto;
+    display: block;
+  }
+  .year-table th, .year-table td {
+    padding: 0.4rem 0.6rem;
+    text-align: right;
+    white-space: nowrap;
+  }
+  .year-table th { font-weight: 600; color: #6b7280; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; border-bottom: 1px solid rgba(0,0,0,0.08); }
+  .year-table td { border-bottom: 1px solid rgba(0,0,0,0.03); }
+  .year-table td:first-child, .year-table th:first-child { text-align: left; }
+  .year-table tr:last-child td { font-weight: 700; border-top: 2px solid rgba(0,0,0,0.1); }
+
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    color: #0071e3;
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin-bottom: 1rem;
+  }
+  .back-link:hover { text-decoration: underline; }
+
+  .tabs {
+    display: flex;
+    gap: 0.25rem;
+    margin-bottom: 1.5rem;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+    overflow-x: auto;
+  }
+  .tab {
+    padding: 0.6rem 1rem;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: #6b7280;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    white-space: nowrap;
+    transition: all 0.15s;
+    background: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+    font-family: inherit;
+  }
+  .tab:hover { color: #1a1a2e; }
+  .tab.active { color: #0071e3; border-bottom-color: #0071e3; }
+
+  .tab-panel { display: none; }
+  .tab-panel.active { display: block; }
+
+  .totals-row td { font-weight: 700 !important; background: rgba(0,0,0,0.02); }
+
+  .needs-cat { background: rgba(59,130,246,0.06); }
+  .wants-cat { background: rgba(168,85,247,0.06); }
+  .savings-cat { background: rgba(16,185,129,0.06); }
+</style>
+</head>
+<body>
+<div class="container">
+  <a href="index.html" class="back-link">
+    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="11 1 4 8 11 15"/></svg>
+    Analytics Home
+  </a>
+
+  <div class="page-header">
+    <div>
+      <h1>Monthly Budget Planner</h1>
+      <div class="subtitle">Plan budgets, track actuals, and monitor savings</div>
+    </div>
+    <div class="header-actions">
+      <div class="month-nav">
+        <button class="btn btn-icon" onclick="changeMonth(-1)" title="Previous month">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="10 2 4 7 10 12"/></svg>
+        </button>
+        <span class="month-label" id="monthLabel"></span>
+        <button class="btn btn-icon" onclick="changeMonth(1)" title="Next month">
+          <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 2 10 7 4 12"/></svg>
+        </button>
+      </div>
+      <button class="btn" onclick="copyToNext()">Copy to Next Month</button>
+      <button class="btn" onclick="exportCSV()">Export CSV</button>
+      <button class="btn" onclick="exportJSON()">Export JSON</button>
+    </div>
+  </div>
+
+  <!-- Stat Cards -->
+  <div class="grid-4" id="statCards" style="margin-bottom:1.5rem;"></div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" data-tab="budget">Budget & Actuals</button>
+    <button class="tab" data-tab="charts">Charts</button>
+    <button class="tab" data-tab="rule">50/30/20 Rule</button>
+    <button class="tab" data-tab="trends">Monthly Trends</button>
+    <button class="tab" data-tab="year">Year Summary</button>
+  </div>
+
+  <!-- Budget & Actuals Tab -->
+  <div class="tab-panel active" id="tab-budget">
+    <!-- Income Section -->
+    <div class="glass">
+      <h2>
+        <svg width="18" height="18" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="9" y1="1" x2="9" y2="17"/><path d="M13 4H7.5a2.5 2.5 0 000 5h3a2.5 2.5 0 010 5H5"/></svg>
+        Monthly Income
+      </h2>
+      <div class="income-form">
+        <div>
+          <label>Gross Salary (CAD)</label>
+          <input type="number" id="inSalary" step="100" placeholder="0" oninput="saveIncome()">
+        </div>
+        <div>
+          <label>Side Projects (CAD)</label>
+          <input type="number" id="inSide" step="100" placeholder="0" oninput="saveIncome()">
+        </div>
+        <div>
+          <label>Tax Rate (%)</label>
+          <input type="number" id="inTax" step="0.5" min="0" max="100" placeholder="33" oninput="saveIncome()">
+        </div>
+        <div style="padding-bottom:0.1rem;">
+          <div style="font-size:0.72rem;color:#6b7280;font-weight:500;margin-bottom:0.3rem;">After-Tax</div>
+          <div id="afterTax" style="font-size:1.2rem;font-weight:700;color:#10b981;">$0</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Budget Table -->
+    <div class="glass">
+      <h2>
+        <svg width="18" height="18" fill="none" stroke="#0071e3" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="16" height="12" rx="2"/><line x1="1" y1="7" x2="17" y2="7"/></svg>
+        Category Budgets
+      </h2>
+      <div style="overflow-x:auto;">
+        <table class="budget-table" id="budgetTable">
+          <thead>
+            <tr>
+              <th>Category</th>
+              <th>Type</th>
+              <th style="text-align:right">Budget (CAD)</th>
+              <th style="text-align:right">Actual (CAD)</th>
+              <th style="text-align:center;min-width:160px">Progress</th>
+              <th style="text-align:right">Diff</th>
+            </tr>
+          </thead>
+          <tbody id="budgetBody"></tbody>
+          <tfoot id="budgetFoot"></tfoot>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Charts Tab -->
+  <div class="tab-panel" id="tab-charts">
+    <div class="grid-2">
+      <div class="glass">
+        <h2>Budget Allocation</h2>
+        <div class="chart-container"><canvas id="pieBudget"></canvas></div>
+      </div>
+      <div class="glass">
+        <h2>Actual Spending</h2>
+        <div class="chart-container"><canvas id="pieActual"></canvas></div>
+      </div>
+    </div>
+    <div class="glass">
+      <h2>Budget vs Actual by Category</h2>
+      <div class="chart-container" style="height:360px;"><canvas id="barComparison"></canvas></div>
+    </div>
+  </div>
+
+  <!-- 50/30/20 Rule Tab -->
+  <div class="tab-panel" id="tab-rule">
+    <div class="glass">
+      <h2>
+        <svg width="18" height="18" fill="none" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="8"/><path d="M9 5v4l2.5 1.5"/></svg>
+        50/30/20 Rule Check
+      </h2>
+      <p style="font-size:0.82rem;color:#6b7280;margin-bottom:1rem;">Guideline: 50% needs, 30% wants, 20% savings. Based on your after-tax income.</p>
+
+      <div class="grid-3" id="ruleCards" style="margin-bottom:1.5rem;"></div>
+
+      <div style="margin-bottom:1rem;">
+        <div style="font-size:0.78rem;font-weight:600;color:#6b7280;margin-bottom:0.35rem;">TARGET (50/30/20)</div>
+        <div class="rule-bar" id="ruleBarTarget"></div>
+      </div>
+      <div>
+        <div style="font-size:0.78rem;font-weight:600;color:#6b7280;margin-bottom:0.35rem;">YOUR ACTUAL</div>
+        <div class="rule-bar" id="ruleBarActual"></div>
+        <div class="rule-legend">
+          <span><span class="rule-dot" style="background:#3b82f6"></span> Needs</span>
+          <span><span class="rule-dot" style="background:#8b5cf6"></span> Wants</span>
+          <span><span class="rule-dot" style="background:#10b981"></span> Savings</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Monthly Trends Tab -->
+  <div class="tab-panel" id="tab-trends">
+    <div class="glass">
+      <h2>6-Month Budget vs Actual Trend</h2>
+      <div class="chart-container" style="height:320px;"><canvas id="trendChart"></canvas></div>
+    </div>
+    <div class="glass">
+      <h2>Savings Rate Trend</h2>
+      <div class="chart-container" style="height:280px;"><canvas id="savingsChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Year Summary Tab -->
+  <div class="tab-panel" id="tab-year">
+    <div class="glass">
+      <h2>
+        <svg width="18" height="18" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="3" width="16" height="12" rx="2"/><line x1="1" y1="7" x2="17" y2="7"/><line x1="5" y1="3" x2="5" y2="0.5"/><line x1="13" y1="3" x2="13" y2="0.5"/></svg>
+        <span id="yearLabel">2026</span> Annual Summary
+      </h2>
+      <div style="overflow-x:auto;">
+        <table class="year-table" id="yearTable"></table>
+      </div>
+      <div class="grid-3" id="yearStats" style="margin-top:1.5rem;"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const CATEGORIES = [
+  { id: 'housing',       name: 'Housing',             color: '#3b82f6', type: 'need' },
+  { id: 'groceries',     name: 'Groceries',           color: '#10b981', type: 'need' },
+  { id: 'transport',     name: 'Transport',           color: '#f59e0b', type: 'need' },
+  { id: 'subscriptions', name: 'Subscriptions',       color: '#8b5cf6', type: 'want' },
+  { id: 'dining',        name: 'Dining Out',          color: '#ef4444', type: 'want' },
+  { id: 'entertainment', name: 'Entertainment',       color: '#ec4899', type: 'want' },
+  { id: 'shopping',      name: 'Shopping',            color: '#06b6d4', type: 'want' },
+  { id: 'kids',          name: 'Kids/Family',         color: '#14b8a6', type: 'need' },
+  { id: 'health',        name: 'Health',              color: '#22c55e', type: 'need' },
+  { id: 'savings',       name: 'Savings/Investment',  color: '#6366f1', type: 'savings' },
+  { id: 'sideprojects',  name: 'Side Projects',       color: '#a855f7', type: 'want' },
+  { id: 'other',         name: 'Other',               color: '#6b7280', type: 'want' }
+];
+
+const TYPE_LABELS = { need: 'Need', want: 'Want', savings: 'Savings' };
+const TYPE_COLORS = { need: '#3b82f6', want: '#8b5cf6', savings: '#10b981' };
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+let currentYear = 2026;
+let currentMonth = 3; // April (0-indexed)
+
+const STORAGE_KEY = 'lumen_budget_planner';
+
+// Charts
+let pieBudgetChart, pieActualChart, barChart, trendChart, savingsRateChart;
+
+function getKey(y, m) { return `${y}-${String(m+1).padStart(2,'0')}`; }
+
+function loadAll() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch { return {}; }
+}
+function saveAll(data) { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+
+function getMonth(y, m) {
+  const data = loadAll();
+  const key = getKey(y, m);
+  if (!data[key]) {
+    data[key] = {
+      income: { salary: 0, side: 0, taxRate: 33 },
+      categories: {}
+    };
+    CATEGORIES.forEach(c => { data[key].categories[c.id] = { budget: 0, actual: 0 }; });
+    saveAll(data);
+  }
+  return data[key];
+}
+
+function saveMonth(y, m, monthData) {
+  const data = loadAll();
+  data[getKey(y, m)] = monthData;
+  saveAll(data);
+}
+
+function getAfterTax(inc) {
+  const gross = (inc.salary || 0) + (inc.side || 0);
+  return gross * (1 - (inc.taxRate || 0) / 100);
+}
+
+function fmt(n) { return '$' + Number(n||0).toLocaleString('en-CA', { minimumFractionDigits: 0, maximumFractionDigits: 0 }); }
+function fmtPct(n) { return (n||0).toFixed(1) + '%'; }
+
+// Seed April 2026
+function seedDefault() {
+  const data = loadAll();
+  const key = '2026-04';
+  if (data[key]) return;
+  data[key] = {
+    income: { salary: 16500, side: 800, taxRate: 33 },
+    categories: {
+      housing:       { budget: 2800, actual: 2800 },
+      groceries:     { budget: 900, actual: 870 },
+      transport:     { budget: 350, actual: 310 },
+      subscriptions: { budget: 180, actual: 185 },
+      dining:        { budget: 400, actual: 450 },
+      entertainment: { budget: 200, actual: 160 },
+      shopping:      { budget: 300, actual: 280 },
+      kids:          { budget: 600, actual: 580 },
+      health:        { budget: 200, actual: 190 },
+      savings:       { budget: 3500, actual: 3500 },
+      sideprojects:  { budget: 120, actual: 95 },
+      other:         { budget: 200, actual: 150 }
+    }
+  };
+  // Seed a few prior months for trends
+  const priors = [
+    { key: '2025-11', salary: 16000, side: 500, tax: 33, mods: { housing: [2700,2700], groceries: [850,900], transport: [350,340], subscriptions: [170,170], dining: [350,380], entertainment: [200,220], shopping: [250,300], kids: [550,560], health: [180,180], savings: [3200,3200], sideprojects: [100,85], other: [150,180] }},
+    { key: '2025-12', salary: 16000, side: 600, tax: 33, mods: { housing: [2700,2700], groceries: [880,950], transport: [350,320], subscriptions: [175,175], dining: [400,520], entertainment: [250,300], shopping: [400,450], kids: [600,700], health: [180,160], savings: [3200,3000], sideprojects: [110,110], other: [200,250] }},
+    { key: '2026-01', salary: 16500, side: 600, tax: 33, mods: { housing: [2800,2800], groceries: [900,890], transport: [350,350], subscriptions: [180,180], dining: [350,330], entertainment: [200,150], shopping: [250,230], kids: [600,600], health: [200,200], savings: [3500,3500], sideprojects: [120,100], other: [200,180] }},
+    { key: '2026-02', salary: 16500, side: 700, tax: 33, mods: { housing: [2800,2800], groceries: [900,920], transport: [350,340], subscriptions: [180,180], dining: [400,420], entertainment: [200,190], shopping: [300,310], kids: [600,590], health: [200,210], savings: [3500,3500], sideprojects: [120,115], other: [200,160] }},
+    { key: '2026-03', salary: 16500, side: 750, tax: 33, mods: { housing: [2800,2800], groceries: [900,880], transport: [350,360], subscriptions: [180,182], dining: [400,390], entertainment: [200,180], shopping: [300,270], kids: [600,610], health: [200,195], savings: [3500,3500], sideprojects: [120,105], other: [200,190] }}
+  ];
+  priors.forEach(p => {
+    if (data[p.key]) return;
+    const cats = {};
+    Object.entries(p.mods).forEach(([k,[b,a]]) => { cats[k] = { budget: b, actual: a }; });
+    data[p.key] = { income: { salary: p.salary, side: p.side, taxRate: p.tax }, categories: cats };
+  });
+  saveAll(data);
+}
+
+function changeMonth(delta) {
+  currentMonth += delta;
+  if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+  if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+  render();
+}
+
+function copyToNext() {
+  const src = getMonth(currentYear, currentMonth);
+  let ny = currentYear, nm = currentMonth + 1;
+  if (nm > 11) { nm = 0; ny++; }
+  const existing = loadAll()[getKey(ny, nm)];
+  if (existing && Object.values(existing.categories).some(c => c.actual > 0)) {
+    if (!confirm(`${MONTHS[nm]} ${ny} already has data. Overwrite budgets (actuals will be reset)?`)) return;
+  }
+  const dest = JSON.parse(JSON.stringify(src));
+  CATEGORIES.forEach(c => { dest.categories[c.id].actual = 0; });
+  saveMonth(ny, nm, dest);
+  currentYear = ny;
+  currentMonth = nm;
+  render();
+}
+
+function saveIncome() {
+  const md = getMonth(currentYear, currentMonth);
+  md.income.salary = parseFloat(document.getElementById('inSalary').value) || 0;
+  md.income.side = parseFloat(document.getElementById('inSide').value) || 0;
+  md.income.taxRate = parseFloat(document.getElementById('inTax').value) || 0;
+  saveMonth(currentYear, currentMonth, md);
+  updateStats();
+  updateRule();
+}
+
+function saveBudget(catId, field, val) {
+  const md = getMonth(currentYear, currentMonth);
+  md.categories[catId][field] = parseFloat(val) || 0;
+  saveMonth(currentYear, currentMonth, md);
+  updateStats();
+  updateBars();
+  updateRule();
+}
+
+function render() {
+  document.getElementById('monthLabel').textContent = `${MONTHS[currentMonth]} ${currentYear}`;
+  document.getElementById('yearLabel').textContent = currentYear;
+
+  const md = getMonth(currentYear, currentMonth);
+  document.getElementById('inSalary').value = md.income.salary || '';
+  document.getElementById('inSide').value = md.income.side || '';
+  document.getElementById('inTax').value = md.income.taxRate || '';
+
+  renderBudgetTable(md);
+  updateStats();
+  updateCharts();
+  updateRule();
+  updateTrends();
+  renderYearSummary();
+}
+
+function renderBudgetTable(md) {
+  const tbody = document.getElementById('budgetBody');
+  tbody.innerHTML = '';
+  CATEGORIES.forEach(cat => {
+    const cd = md.categories[cat.id] || { budget: 0, actual: 0 };
+    const tr = document.createElement('tr');
+    const typeCls = cat.type === 'need' ? 'needs-cat' : cat.type === 'savings' ? 'savings-cat' : 'wants-cat';
+    tr.innerHTML = `
+      <td><span class="cat-dot" style="background:${cat.color}"></span>${cat.name}</td>
+      <td><span style="font-size:0.72rem;padding:0.15rem 0.5rem;border-radius:6px;font-weight:500;color:${TYPE_COLORS[cat.type]};background:${TYPE_COLORS[cat.type]}18">${TYPE_LABELS[cat.type]}</span></td>
+      <td style="text-align:right"><input type="number" value="${cd.budget||''}" step="50" placeholder="0" oninput="saveBudget('${cat.id}','budget',this.value)"></td>
+      <td style="text-align:right"><input type="number" value="${cd.actual||''}" step="10" placeholder="0" oninput="saveBudget('${cat.id}','actual',this.value)"></td>
+      <td style="text-align:center"><div class="bar-track" id="bar-${cat.id}"><div class="bar-fill"></div></div><div class="bar-label" id="barLabel-${cat.id}"></div></td>
+      <td style="text-align:right" id="diff-${cat.id}"></td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  // Totals row
+  const foot = document.getElementById('budgetFoot');
+  foot.innerHTML = `<tr class="totals-row">
+    <td colspan="2" style="font-weight:700">TOTAL</td>
+    <td style="text-align:right;font-weight:700" id="totalBudget"></td>
+    <td style="text-align:right;font-weight:700" id="totalActual"></td>
+    <td></td>
+    <td style="text-align:right;font-weight:700" id="totalDiff"></td>
+  </tr>`;
+
+  updateBars();
+}
+
+function updateBars() {
+  const md = getMonth(currentYear, currentMonth);
+  let totalB = 0, totalA = 0;
+  CATEGORIES.forEach(cat => {
+    const cd = md.categories[cat.id] || { budget: 0, actual: 0 };
+    const b = cd.budget || 0;
+    const a = cd.actual || 0;
+    totalB += b;
+    totalA += a;
+    const pct = b > 0 ? Math.min((a / b) * 100, 150) : (a > 0 ? 100 : 0);
+    const over = a > b && b > 0;
+    const barEl = document.querySelector(`#bar-${cat.id} .bar-fill`);
+    if (barEl) {
+      barEl.style.width = Math.min(pct, 100) + '%';
+      barEl.style.background = over ? '#ef4444' : cat.color;
+    }
+    const lbl = document.getElementById(`barLabel-${cat.id}`);
+    if (lbl) lbl.textContent = b > 0 ? `${pct.toFixed(0)}%` : '';
+
+    const diff = b - a;
+    const diffEl = document.getElementById(`diff-${cat.id}`);
+    if (diffEl) {
+      diffEl.textContent = fmt(Math.abs(diff));
+      diffEl.className = diff > 0 ? 'diff-positive' : diff < 0 ? 'diff-negative' : 'diff-zero';
+      if (diff > 0) diffEl.textContent = '+' + diffEl.textContent;
+      else if (diff < 0) diffEl.textContent = '-' + fmt(Math.abs(diff)).replace('$','');
+      diffEl.textContent = diff >= 0 ? '+' + fmt(diff) : '-' + fmt(Math.abs(diff));
+    }
+  });
+  document.getElementById('totalBudget').textContent = fmt(totalB);
+  document.getElementById('totalActual').textContent = fmt(totalA);
+  const td = totalB - totalA;
+  const tdEl = document.getElementById('totalDiff');
+  tdEl.textContent = (td >= 0 ? '+' : '-') + fmt(Math.abs(td));
+  tdEl.className = td > 0 ? 'diff-positive' : td < 0 ? 'diff-negative' : 'diff-zero';
+}
+
+function updateStats() {
+  const md = getMonth(currentYear, currentMonth);
+  const afterTax = getAfterTax(md.income);
+  document.getElementById('afterTax').textContent = fmt(afterTax);
+
+  let totalB = 0, totalA = 0;
+  CATEGORIES.forEach(c => {
+    const cd = md.categories[c.id] || { budget: 0, actual: 0 };
+    totalB += (cd.budget || 0);
+    totalA += (cd.actual || 0);
+  });
+
+  const savingsRate = afterTax > 0 ? ((afterTax - totalA) / afterTax * 100) : 0;
+  const budgetUtil = totalB > 0 ? (totalA / totalB * 100) : 0;
+  const remaining = afterTax - totalA;
+
+  document.getElementById('statCards').innerHTML = `
+    <div class="stat-card">
+      <div class="label">After-Tax Income</div>
+      <div class="value">${fmt(afterTax)}</div>
+      <div class="sub">Gross: ${fmt((md.income.salary||0)+(md.income.side||0))}</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Total Budgeted</div>
+      <div class="value">${fmt(totalB)}</div>
+      <div class="sub">${afterTax > 0 ? fmtPct(totalB/afterTax*100) : '0%'} of income</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Total Spent</div>
+      <div class="value">${fmt(totalA)}</div>
+      <div class="sub ${budgetUtil <= 100 ? 'positive' : 'negative'}">${fmtPct(budgetUtil)} of budget</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Savings Rate</div>
+      <div class="value ${savingsRate >= 20 ? 'positive' : savingsRate >= 0 ? '' : 'negative'}">${fmtPct(savingsRate)}</div>
+      <div class="sub">${fmt(remaining)} remaining</div>
+    </div>
+  `;
+}
+
+function updateCharts() {
+  const md = getMonth(currentYear, currentMonth);
+  const labels = [], budgets = [], actuals = [], colors = [];
+  CATEGORIES.forEach(c => {
+    const cd = md.categories[c.id] || { budget: 0, actual: 0 };
+    if (cd.budget > 0 || cd.actual > 0) {
+      labels.push(c.name);
+      budgets.push(cd.budget || 0);
+      actuals.push(cd.actual || 0);
+      colors.push(c.color);
+    }
+  });
+
+  // Pie Budget
+  if (pieBudgetChart) pieBudgetChart.destroy();
+  pieBudgetChart = new Chart(document.getElementById('pieBudget'), {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data: budgets, backgroundColor: colors, borderWidth: 0 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { family: 'Inter', size: 11 }, padding: 12 } } } }
+  });
+
+  // Pie Actual
+  if (pieActualChart) pieActualChart.destroy();
+  pieActualChart = new Chart(document.getElementById('pieActual'), {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data: actuals, backgroundColor: colors, borderWidth: 0 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { family: 'Inter', size: 11 }, padding: 12 } } } }
+  });
+
+  // Bar
+  if (barChart) barChart.destroy();
+  barChart = new Chart(document.getElementById('barComparison'), {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Budget', data: budgets, backgroundColor: 'rgba(59,130,246,0.5)', borderRadius: 6 },
+        { label: 'Actual', data: actuals, backgroundColor: actuals.map((a,i) => a > budgets[i] ? 'rgba(239,68,68,0.6)' : 'rgba(16,185,129,0.6)'), borderRadius: 6 }
+      ]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: { x: { grid: { display: false }, ticks: { callback: v => '$'+v.toLocaleString() } }, y: { grid: { display: false } } },
+      plugins: { legend: { labels: { font: { family: 'Inter', size: 11 } } } }
+    }
+  });
+}
+
+function updateRule() {
+  const md = getMonth(currentYear, currentMonth);
+  const afterTax = getAfterTax(md.income);
+  let needs = 0, wants = 0, sav = 0;
+  CATEGORIES.forEach(c => {
+    const a = (md.categories[c.id] || {}).actual || 0;
+    if (c.type === 'need') needs += a;
+    else if (c.type === 'want') wants += a;
+    else sav += a;
+  });
+  // Unspent goes to savings
+  const totalSpent = needs + wants + sav;
+  const unspent = Math.max(0, afterTax - totalSpent);
+  const effectiveSav = sav + unspent;
+
+  const pN = afterTax > 0 ? (needs / afterTax * 100) : 0;
+  const pW = afterTax > 0 ? (wants / afterTax * 100) : 0;
+  const pS = afterTax > 0 ? (effectiveSav / afterTax * 100) : 0;
+
+  const cards = document.getElementById('ruleCards');
+  cards.innerHTML = `
+    <div class="stat-card">
+      <div class="label" style="color:#3b82f6">Needs (50%)</div>
+      <div class="value" style="color:${pN <= 52 ? '#10b981' : '#ef4444'}">${fmtPct(pN)}</div>
+      <div class="sub">${fmt(needs)} / ${fmt(afterTax*0.5)} target</div>
+    </div>
+    <div class="stat-card">
+      <div class="label" style="color:#8b5cf6">Wants (30%)</div>
+      <div class="value" style="color:${pW <= 32 ? '#10b981' : '#ef4444'}">${fmtPct(pW)}</div>
+      <div class="sub">${fmt(wants)} / ${fmt(afterTax*0.3)} target</div>
+    </div>
+    <div class="stat-card">
+      <div class="label" style="color:#10b981">Savings (20%)</div>
+      <div class="value" style="color:${pS >= 18 ? '#10b981' : '#ef4444'}">${fmtPct(pS)}</div>
+      <div class="sub">${fmt(effectiveSav)} / ${fmt(afterTax*0.2)} target</div>
+    </div>
+  `;
+
+  document.getElementById('ruleBarTarget').innerHTML = `
+    <div style="width:50%;background:#3b82f6">50%</div>
+    <div style="width:30%;background:#8b5cf6">30%</div>
+    <div style="width:20%;background:#10b981">20%</div>
+  `;
+
+  const total = pN + pW + pS;
+  const sN = total > 0 ? pN/total*100 : 33;
+  const sW = total > 0 ? pW/total*100 : 33;
+  const sS = total > 0 ? pS/total*100 : 34;
+  document.getElementById('ruleBarActual').innerHTML = `
+    <div style="width:${sN}%;background:#3b82f6">${pN.toFixed(0)}%</div>
+    <div style="width:${sW}%;background:#8b5cf6">${pW.toFixed(0)}%</div>
+    <div style="width:${sS}%;background:#10b981">${pS.toFixed(0)}%</div>
+  `;
+}
+
+function updateTrends() {
+  const data = loadAll();
+  const labels = [], budgetTotals = [], actualTotals = [], savingsRates = [];
+  for (let i = 5; i >= 0; i--) {
+    let y = currentYear, m = currentMonth - i;
+    while (m < 0) { m += 12; y--; }
+    const key = getKey(y, m);
+    const md = data[key];
+    labels.push(MONTHS[m].substring(0,3) + ' ' + y);
+    if (md) {
+      let tb = 0, ta = 0;
+      CATEGORIES.forEach(c => {
+        const cd = md.categories[c.id] || { budget: 0, actual: 0 };
+        tb += (cd.budget || 0);
+        ta += (cd.actual || 0);
+      });
+      budgetTotals.push(tb);
+      actualTotals.push(ta);
+      const at = getAfterTax(md.income);
+      savingsRates.push(at > 0 ? ((at - ta) / at * 100) : 0);
+    } else {
+      budgetTotals.push(0);
+      actualTotals.push(0);
+      savingsRates.push(0);
+    }
+  }
+
+  if (trendChart) trendChart.destroy();
+  trendChart = new Chart(document.getElementById('trendChart'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Total Budget', data: budgetTotals, borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', fill: true, tension: 0.3, pointRadius: 4 },
+        { label: 'Total Actual', data: actualTotals, borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.1)', fill: true, tension: 0.3, pointRadius: 4 }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: { y: { ticks: { callback: v => '$'+v.toLocaleString() }, grid: { color: 'rgba(0,0,0,0.04)' } }, x: { grid: { display: false } } },
+      plugins: { legend: { labels: { font: { family: 'Inter', size: 11 } } } }
+    }
+  });
+
+  if (savingsRateChart) savingsRateChart.destroy();
+  savingsRateChart = new Chart(document.getElementById('savingsChart'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Savings Rate', data: savingsRates, borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.1)', fill: true, tension: 0.3, pointRadius: 4 },
+        { label: '20% Target', data: Array(6).fill(20), borderColor: '#6b7280', borderDash: [5,5], pointRadius: 0, fill: false }
+      ]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: { y: { ticks: { callback: v => v + '%' }, grid: { color: 'rgba(0,0,0,0.04)' } }, x: { grid: { display: false } } },
+      plugins: { legend: { labels: { font: { family: 'Inter', size: 11 } } } }
+    }
+  });
+}
+
+function renderYearSummary() {
+  const data = loadAll();
+  const table = document.getElementById('yearTable');
+  let html = '<thead><tr><th>Category</th>';
+  for (let m = 0; m < 12; m++) html += `<th>${MONTHS[m].substring(0,3)}</th>`;
+  html += '<th>Total</th></tr></thead><tbody>';
+
+  let annualIncome = 0, annualSpent = 0;
+  const monthTotals = new Array(12).fill(0);
+
+  CATEGORIES.forEach(cat => {
+    html += `<tr><td><span class="cat-dot" style="background:${cat.color};display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:4px;vertical-align:middle;"></span>${cat.name}</td>`;
+    let catTotal = 0;
+    for (let m = 0; m < 12; m++) {
+      const key = getKey(currentYear, m);
+      const md = data[key];
+      const a = md ? (md.categories[cat.id] || {}).actual || 0 : 0;
+      catTotal += a;
+      monthTotals[m] += a;
+      html += `<td>${a > 0 ? fmt(a) : '-'}</td>`;
+    }
+    html += `<td>${fmt(catTotal)}</td></tr>`;
+  });
+
+  // Totals row
+  html += '<tr><td><strong>TOTAL</strong></td>';
+  let grandTotal = 0;
+  for (let m = 0; m < 12; m++) {
+    html += `<td>${monthTotals[m] > 0 ? fmt(monthTotals[m]) : '-'}</td>`;
+    grandTotal += monthTotals[m];
+
+    const key = getKey(currentYear, m);
+    const md = data[key];
+    if (md) annualIncome += getAfterTax(md.income);
+  }
+  annualSpent = grandTotal;
+  html += `<td>${fmt(grandTotal)}</td></tr></tbody>`;
+  table.innerHTML = html;
+
+  const annualSavingsRate = annualIncome > 0 ? ((annualIncome - annualSpent) / annualIncome * 100) : 0;
+  document.getElementById('yearStats').innerHTML = `
+    <div class="stat-card">
+      <div class="label">Annual Income (After-Tax)</div>
+      <div class="value">${fmt(annualIncome)}</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Annual Spending</div>
+      <div class="value">${fmt(annualSpent)}</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">Annual Savings Rate</div>
+      <div class="value ${annualSavingsRate >= 20 ? 'positive' : 'negative'}">${fmtPct(annualSavingsRate)}</div>
+    </div>
+  `;
+}
+
+function exportCSV() {
+  const md = getMonth(currentYear, currentMonth);
+  const monthStr = `${MONTHS[currentMonth]} ${currentYear}`;
+  let csv = `Monthly Budget Planner - ${monthStr}\n`;
+  csv += `Gross Salary,${md.income.salary}\nSide Projects,${md.income.side}\nTax Rate,${md.income.taxRate}%\nAfter-Tax Income,${getAfterTax(md.income)}\n\n`;
+  csv += 'Category,Type,Budget,Actual,Diff\n';
+  let tb = 0, ta = 0;
+  CATEGORIES.forEach(c => {
+    const cd = md.categories[c.id] || { budget: 0, actual: 0 };
+    const d = cd.budget - cd.actual;
+    csv += `${c.name},${TYPE_LABELS[c.type]},${cd.budget},${cd.actual},${d}\n`;
+    tb += cd.budget; ta += cd.actual;
+  });
+  csv += `TOTAL,,${tb},${ta},${tb-ta}\n`;
+
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `budget-${getKey(currentYear, currentMonth)}.csv`;
+  a.click();
+}
+
+function exportJSON() {
+  const data = loadAll();
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `budget-planner-all.json`;
+  a.click();
+}
+
+// Tabs
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+    // Refresh charts when switching tabs
+    if (tab.dataset.tab === 'charts') updateCharts();
+    if (tab.dataset.tab === 'trends') updateTrends();
+    if (tab.dataset.tab === 'year') renderYearSummary();
+  });
+});
+
+// Init
+seedDefault();
+render();
+</script>
+</body>
+</html>

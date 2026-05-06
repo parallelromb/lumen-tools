@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Affirmations & Mindset</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #f8f9fc;
+    color: #1a1a2e;
+    min-height: 100vh;
+    padding: 1.5rem;
+  }
+  .back { display: inline-flex; align-items: center; gap: 6px; color: #6b7280; text-decoration: none; font-size: 0.85rem; margin-bottom: 1.5rem; }
+  .back:hover { color: #3b82f6; }
+  .header { text-align: center; margin-bottom: 2rem; }
+  .header h1 { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; }
+  .header p { color: #6b7280; font-size: 0.9rem; margin-top: 0.25rem; }
+
+  .glass {
+    background: rgba(255,255,255,0.72);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.6);
+    border-radius: 16px;
+    padding: 1.5rem;
+  }
+
+  .layout { max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 1.5rem; }
+
+  /* Stats bar */
+  .stats-bar { display: flex; gap: 1rem; flex-wrap: wrap; }
+  .stat-item { flex: 1; min-width: 120px; text-align: center; }
+  .stat-item .val { font-size: 1.5rem; font-weight: 700; }
+  .stat-item .label { font-size: 0.75rem; color: #6b7280; margin-top: 2px; }
+
+  /* Daily card */
+  .daily-card {
+    background: linear-gradient(135deg, rgba(245,158,11,0.1), rgba(239,68,68,0.06));
+    border-color: rgba(245,158,11,0.25);
+    text-align: center;
+    position: relative;
+  }
+  .daily-card .cat-badge {
+    display: inline-block; font-size: 0.7rem; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.05em; padding: 3px 10px; border-radius: 99px;
+    background: rgba(245,158,11,0.15); color: #b45309; margin-bottom: 0.75rem;
+  }
+  .daily-card .affirmation-text { font-size: 1.35rem; font-weight: 600; line-height: 1.5; margin-bottom: 1rem; }
+  .daily-card .actions { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
+  .daily-card .actions button {
+    border: none; background: rgba(255,255,255,0.6); border-radius: 10px; padding: 8px 16px;
+    font-family: inherit; font-size: 0.8rem; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 6px;
+    transition: background 0.15s;
+  }
+  .daily-card .actions button:hover { background: rgba(255,255,255,0.9); }
+  .daily-card .actions button.starred { color: #f59e0b; }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  .tab-btn {
+    border: none; background: rgba(255,255,255,0.5); border-radius: 10px; padding: 6px 14px;
+    font-family: inherit; font-size: 0.78rem; font-weight: 500; cursor: pointer; transition: all 0.15s;
+  }
+  .tab-btn.active { background: #1a1a2e; color: #fff; }
+  .tab-btn:hover:not(.active) { background: rgba(255,255,255,0.8); }
+
+  /* Affirmation list */
+  .aff-list { display: grid; gap: 0.75rem; margin-top: 1rem; }
+  .aff-item {
+    display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.75rem 1rem;
+    background: rgba(255,255,255,0.45); border-radius: 12px; transition: background 0.15s;
+  }
+  .aff-item:hover { background: rgba(255,255,255,0.7); }
+  .aff-item .star-btn { border: none; background: none; cursor: pointer; font-size: 1.1rem; flex-shrink: 0; color: #d1d5db; transition: color 0.15s; }
+  .aff-item .star-btn.starred { color: #f59e0b; }
+  .aff-item .text { font-size: 0.88rem; line-height: 1.5; }
+  .aff-item .item-cat { font-size: 0.65rem; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.04em; margin-top: 2px; }
+
+  /* Mood checkin */
+  .mood-section { display: flex; flex-direction: column; gap: 1rem; }
+  .mood-row { display: flex; gap: 0.5rem; justify-content: center; }
+  .mood-btn {
+    border: none; background: rgba(255,255,255,0.4); width: 56px; height: 56px; border-radius: 14px;
+    font-size: 1.6rem; cursor: pointer; transition: all 0.15s; display: flex; align-items: center; justify-content: center;
+  }
+  .mood-btn:hover { transform: scale(1.1); background: rgba(255,255,255,0.7); }
+  .mood-btn.selected { background: rgba(59,130,246,0.15); box-shadow: 0 0 0 2px #3b82f6; transform: scale(1.1); }
+  .mood-label { text-align: center; font-size: 0.75rem; color: #6b7280; }
+  .mood-done { text-align: center; color: #10b981; font-weight: 500; font-size: 0.85rem; }
+
+  /* Chart */
+  .chart-wrap { position: relative; height: 220px; }
+
+  /* Journal */
+  .journal-area textarea {
+    width: 100%; border: 1px solid rgba(0,0,0,0.08); border-radius: 12px; padding: 1rem;
+    font-family: inherit; font-size: 0.88rem; resize: vertical; min-height: 80px;
+    background: rgba(255,255,255,0.5); outline: none; transition: border-color 0.15s;
+  }
+  .journal-area textarea:focus { border-color: #3b82f6; }
+  .journal-area .j-actions { display: flex; gap: 0.5rem; margin-top: 0.75rem; }
+  .btn-primary {
+    border: none; background: #1a1a2e; color: #fff; border-radius: 10px; padding: 8px 20px;
+    font-family: inherit; font-size: 0.82rem; font-weight: 500; cursor: pointer; transition: opacity 0.15s;
+  }
+  .btn-primary:hover { opacity: 0.85; }
+  .saved-list { margin-top: 1rem; display: grid; gap: 0.5rem; }
+  .saved-item {
+    padding: 0.6rem 0.8rem; background: rgba(255,255,255,0.4); border-radius: 10px;
+    font-size: 0.82rem; display: flex; justify-content: space-between; align-items: flex-start; gap: 0.5rem;
+  }
+  .saved-item .date { font-size: 0.7rem; color: #9ca3af; flex-shrink: 0; }
+  .saved-item .del-btn { border: none; background: none; color: #d1d5db; cursor: pointer; font-size: 0.9rem; }
+  .saved-item .del-btn:hover { color: #ef4444; }
+
+  /* Favorites */
+  .fav-empty { text-align: center; color: #9ca3af; font-size: 0.85rem; padding: 2rem 0; }
+
+  .section-title { font-size: 1rem; font-weight: 600; margin-bottom: 0.25rem; }
+  .section-sub { font-size: 0.78rem; color: #6b7280; margin-bottom: 0.75rem; }
+
+  .toast {
+    position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(80px);
+    background: #1a1a2e; color: #fff; padding: 10px 24px; border-radius: 12px;
+    font-size: 0.82rem; font-weight: 500; opacity: 0; transition: all 0.3s; pointer-events: none; z-index: 999;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  @media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<a href="index.html" class="back"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="10 14 4 8 10 2"/></svg> Back to Analytics</a>
+
+<div class="header">
+  <h1>Daily Affirmations & Mindset</h1>
+  <p>Start your day with intention. Build confidence, one affirmation at a time.</p>
+</div>
+
+<div class="layout">
+  <!-- Stats -->
+  <div class="glass stats-bar">
+    <div class="stat-item"><div class="val" id="streakVal">0</div><div class="label">Day Streak</div></div>
+    <div class="stat-item"><div class="val" id="totalVisits">0</div><div class="label">Total Visits</div></div>
+    <div class="stat-item"><div class="val" id="favCount">0</div><div class="label">Favorites</div></div>
+    <div class="stat-item"><div class="val" id="journalCount">0</div><div class="label">Journal Entries</div></div>
+  </div>
+
+  <!-- Daily affirmation -->
+  <div class="glass daily-card" id="dailyCard">
+    <div class="cat-badge" id="dailyCat"></div>
+    <div class="affirmation-text" id="dailyText"></div>
+    <div class="actions">
+      <button id="starDailyBtn" onclick="toggleFavDaily()"><span id="starDailyIcon">&#9734;</span> Favorite</button>
+      <button onclick="shareAffirmation()"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v1a2 2 0 002 2h6a2 2 0 002-2v-1M7 7l3-3 3 3M10 4v8"/></svg> Share</button>
+      <button onclick="nextRandom()"><svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 4v6h6M15 12V6H9"/><path d="M13.5 2.5A7 7 0 012.5 9.5M2.5 13.5A7 7 0 0013.5 6.5"/></svg> Another</button>
+    </div>
+  </div>
+
+  <!-- Mood check-in -->
+  <div class="glass mood-section">
+    <div class="section-title">Mood Check-in</div>
+    <div class="section-sub">How are you feeling today?</div>
+    <div class="mood-row" id="moodRow"></div>
+    <div class="mood-label" id="moodLabel"></div>
+    <div class="mood-done" id="moodDone" style="display:none"></div>
+  </div>
+
+  <div class="two-col">
+    <!-- Mood chart -->
+    <div class="glass">
+      <div class="section-title">Mood Trend</div>
+      <div class="section-sub">Last 30 days</div>
+      <div class="chart-wrap"><canvas id="moodChart"></canvas></div>
+    </div>
+
+    <!-- Journal -->
+    <div class="glass journal-area">
+      <div class="section-title">Affirmation Journal</div>
+      <div class="section-sub">Write your own affirmations</div>
+      <textarea id="journalInput" placeholder="I am capable of achieving great things..."></textarea>
+      <div class="j-actions">
+        <button class="btn-primary" onclick="saveJournal()">Save Entry</button>
+      </div>
+      <div class="saved-list" id="savedList"></div>
+    </div>
+  </div>
+
+  <!-- Category filter + affirmation list -->
+  <div class="glass">
+    <div class="section-title">Affirmation Library</div>
+    <div class="section-sub">Browse by category. Star your favorites.</div>
+    <div class="tabs" id="categoryTabs"></div>
+    <div class="aff-list" id="affList"></div>
+  </div>
+
+  <!-- Favorites -->
+  <div class="glass">
+    <div class="section-title">Favorites</div>
+    <div class="section-sub">Your starred affirmations</div>
+    <div class="aff-list" id="favList"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const AFFIRMATIONS = [
+  // Confidence (10)
+  {text:"I am worthy of success and abundance.", cat:"Confidence"},
+  {text:"I trust my abilities and instincts completely.", cat:"Confidence"},
+  {text:"I radiate confidence and self-assurance.", cat:"Confidence"},
+  {text:"I deserve every opportunity that comes my way.", cat:"Confidence"},
+  {text:"I am enough, exactly as I am right now.", cat:"Confidence"},
+  {text:"My voice matters and I speak with conviction.", cat:"Confidence"},
+  {text:"I am bold, brave, and unapologetically myself.", cat:"Confidence"},
+  {text:"Every challenge I overcome makes me stronger.", cat:"Confidence"},
+  {text:"I believe in my vision and my ability to execute it.", cat:"Confidence"},
+  {text:"I walk into every room knowing I belong there.", cat:"Confidence"},
+  // Growth (9)
+  {text:"Every day I am becoming a better version of myself.", cat:"Growth"},
+  {text:"Mistakes are stepping stones to mastery.", cat:"Growth"},
+  {text:"I embrace discomfort because that is where growth lives.", cat:"Growth"},
+  {text:"I am a lifelong learner and that is my superpower.", cat:"Growth"},
+  {text:"Progress, not perfection, is my measure of success.", cat:"Growth"},
+  {text:"I release old patterns that no longer serve me.", cat:"Growth"},
+  {text:"Each setback carries a lesson I am ready to learn.", cat:"Growth"},
+  {text:"I am patient with myself while I grow and evolve.", cat:"Growth"},
+  {text:"I invest in myself because I am my greatest asset.", cat:"Growth"},
+  // Focus (9)
+  {text:"I direct my energy toward what truly matters.", cat:"Focus"},
+  {text:"I am present, engaged, and fully focused on this moment.", cat:"Focus"},
+  {text:"Distractions do not control me; I control my attention.", cat:"Focus"},
+  {text:"I finish what I start and I start what matters.", cat:"Focus"},
+  {text:"Deep work is my competitive advantage.", cat:"Focus"},
+  {text:"I say no to the unimportant so I can say yes to the essential.", cat:"Focus"},
+  {text:"My mind is clear, my priorities are set, and I am ready.", cat:"Focus"},
+  {text:"I trust the process and focus on the next step.", cat:"Focus"},
+  {text:"One task at a time. One day at a time. That is enough.", cat:"Focus"},
+  // Gratitude (8)
+  {text:"I am grateful for the life I have and the life I am building.", cat:"Gratitude"},
+  {text:"Gratitude turns what I have into more than enough.", cat:"Gratitude"},
+  {text:"I appreciate the small victories just as much as the big ones.", cat:"Gratitude"},
+  {text:"I am thankful for the people who believe in me.", cat:"Gratitude"},
+  {text:"Every morning is a gift and I treat it as such.", cat:"Gratitude"},
+  {text:"I find joy in the ordinary moments of my day.", cat:"Gratitude"},
+  {text:"Abundance flows to me because I appreciate what I already have.", cat:"Gratitude"},
+  {text:"I am surrounded by more blessings than I can count.", cat:"Gratitude"},
+  // Leadership (8)
+  {text:"I lead by example and inspire others with my actions.", cat:"Leadership"},
+  {text:"I make decisions with clarity and courage.", cat:"Leadership"},
+  {text:"I empower those around me to do their best work.", cat:"Leadership"},
+  {text:"Great leaders serve first, and I choose to serve.", cat:"Leadership"},
+  {text:"I communicate with honesty, empathy, and purpose.", cat:"Leadership"},
+  {text:"I take full ownership of my outcomes and my team's success.", cat:"Leadership"},
+  {text:"I am calm under pressure and decisive in uncertainty.", cat:"Leadership"},
+  {text:"My leadership creates space for others to shine.", cat:"Leadership"},
+  // Creativity (8)
+  {text:"My creativity is limitless and flows effortlessly.", cat:"Creativity"},
+  {text:"I give myself permission to think differently.", cat:"Creativity"},
+  {text:"Every problem is an invitation for creative solutions.", cat:"Creativity"},
+  {text:"I trust my creative process, even when the path is unclear.", cat:"Creativity"},
+  {text:"I create boldly and share generously.", cat:"Creativity"},
+  {text:"Constraints fuel my creativity rather than limit it.", cat:"Creativity"},
+  {text:"I am a builder. What I imagine, I can bring to life.", cat:"Creativity"},
+  {text:"My unique perspective is my creative edge.", cat:"Creativity"},
+];
+
+const CATEGORIES = ['All', 'Confidence', 'Growth', 'Focus', 'Gratitude', 'Leadership', 'Creativity'];
+const MOODS = [
+  {emoji:'😤', label:'Frustrated', val:1},
+  {emoji:'😟', label:'Anxious', val:2},
+  {emoji:'😐', label:'Neutral', val:3},
+  {emoji:'😊', label:'Happy', val:4},
+  {emoji:'🤩', label:'Amazing', val:5},
+];
+
+const LS = {
+  get(k, d) { try { return JSON.parse(localStorage.getItem('aff_'+k)) ?? d; } catch { return d; } },
+  set(k, v) { localStorage.setItem('aff_'+k, JSON.stringify(v)); }
+};
+
+function today() { return new Date().toISOString().slice(0,10); }
+
+// Seeded random from date
+function dateSeed(dateStr) {
+  let h = 0;
+  for (let i = 0; i < dateStr.length; i++) { h = ((h << 5) - h) + dateStr.charCodeAt(i); h |= 0; }
+  return Math.abs(h);
+}
+
+let currentFilter = 'All';
+let dailyAff = null;
+
+// Streak
+function updateStreak() {
+  const visits = LS.get('visits', {});
+  const t = today();
+  visits[t] = true;
+  LS.set('visits', visits);
+
+  let streak = 0;
+  let d = new Date();
+  while (true) {
+    const ds = d.toISOString().slice(0,10);
+    if (visits[ds]) { streak++; d.setDate(d.getDate()-1); } else break;
+  }
+  LS.set('streak', streak);
+  document.getElementById('streakVal').textContent = streak;
+  document.getElementById('totalVisits').textContent = Object.keys(visits).length;
+}
+
+// Daily affirmation
+function setDailyAffirmation() {
+  const seed = dateSeed(today());
+  const idx = seed % AFFIRMATIONS.length;
+  dailyAff = AFFIRMATIONS[idx];
+  document.getElementById('dailyText').textContent = '"' + dailyAff.text + '"';
+  document.getElementById('dailyCat').textContent = dailyAff.cat;
+  updateDailyStar();
+}
+
+function updateDailyStar() {
+  const favs = LS.get('favorites', []);
+  const isFav = favs.includes(dailyAff.text);
+  const btn = document.getElementById('starDailyBtn');
+  document.getElementById('starDailyIcon').innerHTML = isFav ? '&#9733;' : '&#9734;';
+  btn.classList.toggle('starred', isFav);
+}
+
+function toggleFavDaily() {
+  toggleFav(dailyAff.text);
+  updateDailyStar();
+}
+
+let _randomAff = null;
+function nextRandom() {
+  const idx = Math.floor(Math.random() * AFFIRMATIONS.length);
+  _randomAff = AFFIRMATIONS[idx];
+  dailyAff = _randomAff;
+  document.getElementById('dailyText').textContent = '"' + dailyAff.text + '"';
+  document.getElementById('dailyCat').textContent = dailyAff.cat;
+  updateDailyStar();
+}
+
+function shareAffirmation() {
+  const text = dailyAff.text + '\n\n— Daily Affirmation (' + dailyAff.cat + ')';
+  navigator.clipboard.writeText(text).then(() => showToast('Copied to clipboard'));
+}
+
+// Favorites
+function toggleFav(text) {
+  let favs = LS.get('favorites', []);
+  const idx = favs.indexOf(text);
+  if (idx >= 0) favs.splice(idx,1); else favs.push(text);
+  LS.set('favorites', favs);
+  renderAffList();
+  renderFavorites();
+  updateStats();
+}
+
+function renderFavorites() {
+  const favs = LS.get('favorites', []);
+  const el = document.getElementById('favList');
+  if (!favs.length) { el.innerHTML = '<div class="fav-empty">Star affirmations to save them here</div>'; return; }
+  el.innerHTML = favs.map(f => {
+    const a = AFFIRMATIONS.find(x => x.text === f);
+    const cat = a ? a.cat : 'Custom';
+    return `<div class="aff-item">
+      <button class="star-btn starred" onclick="toggleFav('${f.replace(/'/g,"\\'")}')">&#9733;</button>
+      <div><div class="text">${f}</div><div class="item-cat">${cat}</div></div>
+    </div>`;
+  }).join('');
+}
+
+// Affirmation list
+function renderAffList() {
+  const favs = LS.get('favorites', []);
+  const filtered = currentFilter === 'All' ? AFFIRMATIONS : AFFIRMATIONS.filter(a => a.cat === currentFilter);
+  document.getElementById('affList').innerHTML = filtered.map(a => {
+    const isFav = favs.includes(a.text);
+    return `<div class="aff-item">
+      <button class="star-btn ${isFav?'starred':''}" onclick="toggleFav('${a.text.replace(/'/g,"\\'")}')">&#973${isFav?'3':'4'};</button>
+      <div><div class="text">${a.text}</div><div class="item-cat">${a.cat}</div></div>
+    </div>`;
+  }).join('');
+}
+
+function renderTabs() {
+  document.getElementById('categoryTabs').innerHTML = CATEGORIES.map(c =>
+    `<button class="tab-btn ${c===currentFilter?'active':''}" onclick="filterCat('${c}')">${c}</button>`
+  ).join('');
+}
+
+function filterCat(c) { currentFilter = c; renderTabs(); renderAffList(); }
+
+// Mood
+function renderMood() {
+  const log = LS.get('moodLog', {});
+  const todayMood = log[today()];
+  const row = document.getElementById('moodRow');
+  const label = document.getElementById('moodLabel');
+  const done = document.getElementById('moodDone');
+
+  if (todayMood) {
+    const m = MOODS.find(x => x.val === todayMood);
+    row.innerHTML = MOODS.map(m => `<button class="mood-btn ${m.val===todayMood?'selected':''}" disabled>${m.emoji}</button>`).join('');
+    label.textContent = '';
+    done.style.display = 'block';
+    done.textContent = 'Today: ' + (m ? m.emoji + ' ' + m.label : '');
+  } else {
+    row.innerHTML = MOODS.map(m =>
+      `<button class="mood-btn" onclick="logMood(${m.val})" onmouseenter="showMoodLabel('${m.label}')" onmouseleave="showMoodLabel('')">${m.emoji}</button>`
+    ).join('');
+    label.textContent = 'Tap to log your mood';
+    done.style.display = 'none';
+  }
+}
+
+function showMoodLabel(t) { document.getElementById('moodLabel').textContent = t || 'Tap to log your mood'; }
+
+function logMood(val) {
+  const log = LS.get('moodLog', {});
+  log[today()] = val;
+  LS.set('moodLog', log);
+  renderMood();
+  renderMoodChart();
+  showToast('Mood logged!');
+}
+
+// Mood chart
+let moodChartInstance = null;
+function renderMoodChart() {
+  const log = LS.get('moodLog', {});
+  const labels = [];
+  const data = [];
+  const d = new Date();
+  d.setDate(d.getDate() - 29);
+  for (let i = 0; i < 30; i++) {
+    const ds = d.toISOString().slice(0,10);
+    labels.push(ds.slice(5));
+    data.push(log[ds] || null);
+    d.setDate(d.getDate()+1);
+  }
+
+  if (moodChartInstance) moodChartInstance.destroy();
+  moodChartInstance = new Chart(document.getElementById('moodChart'), {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Mood',
+        data,
+        borderColor: '#3b82f6',
+        backgroundColor: 'rgba(59,130,246,0.1)',
+        fill: true,
+        tension: 0.35,
+        pointRadius: 3,
+        pointBackgroundColor: '#3b82f6',
+        spanGaps: true,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: { min: 0.5, max: 5.5, ticks: { stepSize: 1, callback: v => MOODS[v-1]?.emoji || '' }, grid: { color: 'rgba(0,0,0,0.04)' } },
+        x: { ticks: { maxTicksLimit: 10, font: { size: 10 } }, grid: { display: false } }
+      },
+      plugins: { legend: { display: false } }
+    }
+  });
+}
+
+// Journal
+function saveJournal() {
+  const input = document.getElementById('journalInput');
+  const text = input.value.trim();
+  if (!text) return;
+  const entries = LS.get('journal', []);
+  entries.unshift({ text, date: today(), ts: Date.now() });
+  LS.set('journal', entries);
+  input.value = '';
+  renderJournal();
+  updateStats();
+  showToast('Affirmation saved!');
+}
+
+function deleteJournal(ts) {
+  let entries = LS.get('journal', []);
+  entries = entries.filter(e => e.ts !== ts);
+  LS.set('journal', entries);
+  renderJournal();
+  updateStats();
+}
+
+function renderJournal() {
+  const entries = LS.get('journal', []);
+  document.getElementById('savedList').innerHTML = entries.slice(0, 20).map(e =>
+    `<div class="saved-item">
+      <div style="flex:1">${e.text}</div>
+      <span class="date">${e.date}</span>
+      <button class="del-btn" onclick="deleteJournal(${e.ts})" title="Delete">&#10005;</button>
+    </div>`
+  ).join('');
+}
+
+function updateStats() {
+  document.getElementById('favCount').textContent = LS.get('favorites', []).length;
+  document.getElementById('journalCount').textContent = LS.get('journal', []).length;
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// Init
+updateStreak();
+setDailyAffirmation();
+renderTabs();
+renderAffList();
+renderFavorites();
+renderMood();
+renderMoodChart();
+renderJournal();
+updateStats();
+</script>
+</body>
+</html>

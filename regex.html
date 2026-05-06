@@ -1,0 +1,631 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Regex Tester & Debugger</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:#f8f9fc;color:#1a1a2e;min-height:100vh;padding:1.5rem}
+.glass{background:rgba(255,255,255,0.72);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.6);border-radius:16px;padding:1.5rem}
+.header{display:flex;align-items:center;gap:1rem;margin-bottom:1.5rem}
+.header a{color:#6b7280;text-decoration:none;font-size:.875rem;display:flex;align-items:center;gap:.25rem}
+.header a:hover{color:#3b82f6}
+.header h1{font-size:1.5rem;font-weight:700;letter-spacing:-.02em;flex:1}
+.stats-bar{display:flex;gap:1rem;font-size:.8rem;color:#6b7280;align-items:center}
+.stats-bar .stat{background:rgba(59,130,246,0.08);padding:.25rem .6rem;border-radius:8px;font-weight:500}
+.layout{display:grid;grid-template-columns:1fr 340px;gap:1.25rem;max-width:1400px;margin:0 auto}
+@media(max-width:960px){.layout{grid-template-columns:1fr}}
+.main-col{display:flex;flex-direction:column;gap:1.25rem}
+.side-col{display:flex;flex-direction:column;gap:1.25rem}
+label{font-size:.75rem;font-weight:600;color:#6b7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:.35rem;display:block}
+input[type="text"],textarea{width:100%;font-family:'Inter',monospace;font-size:.875rem;padding:.6rem .75rem;border:1px solid rgba(0,0,0,0.08);border-radius:10px;background:rgba(255,255,255,0.6);outline:none;transition:border-color .15s}
+input[type="text"]:focus,textarea:focus{border-color:#3b82f6}
+textarea{resize:vertical;min-height:100px;line-height:1.6}
+.regex-row{display:flex;gap:.5rem;align-items:stretch}
+.regex-row input{flex:1;font-family:'SF Mono','Fira Code',monospace;font-size:.95rem}
+.flags{display:flex;gap:.25rem;align-items:center}
+.flag-btn{width:32px;height:32px;border:1px solid rgba(0,0,0,0.08);border-radius:8px;background:rgba(255,255,255,0.5);cursor:pointer;font-family:'SF Mono',monospace;font-size:.8rem;font-weight:600;color:#9ca3af;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.flag-btn.active{background:#3b82f6;color:#fff;border-color:#3b82f6}
+.tabs{display:flex;gap:.25rem;margin-bottom:1rem;flex-wrap:wrap}
+.tab{padding:.4rem .8rem;border-radius:8px;font-size:.8rem;font-weight:500;cursor:pointer;background:transparent;border:1px solid transparent;color:#6b7280;transition:all .15s}
+.tab.active{background:#3b82f6;color:#fff}
+.tab:hover:not(.active){background:rgba(59,130,246,0.08)}
+.highlight-area{font-family:'SF Mono','Fira Code',monospace;font-size:.875rem;line-height:1.7;white-space:pre-wrap;word-break:break-all;padding:.75rem;border-radius:10px;background:rgba(255,255,255,0.5);border:1px solid rgba(0,0,0,0.06);min-height:80px;max-height:300px;overflow-y:auto}
+.highlight-area mark{background:rgba(59,130,246,0.2);border-radius:3px;padding:0 1px}
+.highlight-area mark:nth-of-type(even){background:rgba(168,85,247,0.2)}
+.match-list{max-height:260px;overflow-y:auto;font-size:.8rem}
+.match-item{padding:.5rem .6rem;border-bottom:1px solid rgba(0,0,0,0.04);display:grid;grid-template-columns:40px 1fr;gap:.5rem;align-items:start}
+.match-idx{font-family:monospace;color:#3b82f6;font-weight:600;font-size:.75rem}
+.match-val{font-family:'SF Mono',monospace;word-break:break-all}
+.match-groups{margin-top:.25rem;color:#8b5cf6;font-size:.75rem}
+.replace-preview{font-family:'SF Mono','Fira Code',monospace;font-size:.875rem;line-height:1.7;white-space:pre-wrap;word-break:break-all;padding:.75rem;border-radius:10px;background:rgba(16,185,129,0.05);border:1px solid rgba(16,185,129,0.15);min-height:60px;max-height:200px;overflow-y:auto}
+.split-results{display:flex;flex-wrap:wrap;gap:.35rem;padding:.5rem}
+.split-item{background:rgba(59,130,246,0.08);padding:.25rem .5rem;border-radius:6px;font-family:monospace;font-size:.8rem}
+.explanation{font-size:.825rem;line-height:1.7}
+.explanation .token{display:inline-flex;align-items:baseline;gap:.25rem;margin:.15rem 0}
+.explanation .token code{background:rgba(99,102,241,0.1);padding:.1rem .35rem;border-radius:4px;font-family:'SF Mono',monospace;font-size:.8rem;color:#6366f1}
+.explanation .token span{color:#4b5563}
+.patterns-grid{display:grid;grid-template-columns:1fr 1fr;gap:.35rem;max-height:400px;overflow-y:auto}
+.pattern-chip{padding:.4rem .6rem;border-radius:8px;font-size:.75rem;cursor:pointer;background:rgba(255,255,255,0.5);border:1px solid rgba(0,0,0,0.06);transition:all .15s;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pattern-chip:hover{background:rgba(59,130,246,0.08);border-color:rgba(59,130,246,0.2)}
+.pattern-chip .pname{font-weight:600;display:block;margin-bottom:.1rem}
+.pattern-chip .pdesc{color:#9ca3af;font-size:.7rem}
+.cheat-section{margin-bottom:1rem}
+.cheat-section h4{font-size:.75rem;font-weight:700;color:#3b82f6;margin-bottom:.4rem;text-transform:uppercase;letter-spacing:.04em}
+.cheat-table{width:100%;font-size:.75rem}
+.cheat-table td{padding:.2rem .4rem;border-bottom:1px solid rgba(0,0,0,0.04)}
+.cheat-table td:first-child{font-family:'SF Mono',monospace;font-weight:600;color:#6366f1;white-space:nowrap;width:80px}
+.saved-list,.history-list{max-height:260px;overflow-y:auto;font-size:.8rem}
+.saved-item,.history-item{padding:.5rem .6rem;border-bottom:1px solid rgba(0,0,0,0.04);cursor:pointer;display:flex;align-items:center;gap:.5rem;transition:background .1s}
+.saved-item:hover,.history-item:hover{background:rgba(59,130,246,0.05)}
+.saved-item .sname{font-weight:600;font-size:.8rem}
+.saved-item .sdesc{color:#9ca3af;font-size:.7rem}
+.saved-item .sregex,.history-item code{font-family:monospace;font-size:.75rem;color:#6366f1;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.del-btn{background:none;border:none;color:#ef4444;cursor:pointer;font-size:.7rem;padding:.15rem .3rem;border-radius:4px;opacity:.5}
+.del-btn:hover{opacity:1;background:rgba(239,68,68,0.1)}
+.copy-row{display:flex;gap:.35rem;margin-top:.5rem}
+.copy-btn{padding:.35rem .65rem;border-radius:8px;font-size:.75rem;font-weight:500;cursor:pointer;background:rgba(255,255,255,0.5);border:1px solid rgba(0,0,0,0.08);transition:all .15s;color:#4b5563}
+.copy-btn:hover{background:rgba(59,130,246,0.08);border-color:rgba(59,130,246,0.2);color:#3b82f6}
+.save-row{display:flex;gap:.35rem;margin-top:.75rem}
+.save-row input{flex:1}
+.save-btn{padding:.4rem .8rem;border-radius:8px;font-size:.8rem;font-weight:500;cursor:pointer;background:#3b82f6;color:#fff;border:none;transition:all .15s}
+.save-btn:hover{background:#2563eb}
+.section-title{font-size:.8rem;font-weight:700;margin-bottom:.75rem;display:flex;align-items:center;gap:.4rem}
+.empty-state{text-align:center;color:#9ca3af;font-size:.8rem;padding:2rem 1rem}
+.toast{position:fixed;bottom:1.5rem;right:1.5rem;background:#1a1a2e;color:#fff;padding:.6rem 1rem;border-radius:10px;font-size:.8rem;opacity:0;transform:translateY(10px);transition:all .25s;pointer-events:none;z-index:999}
+.toast.show{opacity:1;transform:translateY(0)}
+.error-msg{color:#ef4444;font-size:.8rem;margin-top:.35rem;font-weight:500}
+</style>
+</head>
+<body>
+<div class="header">
+  <a href="index.html">&larr; Back</a>
+  <h1>Regex Tester & Debugger</h1>
+  <div class="stats-bar">
+    <span class="stat" id="matchCount">0 matches</span>
+    <span class="stat" id="execTime">0ms</span>
+  </div>
+</div>
+
+<div class="layout">
+  <div class="main-col">
+    <!-- Regex Input -->
+    <div class="glass">
+      <label>Regular Expression</label>
+      <div class="regex-row">
+        <input type="text" id="regexInput" placeholder="Enter regex pattern..." spellcheck="false" autocomplete="off">
+        <div class="flags">
+          <button class="flag-btn active" data-flag="g" title="Global">g</button>
+          <button class="flag-btn" data-flag="i" title="Case insensitive">i</button>
+          <button class="flag-btn" data-flag="m" title="Multiline">m</button>
+          <button class="flag-btn" data-flag="s" title="Dotall">s</button>
+          <button class="flag-btn" data-flag="u" title="Unicode">u</button>
+        </div>
+      </div>
+      <div id="regexError" class="error-msg" style="display:none"></div>
+      <div class="copy-row">
+        <button class="copy-btn" onclick="copyAs('js')">Copy as JS</button>
+        <button class="copy-btn" onclick="copyAs('py')">Copy as Python</button>
+        <button class="copy-btn" onclick="copyAs('go')">Copy as Go</button>
+      </div>
+      <div class="save-row">
+        <input type="text" id="saveName" placeholder="Pattern name...">
+        <input type="text" id="saveDesc" placeholder="Description..." style="flex:1.5">
+        <button class="save-btn" onclick="savePattern()">Save</button>
+      </div>
+    </div>
+
+    <!-- Test String -->
+    <div class="glass">
+      <label>Test String</label>
+      <textarea id="testString" placeholder="Enter test string..." spellcheck="false"></textarea>
+    </div>
+
+    <!-- Tabs: Match / Replace / Split -->
+    <div class="glass">
+      <div class="tabs">
+        <button class="tab active" data-tab="match">Match</button>
+        <button class="tab" data-tab="replace">Replace</button>
+        <button class="tab" data-tab="split">Split</button>
+        <button class="tab" data-tab="explain">Explain</button>
+      </div>
+      <div id="tabMatch">
+        <label>Highlighted Matches</label>
+        <div class="highlight-area" id="highlightArea"></div>
+        <div style="margin-top:.75rem">
+          <label>All Matches</label>
+          <div class="match-list" id="matchList"><div class="empty-state">Type a regex and test string to see matches</div></div>
+        </div>
+      </div>
+      <div id="tabReplace" style="display:none">
+        <label>Replacement String</label>
+        <input type="text" id="replaceInput" placeholder="Replacement (use $1, $2, $&, etc.)" spellcheck="false">
+        <div style="margin-top:.75rem">
+          <label>Replace Preview</label>
+          <div class="replace-preview" id="replacePreview"></div>
+        </div>
+      </div>
+      <div id="tabSplit" style="display:none">
+        <label>Split Results</label>
+        <div class="split-results" id="splitResults"><div class="empty-state">Results will appear when regex matches</div></div>
+      </div>
+      <div id="tabExplain" style="display:none">
+        <label>Regex Explanation</label>
+        <div class="explanation" id="explanationArea"><div class="empty-state">Enter a regex to see its explanation</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Sidebar -->
+  <div class="side-col">
+    <!-- Sidebar tabs -->
+    <div class="glass">
+      <div class="tabs">
+        <button class="tab active" data-sidebar="patterns">Patterns</button>
+        <button class="tab" data-sidebar="saved">Saved</button>
+        <button class="tab" data-sidebar="history">History</button>
+        <button class="tab" data-sidebar="cheat">Cheat Sheet</button>
+      </div>
+      <div id="sidePatterns">
+        <div class="patterns-grid" id="patternsGrid"></div>
+      </div>
+      <div id="sideSaved" style="display:none">
+        <div class="saved-list" id="savedList"><div class="empty-state">No saved patterns yet</div></div>
+      </div>
+      <div id="sideHistory" style="display:none">
+        <div class="history-list" id="historyList"><div class="empty-state">No history yet</div></div>
+      </div>
+      <div id="sideCheat" style="display:none" id="cheatContent"></div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// Common patterns library
+const COMMON_PATTERNS = [
+  { name: 'Email', regex: '[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}', desc: 'Email address', test: 'user@example.com' },
+  { name: 'URL', regex: 'https?:\\/\\/[\\w\\-._~:/?#[\\]@!$&\'()*+,;=%]+', desc: 'HTTP/HTTPS URL', test: 'https://example.com/path?q=1' },
+  { name: 'Phone (US)', regex: '\\(?\\d{3}\\)?[-.\\s]?\\d{3}[-.\\s]?\\d{4}', desc: 'US phone number', test: '(555) 123-4567' },
+  { name: 'Phone (Intl)', regex: '\\+?\\d{1,4}[-.\\s]?\\(?\\d{1,3}\\)?[-.\\s]?\\d{1,4}[-.\\s]?\\d{1,4}[-.\\s]?\\d{1,9}', desc: 'International phone', test: '+1-555-123-4567' },
+  { name: 'IPv4', regex: '\\b(?:(?:25[0-5]|2[0-4]\\d|[01]?\\d\\d?)\\.){3}(?:25[0-5]|2[0-4]\\d|[01]?\\d\\d?)\\b', desc: 'IPv4 address', test: '192.168.1.1' },
+  { name: 'IPv6', regex: '([0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}', desc: 'IPv6 address', test: '2001:0db8:85a3:0000:0000:8a2e:0370:7334' },
+  { name: 'Date (YYYY-MM-DD)', regex: '\\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\\d|3[01])', desc: 'ISO date format', test: '2026-04-29' },
+  { name: 'Date (MM/DD/YYYY)', regex: '(?:0[1-9]|1[0-2])\\/(?:0[1-9]|[12]\\d|3[01])\\/\\d{4}', desc: 'US date format', test: '04/29/2026' },
+  { name: 'Time (24h)', regex: '(?:[01]\\d|2[0-3]):[0-5]\\d(?::[0-5]\\d)?', desc: '24-hour time', test: '14:30:00' },
+  { name: 'Hex Color', regex: '#(?:[0-9a-fA-F]{3}){1,2}\\b', desc: 'CSS hex color', test: '#3b82f6 and #fff' },
+  { name: 'Credit Card', regex: '\\b(?:4\\d{3}|5[1-5]\\d{2}|3[47]\\d{2}|6(?:011|5\\d{2}))[- ]?\\d{4}[- ]?\\d{4}[- ]?\\d{4}\\b', desc: 'Major credit cards', test: '4111-1111-1111-1111' },
+  { name: 'UUID', regex: '[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}', desc: 'UUID v4', test: '550e8400-e29b-41d4-a716-446655440000' },
+  { name: 'Slug', regex: '[a-z0-9]+(?:-[a-z0-9]+)*', desc: 'URL slug', test: 'my-awesome-post' },
+  { name: 'Postal (US)', regex: '\\b\\d{5}(?:-\\d{4})?\\b', desc: 'US ZIP code', test: '90210 or 90210-1234' },
+  { name: 'Postal (CA)', regex: '[A-Za-z]\\d[A-Za-z]\\s?\\d[A-Za-z]\\d', desc: 'Canadian postal', test: 'M5V 2T6' },
+  { name: 'HTML Tag', regex: '<\\/?[a-zA-Z][a-zA-Z0-9]*(?:\\s[^>]*)?\\/?>',desc: 'HTML tags', test: '<div class="test">hello</div>' },
+  { name: 'Username', regex: '[a-zA-Z0-9_]{3,20}', desc: '3-20 alphanumeric', test: 'user_name123' },
+  { name: 'Password Strength', regex: '(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}', desc: 'Min 8, upper+lower+digit+special', test: 'P@ssw0rd!' },
+  { name: 'SSN', regex: '\\b\\d{3}-\\d{2}-\\d{4}\\b', desc: 'US SSN format', test: '123-45-6789' },
+  { name: 'MAC Address', regex: '(?:[0-9a-fA-F]{2}[:-]){5}[0-9a-fA-F]{2}', desc: 'MAC address', test: '00:1A:2B:3C:4D:5E' },
+  { name: 'Semantic Version', regex: '\\bv?\\d+\\.\\d+\\.\\d+(?:-[\\w.]+)?(?:\\+[\\w.]+)?\\b', desc: 'SemVer pattern', test: 'v2.1.3-beta.1' },
+  { name: 'Domain', regex: '(?:[a-zA-Z0-9-]+\\.)+[a-zA-Z]{2,}', desc: 'Domain name', test: 'sub.example.co.uk' },
+  { name: 'Base64', regex: '[A-Za-z0-9+/]{4,}(?:={0,2})', desc: 'Base64 string', test: 'SGVsbG8gV29ybGQ=' },
+  { name: 'JSON Key', regex: '"([^"]+)"\\s*:', desc: 'JSON object key', test: '{"name": "value", "age": 30}' },
+];
+
+// Cheat sheet data
+const CHEAT_SHEET = {
+  'Character Classes': [
+    ['.', 'Any character except newline'],
+    ['\\d', 'Digit [0-9]'],
+    ['\\D', 'Non-digit [^0-9]'],
+    ['\\w', 'Word char [a-zA-Z0-9_]'],
+    ['\\W', 'Non-word char'],
+    ['\\s', 'Whitespace'],
+    ['\\S', 'Non-whitespace'],
+    ['[abc]', 'Character set'],
+    ['[^abc]', 'Negated set'],
+    ['[a-z]', 'Range'],
+  ],
+  'Quantifiers': [
+    ['*', '0 or more'],
+    ['+', '1 or more'],
+    ['?', '0 or 1'],
+    ['{n}', 'Exactly n'],
+    ['{n,}', 'n or more'],
+    ['{n,m}', 'Between n and m'],
+    ['*?', 'Lazy 0 or more'],
+    ['+?', 'Lazy 1 or more'],
+  ],
+  'Anchors': [
+    ['^', 'Start of string/line'],
+    ['$', 'End of string/line'],
+    ['\\b', 'Word boundary'],
+    ['\\B', 'Non-word boundary'],
+  ],
+  'Groups & References': [
+    ['(abc)', 'Capture group'],
+    ['(?:abc)', 'Non-capture group'],
+    ['(?<name>abc)', 'Named group'],
+    ['\\1', 'Back-reference'],
+    ['(?=abc)', 'Positive lookahead'],
+    ['(?!abc)', 'Negative lookahead'],
+    ['(?<=abc)', 'Positive lookbehind'],
+    ['(?<!abc)', 'Negative lookbehind'],
+  ],
+  'Special': [
+    ['|', 'Alternation (OR)'],
+    ['\\', 'Escape character'],
+    ['\\n', 'Newline'],
+    ['\\t', 'Tab'],
+  ],
+};
+
+// Explanation tokens
+const EXPLAIN_MAP = [
+  [/^\\\d/,       (m) => `<code>${esc(m)}</code> <span>back-reference to group ${m[1]}</span>`],
+  [/^\\b/,        () => '<code>\\b</code> <span>word boundary</span>'],
+  [/^\\B/,        () => '<code>\\B</code> <span>non-word boundary</span>'],
+  [/^\\d/,        () => '<code>\\d</code> <span>digit [0-9]</span>'],
+  [/^\\D/,        () => '<code>\\D</code> <span>non-digit</span>'],
+  [/^\\w/,        () => '<code>\\w</code> <span>word character [a-zA-Z0-9_]</span>'],
+  [/^\\W/,        () => '<code>\\W</code> <span>non-word character</span>'],
+  [/^\\s/,        () => '<code>\\s</code> <span>whitespace</span>'],
+  [/^\\S/,        () => '<code>\\S</code> <span>non-whitespace</span>'],
+  [/^\\n/,        () => '<code>\\n</code> <span>newline</span>'],
+  [/^\\t/,        () => '<code>\\t</code> <span>tab</span>'],
+  [/^\\r/,        () => '<code>\\r</code> <span>carriage return</span>'],
+  [/^\\./,        () => '<code>\\.</code> <span>literal dot</span>'],
+  [/^\\[^a-zA-Z0-9]/, (m) => `<code>${esc(m)}</code> <span>literal "${esc(m[1])}"</span>`],
+  [/^\./,         () => '<code>.</code> <span>any character</span>'],
+  [/^\^/,         () => '<code>^</code> <span>start of string</span>'],
+  [/^\$/,         () => '<code>$</code> <span>end of string</span>'],
+  [/^\*/,         () => '<code>*</code> <span>zero or more</span>'],
+  [/^\+/,         () => '<code>+</code> <span>one or more</span>'],
+  [/^\?/,         () => '<code>?</code> <span>optional (zero or one)</span>'],
+  [/^\|/,         () => '<code>|</code> <span>OR</span>'],
+  [/^\{(\d+)(?:,(\d*))?\}/, (m,f) => {
+    if(f[2]===undefined && !m.includes(',')) return `<code>${esc(m)}</code> <span>exactly ${f[1]} times</span>`;
+    if(f[2]==='') return `<code>${esc(m)}</code> <span>${f[1]} or more times</span>`;
+    return `<code>${esc(m)}</code> <span>between ${f[1]} and ${f[2]} times</span>`;
+  }],
+  [/^\(\?:/, () => '<code>(?:</code> <span>non-capturing group start</span>'],
+  [/^\(\?=/, () => '<code>(?=</code> <span>positive lookahead start</span>'],
+  [/^\(\?!/, () => '<code>(?!</code> <span>negative lookahead start</span>'],
+  [/^\(\?<=/, () => '<code>(?<=</code> <span>positive lookbehind start</span>'],
+  [/^\(\?<!/, () => '<code>(?<!</code> <span>negative lookbehind start</span>'],
+  [/^\(\?<(\w+)>/, (m,f) => `<code>(?&lt;${esc(f[1])}&gt;</code> <span>named group "${esc(f[1])}" start</span>`],
+  [/^\(/,       () => '<code>(</code> <span>capturing group start</span>'],
+  [/^\)/,       () => '<code>)</code> <span>group end</span>'],
+  [/^\[(\^?)/, (m,f) => f[1] ? '<code>[^</code> <span>negated character class</span>' : '<code>[</code> <span>character class start</span>'],
+  [/^\]/,       () => '<code>]</code> <span>character class end</span>'],
+];
+
+function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function explainRegex(pattern) {
+  if (!pattern) return '';
+  let html = '';
+  let i = 0;
+  while (i < pattern.length) {
+    let matched = false;
+    const rest = pattern.slice(i);
+    for (const [re, fn] of EXPLAIN_MAP) {
+      const m = rest.match(re);
+      if (m) {
+        html += '<div class="token">' + fn(m[0], m) + '</div>';
+        i += m[0].length;
+        matched = true;
+        break;
+      }
+    }
+    if (!matched) {
+      const ch = pattern[i];
+      if (/[a-zA-Z0-9]/.test(ch)) {
+        // collect literal run
+        let run = '';
+        while (i < pattern.length && /[a-zA-Z0-9 ]/.test(pattern[i]) && pattern[i] !== '\\') {
+          run += pattern[i]; i++;
+        }
+        html += `<div class="token"><code>${esc(run)}</code> <span>literal "${esc(run)}"</span></div>`;
+      } else {
+        html += `<div class="token"><code>${esc(ch)}</code> <span>literal "${esc(ch)}"</span></div>`;
+        i++;
+      }
+    }
+  }
+  return html;
+}
+
+// State
+let flags = { g: true, i: false, m: false, s: false, u: false };
+let history = JSON.parse(localStorage.getItem('regex_history') || '[]');
+let saved = JSON.parse(localStorage.getItem('regex_saved') || '[]');
+
+// DOM
+const regexInput = document.getElementById('regexInput');
+const testString = document.getElementById('testString');
+const replaceInput = document.getElementById('replaceInput');
+const highlightArea = document.getElementById('highlightArea');
+const matchList = document.getElementById('matchList');
+const matchCount = document.getElementById('matchCount');
+const execTime = document.getElementById('execTime');
+const regexError = document.getElementById('regexError');
+const replacePreview = document.getElementById('replacePreview');
+const splitResults = document.getElementById('splitResults');
+const explanationArea = document.getElementById('explanationArea');
+
+// Flags
+document.querySelectorAll('.flag-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const f = btn.dataset.flag;
+    flags[f] = !flags[f];
+    btn.classList.toggle('active', flags[f]);
+    runTest();
+  });
+});
+
+// Main tabs
+document.querySelectorAll('.tabs .tab[data-tab]').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab[data-tab]').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    ['match','replace','split','explain'].forEach(id => {
+      const el = document.getElementById('tab' + id.charAt(0).toUpperCase() + id.slice(1));
+      if (el) el.style.display = id === tab.dataset.tab ? '' : 'none';
+    });
+  });
+});
+
+// Sidebar tabs
+document.querySelectorAll('.tabs .tab[data-sidebar]').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab[data-sidebar]').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    ['patterns','saved','history','cheat'].forEach(id => {
+      const el = document.getElementById('side' + id.charAt(0).toUpperCase() + id.slice(1));
+      if (el) el.style.display = id === tab.dataset.sidebar ? '' : 'none';
+    });
+  });
+});
+
+// Build patterns grid
+function renderPatterns() {
+  const grid = document.getElementById('patternsGrid');
+  grid.innerHTML = COMMON_PATTERNS.map((p, i) =>
+    `<div class="pattern-chip" onclick="loadPattern(${i})"><span class="pname">${esc(p.name)}</span><span class="pdesc">${esc(p.desc)}</span></div>`
+  ).join('');
+}
+
+function loadPattern(i) {
+  const p = COMMON_PATTERNS[i];
+  regexInput.value = p.regex;
+  testString.value = p.test;
+  runTest();
+}
+
+// Build cheat sheet
+function renderCheat() {
+  const el = document.getElementById('sideCheat');
+  el.innerHTML = Object.entries(CHEAT_SHEET).map(([section, rows]) =>
+    `<div class="cheat-section"><h4>${section}</h4><table class="cheat-table">${rows.map(([k,v]) => `<tr><td>${esc(k)}</td><td>${esc(v)}</td></tr>`).join('')}</table></div>`
+  ).join('');
+}
+
+// Saved
+function renderSaved() {
+  const el = document.getElementById('savedList');
+  if (!saved.length) { el.innerHTML = '<div class="empty-state">No saved patterns yet</div>'; return; }
+  el.innerHTML = saved.map((s, i) =>
+    `<div class="saved-item" onclick="loadSaved(${i})"><div><div class="sname">${esc(s.name)}</div><div class="sdesc">${esc(s.desc||'')}</div><div class="sregex">/${esc(s.regex)}/</div></div><button class="del-btn" onclick="event.stopPropagation();deleteSaved(${i})">Del</button></div>`
+  ).join('');
+}
+
+function loadSaved(i) {
+  regexInput.value = saved[i].regex;
+  if (saved[i].flags) {
+    flags = { g: true, i: false, m: false, s: false, u: false, ...saved[i].flags };
+    document.querySelectorAll('.flag-btn').forEach(b => b.classList.toggle('active', flags[b.dataset.flag]));
+  }
+  runTest();
+}
+
+function deleteSaved(i) {
+  saved.splice(i, 1);
+  localStorage.setItem('regex_saved', JSON.stringify(saved));
+  renderSaved();
+}
+
+function savePattern() {
+  const name = document.getElementById('saveName').value.trim();
+  const desc = document.getElementById('saveDesc').value.trim();
+  const regex = regexInput.value;
+  if (!name || !regex) { toast('Enter a name and regex'); return; }
+  saved.unshift({ name, desc, regex, flags: { ...flags } });
+  localStorage.setItem('regex_saved', JSON.stringify(saved));
+  document.getElementById('saveName').value = '';
+  document.getElementById('saveDesc').value = '';
+  renderSaved();
+  toast('Pattern saved');
+}
+
+// History
+function addHistory(pattern) {
+  if (!pattern) return;
+  history = history.filter(h => h !== pattern);
+  history.unshift(pattern);
+  if (history.length > 20) history.pop();
+  localStorage.setItem('regex_history', JSON.stringify(history));
+  renderHistory();
+}
+
+function renderHistory() {
+  const el = document.getElementById('historyList');
+  if (!history.length) { el.innerHTML = '<div class="empty-state">No history yet</div>'; return; }
+  el.innerHTML = history.map((h, i) =>
+    `<div class="history-item" onclick="regexInput.value='${h.replace(/'/g,"\\'")}';runTest()"><code>/${esc(h)}/</code><button class="del-btn" onclick="event.stopPropagation();history.splice(${i},1);localStorage.setItem('regex_history',JSON.stringify(history));renderHistory()">Del</button></div>`
+  ).join('');
+}
+
+// Copy as syntax
+function copyAs(lang) {
+  const r = regexInput.value;
+  const f = Object.entries(flags).filter(([,v])=>v).map(([k])=>k).join('');
+  let txt;
+  if (lang === 'js') txt = `const regex = /${r}/${f};`;
+  else if (lang === 'py') {
+    const pyFlags = [];
+    if (flags.i) pyFlags.push('re.IGNORECASE');
+    if (flags.m) pyFlags.push('re.MULTILINE');
+    if (flags.s) pyFlags.push('re.DOTALL');
+    if (flags.u) pyFlags.push('re.UNICODE');
+    const fStr = pyFlags.length ? ', ' + pyFlags.join(' | ') : '';
+    txt = `import re\npattern = re.compile(r'${r}'${fStr})`;
+  } else {
+    txt = `import "regexp"\nre := regexp.MustCompile(\`${r}\`)`;
+  }
+  navigator.clipboard.writeText(txt).then(() => toast(`Copied as ${lang.toUpperCase()}`));
+}
+
+// Toast
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// Main test
+let debounceTimer;
+function runTest() {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(_runTest, 50);
+}
+
+function _runTest() {
+  const pattern = regexInput.value;
+  const text = testString.value;
+
+  // Explain always
+  explanationArea.innerHTML = pattern ? explainRegex(pattern) : '<div class="empty-state">Enter a regex to see its explanation</div>';
+
+  if (!pattern) {
+    highlightArea.innerHTML = esc(text);
+    matchList.innerHTML = '<div class="empty-state">Type a regex and test string to see matches</div>';
+    matchCount.textContent = '0 matches';
+    execTime.textContent = '0ms';
+    regexError.style.display = 'none';
+    replacePreview.textContent = '';
+    splitResults.innerHTML = '<div class="empty-state">Results will appear when regex matches</div>';
+    return;
+  }
+
+  let regex;
+  try {
+    const f = Object.entries(flags).filter(([,v])=>v).map(([k])=>k).join('');
+    regex = new RegExp(pattern, f);
+    regexError.style.display = 'none';
+  } catch(e) {
+    regexError.textContent = e.message;
+    regexError.style.display = '';
+    highlightArea.innerHTML = esc(text);
+    matchList.innerHTML = '';
+    matchCount.textContent = 'Error';
+    return;
+  }
+
+  // Add to history
+  addHistory(pattern);
+
+  // Execute
+  const t0 = performance.now();
+  const matches = [];
+  if (flags.g) {
+    let m;
+    const safeRegex = new RegExp(regex.source, regex.flags);
+    let safety = 0;
+    while ((m = safeRegex.exec(text)) !== null && safety < 10000) {
+      matches.push({ index: m.index, value: m[0], groups: m.slice(1), namedGroups: m.groups || {} });
+      if (m[0].length === 0) safeRegex.lastIndex++;
+      safety++;
+    }
+  } else {
+    const m = regex.exec(text);
+    if (m) matches.push({ index: m.index, value: m[0], groups: m.slice(1), namedGroups: m.groups || {} });
+  }
+  const elapsed = (performance.now() - t0).toFixed(2);
+
+  matchCount.textContent = `${matches.length} match${matches.length !== 1 ? 'es' : ''}`;
+  execTime.textContent = `${elapsed}ms`;
+
+  // Highlight
+  if (matches.length && text) {
+    let html = '';
+    let last = 0;
+    const sorted = [...matches].sort((a, b) => a.index - b.index);
+    for (const m of sorted) {
+      if (m.index < last) continue;
+      html += esc(text.slice(last, m.index));
+      html += `<mark>${esc(m.value)}</mark>`;
+      last = m.index + m.value.length;
+    }
+    html += esc(text.slice(last));
+    highlightArea.innerHTML = html;
+  } else {
+    highlightArea.innerHTML = esc(text);
+  }
+
+  // Match list
+  if (matches.length) {
+    matchList.innerHTML = matches.map((m, i) => {
+      let groupsHtml = '';
+      if (m.groups.length) {
+        groupsHtml += m.groups.map((g, gi) => `<div class="match-groups">Group ${gi + 1}: ${esc(g ?? 'undefined')}</div>`).join('');
+      }
+      const namedKeys = Object.keys(m.namedGroups);
+      if (namedKeys.length) {
+        groupsHtml += namedKeys.map(k => `<div class="match-groups">${esc(k)}: ${esc(m.namedGroups[k] ?? 'undefined')}</div>`).join('');
+      }
+      return `<div class="match-item"><span class="match-idx">#${i}</span><div><span class="match-val">${esc(m.value)}</span> <span style="color:#9ca3af;font-size:.7rem">@${m.index}</span>${groupsHtml}</div></div>`;
+    }).join('');
+  } else {
+    matchList.innerHTML = '<div class="empty-state">No matches found</div>';
+  }
+
+  // Replace
+  try {
+    const rep = replaceInput.value;
+    replacePreview.textContent = text.replace(regex, rep);
+  } catch(e) {
+    replacePreview.textContent = 'Error: ' + e.message;
+  }
+
+  // Split
+  try {
+    const parts = text.split(regex);
+    if (parts.length > 1) {
+      splitResults.innerHTML = parts.map((p, i) =>
+        `<span class="split-item">${i}: "${esc(p)}"</span>`
+      ).join('');
+    } else {
+      splitResults.innerHTML = '<div class="empty-state">No split results (regex did not match)</div>';
+    }
+  } catch(e) {
+    splitResults.innerHTML = '<div class="empty-state">Error splitting</div>';
+  }
+}
+
+// Event listeners
+regexInput.addEventListener('input', runTest);
+testString.addEventListener('input', runTest);
+replaceInput.addEventListener('input', runTest);
+
+// Init
+renderPatterns();
+renderCheat();
+renderSaved();
+renderHistory();
+runTest();
+</script>
+</body>
+</html>

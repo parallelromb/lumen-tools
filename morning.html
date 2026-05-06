@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Morning Dashboard - Lumen</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #f8f9fc;
+  --text: #1a1a2e;
+  --text-secondary: #6b7280;
+  --card-bg: rgba(255,255,255,0.72);
+  --card-border: rgba(255,255,255,0.6);
+  --card-shadow: 0 4px 24px rgba(0,0,0,0.04);
+  --accent: #0071e3;
+  --accent-light: rgba(0,113,227,0.08);
+}
+
+.dark {
+  --bg: #0d1117;
+  --text: #e6edf3;
+  --text-secondary: #8b949e;
+  --card-bg: rgba(30,37,46,0.82);
+  --card-border: rgba(55,65,81,0.5);
+  --card-shadow: 0 4px 24px rgba(0,0,0,0.3);
+  --accent: #58a6ff;
+  --accent-light: rgba(88,166,255,0.1);
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  padding: 1.25rem 1.5rem;
+  transition: background 0.3s, color 0.3s;
+}
+
+.dashboard {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto auto auto auto;
+  gap: 0.875rem;
+  height: calc(100vh - 2.5rem);
+}
+
+.glass {
+  background: var(--card-bg);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--card-border);
+  border-radius: 14px;
+  padding: 1rem 1.25rem;
+  box-shadow: var(--card-shadow);
+  transition: background 0.3s, border 0.3s;
+}
+
+/* Header row */
+.header-row {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1.25rem;
+}
+
+.greeting h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.greeting .date-line {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  margin-top: 0.15rem;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.weather-widget {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+}
+
+.weather-icon {
+  font-size: 1.75rem;
+  line-height: 1;
+}
+
+.weather-temp {
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+
+.weather-details {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.controls {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.controls button {
+  background: var(--accent-light);
+  border: none;
+  border-radius: 8px;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+
+.controls button:hover {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* Focus card */
+.focus-card {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 1.25rem;
+}
+
+.focus-card label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.focus-card input {
+  display: block;
+  width: 100%;
+  max-width: 600px;
+  margin: 0.5rem auto 0;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid var(--accent);
+  font-family: inherit;
+  font-size: 1.2rem;
+  font-weight: 500;
+  color: var(--text);
+  text-align: center;
+  padding: 0.4rem 0;
+  outline: none;
+}
+
+.focus-card input::placeholder {
+  color: var(--text-secondary);
+  opacity: 0.6;
+}
+
+/* Stats row */
+.stats-row {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.75rem;
+}
+
+.stat-card {
+  text-align: center;
+  padding: 0.75rem 0.5rem;
+}
+
+.stat-card .stat-value {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.stat-card .stat-value.editable {
+  cursor: pointer;
+  border-bottom: 1px dashed var(--accent);
+  display: inline-block;
+}
+
+.stat-card .stat-label {
+  font-size: 0.7rem;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 0.2rem;
+}
+
+/* Quick links */
+.links-card {
+  padding: 0.875rem;
+}
+
+.links-card h3 {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+  margin-bottom: 0.6rem;
+  font-weight: 600;
+}
+
+.links-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+}
+
+.link-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+  text-decoration: none;
+  color: var(--text);
+  padding: 0.5rem 0.25rem;
+  border-radius: 10px;
+  transition: background 0.2s;
+  font-size: 0.7rem;
+  font-weight: 500;
+}
+
+.link-item:hover {
+  background: var(--accent-light);
+}
+
+.link-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+}
+
+/* Habits card */
+.habits-card {
+  padding: 0.875rem;
+}
+
+.habits-card h3 {
+  font-size: 0.7rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-secondary);
+  margin-bottom: 0.6rem;
+  font-weight: 600;
+}
+
+.habits-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.habit-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.8rem;
+}
+
+.habit-row input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.habit-row label {
+  cursor: pointer;
+}
+
+.habit-row label.done {
+  text-decoration: line-through;
+  color: var(--text-secondary);
+}
+
+/* Quote footer */
+.quote-footer {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 0.6rem 1rem;
+  font-size: 0.8rem;
+  font-style: italic;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.quote-footer .author {
+  font-style: normal;
+  font-weight: 600;
+  color: var(--text);
+  opacity: 0.7;
+}
+
+/* Focus mode */
+.focus-mode .focus-card { display: block !important; }
+.focus-mode .stats-row,
+.focus-mode .links-card,
+.focus-mode .habits-card,
+.focus-mode .quote-footer,
+.focus-mode .header-right { display: none !important; }
+.focus-mode .focus-card {
+  grid-column: 1 / -1;
+  grid-row: 2 / -1;
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.focus-mode .focus-card input {
+  font-size: 2rem;
+}
+
+/* Back link */
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 0.8rem;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+.back-link:hover { text-decoration: underline; }
+
+/* Mobile */
+@media (max-width: 768px) {
+  body { padding: 0.75rem; }
+  .dashboard {
+    grid-template-columns: 1fr;
+    height: auto;
+    gap: 0.75rem;
+  }
+  .header-row {
+    flex-direction: column;
+    gap: 0.75rem;
+    text-align: center;
+  }
+  .stats-row {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .links-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  .quote-footer { font-size: 0.75rem; }
+}
+
+@media (max-width: 480px) {
+  .links-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+</style>
+</head>
+<body>
+<a href="index.html" class="back-link">&larr; Analytics</a>
+
+<div class="dashboard" id="dashboard">
+  <!-- Header -->
+  <div class="header-row glass">
+    <div class="greeting">
+      <h1 id="greeting-text">Good Morning, Sri</h1>
+      <div class="date-line" id="date-line"></div>
+    </div>
+    <div class="header-right">
+      <div class="weather-widget" id="weather-widget">
+        <span class="weather-icon" id="weather-icon">--</span>
+        <div>
+          <div class="weather-temp" id="weather-temp">--</div>
+          <div class="weather-details" id="weather-details">Loading weather...</div>
+        </div>
+      </div>
+      <div class="controls">
+        <button id="btn-dark" title="Toggle dark mode (D)">D</button>
+        <button id="btn-focus" title="Focus mode (F)">F</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Today's Focus -->
+  <div class="focus-card glass">
+    <label for="focus-input">What's the #1 thing to accomplish today?</label>
+    <input type="text" id="focus-input" placeholder="Type your main focus..." autocomplete="off">
+  </div>
+
+  <!-- Stats Row -->
+  <div class="stats-row">
+    <div class="stat-card glass">
+      <div class="stat-value" id="days-until">--</div>
+      <div class="stat-label">Days to May 13</div>
+    </div>
+    <div class="stat-card glass">
+      <div class="stat-value editable" id="mrr-value" title="Click to edit">$0</div>
+      <div class="stat-label">Smara MRR</div>
+    </div>
+    <div class="stat-card glass">
+      <div class="stat-value">6</div>
+      <div class="stat-label">Active Projects</div>
+    </div>
+    <div class="stat-card glass">
+      <div class="stat-value" id="streak-value">0</div>
+      <div class="stat-label">Day Streak</div>
+    </div>
+  </div>
+
+  <!-- Quick Links -->
+  <div class="links-card glass">
+    <h3>Quick Links</h3>
+    <div class="links-grid">
+      <a href="http://localhost:3011" class="link-item" target="_blank">
+        <div class="link-icon" style="background:rgba(139,92,246,0.1)">L</div>
+        Lumen
+      </a>
+      <a href="http://localhost:3011/analytics/" class="link-item" target="_blank">
+        <div class="link-icon" style="background:rgba(59,130,246,0.1)">A</div>
+        Analytics
+      </a>
+      <a href="https://smara.io" class="link-item" target="_blank">
+        <div class="link-icon" style="background:rgba(16,185,129,0.1)">S</div>
+        Smara
+      </a>
+      <a href="https://parallelromb.dev" class="link-item" target="_blank">
+        <div class="link-icon" style="background:rgba(245,158,11,0.1)">P</div>
+        parallelromb
+      </a>
+      <a href="https://mail.google.com" class="link-item" target="_blank">
+        <div class="link-icon" style="background:rgba(239,68,68,0.1)">G</div>
+        Gmail
+      </a>
+      <a href="https://linkedin.com/in/5ri/" class="link-item" target="_blank">
+        <div class="link-icon" style="background:rgba(0,119,181,0.1)">in</div>
+        LinkedIn
+      </a>
+      <a href="https://github.com" class="link-item" target="_blank">
+        <div class="link-icon" style="background:rgba(110,118,129,0.1)">GH</div>
+        GitHub
+      </a>
+      <a href="https://web.telegram.org" class="link-item" target="_blank">
+        <div class="link-icon" style="background:rgba(0,136,204,0.1)">T</div>
+        Telegram
+      </a>
+    </div>
+  </div>
+
+  <!-- Habits -->
+  <div class="habits-card glass">
+    <h3>Today's Habits</h3>
+    <div class="habits-list" id="habits-list">
+      <div style="color:var(--text-secondary);font-size:0.8rem;">No habits configured yet</div>
+    </div>
+  </div>
+
+  <!-- Quote -->
+  <div class="quote-footer glass" id="quote-footer"></div>
+</div>
+
+<script>
+// ==================== QUOTES ====================
+const QUOTES = [
+  { text: "The stock market is a device for transferring money from the impatient to the patient.", author: "Warren Buffett" },
+  { text: "In investing, what is comfortable is rarely profitable.", author: "Robert Arnott" },
+  { text: "The individual investor should act consistently as an investor and not as a speculator.", author: "Benjamin Graham" },
+  { text: "Know what you own, and know why you own it.", author: "Peter Lynch" },
+  { text: "The four most dangerous words in investing are: 'This time it's different.'", author: "John Templeton" },
+  { text: "Risk comes from not knowing what you're doing.", author: "Warren Buffett" },
+  { text: "The biggest risk of all is not taking one.", author: "Mellody Hobson" },
+  { text: "Price is what you pay. Value is what you get.", author: "Warren Buffett" },
+  { text: "Compound interest is the eighth wonder of the world.", author: "Albert Einstein" },
+  { text: "An investment in knowledge pays the best interest.", author: "Benjamin Franklin" },
+  { text: "Do not save what is left after spending; spend what is left after saving.", author: "Warren Buffett" },
+  { text: "The goal of a successful trader is to make the best trades. Money is secondary.", author: "Alexander Elder" },
+  { text: "Markets can remain irrational longer than you can remain solvent.", author: "John Maynard Keynes" },
+  { text: "Wide diversification is only required when investors do not understand what they are doing.", author: "Warren Buffett" },
+  { text: "I will tell you how to become rich. Close the doors. Be fearful when others are greedy. Be greedy when others are fearful.", author: "Warren Buffett" },
+  { text: "Investing should be more like watching paint dry or watching grass grow. If you want excitement, take $800 and go to Las Vegas.", author: "Paul Samuelson" },
+  { text: "The time of maximum pessimism is the best time to buy, and the time of maximum optimism is the best time to sell.", author: "John Templeton" },
+  { text: "It's not whether you're right or wrong that's important, but how much money you make when you're right and how much you lose when you're wrong.", author: "George Soros" },
+  { text: "Returns matter a lot. It's our capital.", author: "Abigail Johnson" },
+  { text: "If you have trouble imagining a 20% loss in the stock market, you shouldn't be in stocks.", author: "John Bogle" },
+  { text: "The investor's chief problem, and even his worst enemy, is likely to be himself.", author: "Benjamin Graham" },
+  { text: "Behind every stock is a company. Find out what it's doing.", author: "Peter Lynch" },
+  { text: "Bottoms in the investment world don't end with four-year lows; they end with 10- or 15-year lows.", author: "Jim Rogers" },
+  { text: "I don't look to jump over 7-foot bars; I look around for 1-foot bars that I can step over.", author: "Warren Buffett" },
+  { text: "The secret to investing is to figure out the value of something and then pay a lot less.", author: "Joel Greenblatt" },
+  { text: "You get recessions, you have stock market declines. If you don't understand that's going to happen, then you're not ready.", author: "Peter Lynch" },
+  { text: "The stock market is filled with individuals who know the price of everything, but the value of nothing.", author: "Philip Fisher" },
+  { text: "Opportunities come infrequently. When it rains gold, put out the bucket, not the thimble.", author: "Warren Buffett" },
+  { text: "The only value of stock forecasters is to make fortune tellers look good.", author: "Warren Buffett" },
+  { text: "All intelligent investing is value investing.", author: "Charlie Munger" },
+  { text: "It's far better to buy a wonderful company at a fair price than a fair company at a wonderful price.", author: "Warren Buffett" },
+  { text: "Financial peace isn't the acquisition of stuff. It's learning to live on less than you make.", author: "Dave Ramsey" },
+  { text: "The most important thing to do if you find yourself in a hole is to stop digging.", author: "Warren Buffett" },
+  { text: "Go to bed a little smarter each day.", author: "Charlie Munger" },
+  { text: "Time in the market beats timing the market.", author: "Ken Fisher" },
+  { text: "Rule No. 1: Never lose money. Rule No. 2: Never forget Rule No. 1.", author: "Warren Buffett" },
+  { text: "Someone's sitting in the shade today because someone planted a tree a long time ago.", author: "Warren Buffett" },
+  { text: "Investing is not nearly as difficult as it looks. Successful investing involves doing a few things right and avoiding serious mistakes.", author: "John Bogle" },
+  { text: "The best investment you can make is in yourself.", author: "Warren Buffett" },
+  { text: "The desire to perform all the time is usually a barrier to performing over time.", author: "Robert Olstein" },
+  { text: "Develop into a lifelong self-learner through voracious reading; cultivate curiosity.", author: "Charlie Munger" },
+  { text: "I made my money by selling too soon.", author: "Bernard Baruch" },
+  { text: "You must be a binary thinker to buy and sell stocks effectively.", author: "Bill Ackman" },
+  { text: "The best time to plant a tree was 20 years ago. The second best time is now.", author: "Chinese Proverb" }
+];
+
+// ==================== DATE & TIME ====================
+function updateDateTime() {
+  const now = new Date();
+  const torontoOpts = { timeZone: 'America/Toronto' };
+  const torontoTime = now.toLocaleTimeString('en-US', { ...torontoOpts, hour: '2-digit', minute: '2-digit' });
+  const dayName = now.toLocaleDateString('en-US', { ...torontoOpts, weekday: 'long' });
+  const dateStr = now.toLocaleDateString('en-US', { ...torontoOpts, month: 'long', day: 'numeric', year: 'numeric' });
+
+  document.getElementById('date-line').textContent = `${dayName}, ${dateStr} \u2022 ${torontoTime} Toronto`;
+
+  const hour = parseInt(now.toLocaleTimeString('en-US', { ...torontoOpts, hour: 'numeric', hour12: false }));
+  let greet = 'Good Morning';
+  if (hour >= 12 && hour < 17) greet = 'Good Afternoon';
+  else if (hour >= 17) greet = 'Good Evening';
+  document.getElementById('greeting-text').textContent = `${greet}, Sri`;
+}
+updateDateTime();
+setInterval(updateDateTime, 30000);
+
+// ==================== DAYS UNTIL ====================
+function updateDaysUntil() {
+  const target = new Date('2026-05-13T00:00:00');
+  const now = new Date();
+  const diff = Math.ceil((target - now) / (1000 * 60 * 60 * 24));
+  document.getElementById('days-until').textContent = diff > 0 ? diff : (diff === 0 ? 'TODAY' : 'PAST');
+}
+updateDaysUntil();
+
+// ==================== FOCUS ====================
+function getTodayKey() {
+  return 'morning_focus_' + new Date().toISOString().slice(0, 10);
+}
+
+const focusInput = document.getElementById('focus-input');
+focusInput.value = localStorage.getItem(getTodayKey()) || '';
+focusInput.addEventListener('input', () => {
+  localStorage.setItem(getTodayKey(), focusInput.value);
+});
+
+// ==================== MRR ====================
+const mrrEl = document.getElementById('mrr-value');
+mrrEl.textContent = localStorage.getItem('morning_smara_mrr') || '$0';
+mrrEl.addEventListener('click', () => {
+  const val = prompt('Enter current Smara MRR:', mrrEl.textContent);
+  if (val !== null) {
+    mrrEl.textContent = val;
+    localStorage.setItem('morning_smara_mrr', val);
+  }
+});
+
+// ==================== STREAK ====================
+function calcStreak() {
+  try {
+    const data = JSON.parse(localStorage.getItem('lumen_habits_v1'));
+    if (!data || !data.log) return 0;
+    let streak = 0;
+    const today = new Date();
+    for (let i = 0; i < 365; i++) {
+      const d = new Date(today);
+      d.setDate(d.getDate() - i);
+      const key = d.toISOString().slice(0, 10);
+      const entry = data.log[key];
+      if (entry && entry.habits) {
+        const total = Object.keys(entry.habits).length;
+        const done = Object.values(entry.habits).filter(Boolean).length;
+        if (total > 0 && done / total >= 0.5) {
+          streak++;
+        } else if (i > 0) { break; }
+      } else if (i > 0) { break; }
+    }
+    return streak;
+  } catch { return 0; }
+}
+document.getElementById('streak-value').textContent = calcStreak();
+
+// ==================== WEATHER ====================
+const WEATHER_ICONS = {
+  '01': '\u2600\uFE0F', '02': '\u26C5', '03': '\u2601\uFE0F', '04': '\u2601\uFE0F',
+  '09': '\uD83C\uDF27\uFE0F', '10': '\uD83C\uDF26\uFE0F', '11': '\u26C8\uFE0F',
+  '13': '\u2744\uFE0F', '50': '\uD83C\uDF2B\uFE0F'
+};
+
+function showSampleWeather() {
+  document.getElementById('weather-icon').textContent = '\u26C5';
+  document.getElementById('weather-temp').textContent = '18\u00B0C';
+  document.getElementById('weather-details').textContent = 'Partly Cloudy \u2022 H:22\u00B0 L:11\u00B0';
+}
+
+async function fetchWeather() {
+  const apiKey = localStorage.getItem('morning_openweather_key');
+  if (!apiKey) {
+    showSampleWeather();
+    document.getElementById('weather-details').textContent += ' (sample)';
+    return;
+  }
+  try {
+    const resp = await fetch(`https://api.openweathermap.org/data/2.5/weather?q=Toronto,CA&units=metric&appid=${apiKey}`);
+    const data = await resp.json();
+    if (data.cod !== 200) { showSampleWeather(); return; }
+    const iconCode = data.weather[0].icon.slice(0, 2);
+    document.getElementById('weather-icon').textContent = WEATHER_ICONS[iconCode] || '\u2601\uFE0F';
+    document.getElementById('weather-temp').textContent = Math.round(data.main.temp) + '\u00B0C';
+    const desc = data.weather[0].description.replace(/\b\w/g, c => c.toUpperCase());
+    document.getElementById('weather-details').textContent =
+      `${desc} \u2022 H:${Math.round(data.main.temp_max)}\u00B0 L:${Math.round(data.main.temp_min)}\u00B0`;
+  } catch {
+    showSampleWeather();
+  }
+}
+fetchWeather();
+setInterval(fetchWeather, 30 * 60 * 1000);
+
+// ==================== HABITS ====================
+function renderHabits() {
+  const container = document.getElementById('habits-list');
+  const todayKey = new Date().toISOString().slice(0, 10);
+  let habitsData;
+  try {
+    habitsData = JSON.parse(localStorage.getItem('lumen_habits_v1'));
+  } catch { habitsData = null; }
+
+  if (!habitsData || !habitsData.habits || habitsData.habits.length === 0) {
+    container.innerHTML = '<div style="color:var(--text-secondary);font-size:0.8rem;">No habits configured. <a href="habits.html" style="color:var(--accent)">Set up habits</a></div>';
+    return;
+  }
+
+  const log = habitsData.log || {};
+  const todayLog = log[todayKey] || { habits: {} };
+
+  container.innerHTML = habitsData.habits.map((habit, i) => {
+    const checked = todayLog.habits && todayLog.habits[habit.name] ? 'checked' : '';
+    const doneClass = checked ? 'done' : '';
+    return `<div class="habit-row">
+      <input type="checkbox" id="habit-${i}" ${checked} data-name="${habit.name}">
+      <label for="habit-${i}" class="${doneClass}">${habit.name}</label>
+    </div>`;
+  }).join('');
+
+  container.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+    cb.addEventListener('change', (e) => {
+      const name = e.target.dataset.name;
+      const data = JSON.parse(localStorage.getItem('lumen_habits_v1'));
+      if (!data.log) data.log = {};
+      if (!data.log[todayKey]) data.log[todayKey] = { habits: {} };
+      data.log[todayKey].habits[name] = e.target.checked;
+      localStorage.setItem('lumen_habits_v1', JSON.stringify(data));
+      // Update label style
+      const label = e.target.nextElementSibling;
+      label.classList.toggle('done', e.target.checked);
+      // Update streak
+      document.getElementById('streak-value').textContent = calcStreak();
+    });
+  });
+}
+renderHabits();
+
+// ==================== QUOTE ====================
+function showQuote() {
+  const dayOfYear = Math.floor((Date.now() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
+  const q = QUOTES[dayOfYear % QUOTES.length];
+  document.getElementById('quote-footer').innerHTML =
+    `\u201C${q.text}\u201D <span class="author">\u2014 ${q.author}</span>`;
+}
+showQuote();
+
+// ==================== DARK MODE ====================
+function toggleDark() {
+  document.documentElement.classList.toggle('dark');
+  localStorage.setItem('morning_dark', document.documentElement.classList.contains('dark'));
+}
+if (localStorage.getItem('morning_dark') === 'true') {
+  document.documentElement.classList.add('dark');
+}
+document.getElementById('btn-dark').addEventListener('click', toggleDark);
+
+// ==================== FOCUS MODE ====================
+function toggleFocus() {
+  document.getElementById('dashboard').classList.toggle('focus-mode');
+  if (document.getElementById('dashboard').classList.contains('focus-mode')) {
+    focusInput.focus();
+  }
+}
+document.getElementById('btn-focus').addEventListener('click', toggleFocus);
+
+// ==================== KEYBOARD SHORTCUTS ====================
+document.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  if (e.key === 'f' || e.key === 'F') toggleFocus();
+  if (e.key === 'd' || e.key === 'D') toggleDark();
+});
+</script>
+</body>
+</html>

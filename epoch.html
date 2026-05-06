@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Epoch & Timestamp Converter</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #f8f9fc;
+  color: #1a1a2e;
+  min-height: 100vh;
+  padding: 1.5rem;
+}
+.back { display: inline-flex; align-items: center; gap: 6px; color: #6b7280; text-decoration: none; font-size: 0.85rem; margin-bottom: 1rem; }
+.back:hover { color: #3b82f6; }
+.header { text-align: center; margin-bottom: 2rem; }
+.header h1 { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; }
+.header p { color: #6b7280; font-size: 0.9rem; margin-top: 0.25rem; }
+
+.live-epoch {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+.live-epoch .epoch-value {
+  font-size: 2.8rem;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.03em;
+  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  cursor: pointer;
+}
+.live-epoch .epoch-label { color: #9ca3af; font-size: 0.8rem; margin-top: 0.25rem; }
+.live-formats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.5rem;
+  max-width: 900px;
+  margin: 0.75rem auto 0;
+}
+.live-fmt {
+  background: rgba(255,255,255,0.72);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.6);
+  border-radius: 10px;
+  padding: 0.6rem 0.8rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.8rem;
+}
+.live-fmt .label { color: #6b7280; font-weight: 500; white-space: nowrap; margin-right: 0.5rem; }
+.live-fmt .value { font-variant-numeric: tabular-nums; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+  gap: 1.25rem;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+@media (max-width: 500px) { .grid { grid-template-columns: 1fr; } }
+
+.card {
+  background: rgba(255,255,255,0.72);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.6);
+  border-radius: 16px;
+  padding: 1.25rem;
+}
+.card h2 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.card h2 svg { flex-shrink: 0; }
+
+label { display: block; font-size: 0.78rem; color: #6b7280; font-weight: 500; margin-bottom: 0.25rem; }
+input, select, textarea {
+  width: 100%;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.85rem;
+  background: #fff;
+  transition: border-color 0.15s;
+}
+input:focus, select:focus { outline: none; border-color: #3b82f6; }
+.row { display: flex; gap: 0.5rem; align-items: flex-end; margin-bottom: 0.5rem; }
+.row > * { flex: 1; }
+button {
+  padding: 0.5rem 0.85rem;
+  border: none;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn-primary { background: #3b82f6; color: #fff; }
+.btn-primary:hover { background: #2563eb; }
+.btn-sm {
+  padding: 0.3rem 0.55rem;
+  font-size: 0.72rem;
+  background: #f3f4f6;
+  color: #374151;
+  border-radius: 6px;
+}
+.btn-sm:hover { background: #e5e7eb; }
+.btn-copy {
+  padding: 0.2rem 0.4rem;
+  font-size: 0.7rem;
+  background: rgba(59,130,246,0.1);
+  color: #3b82f6;
+  border-radius: 5px;
+  cursor: pointer;
+  border: none;
+  font-family: inherit;
+}
+.btn-copy:hover { background: rgba(59,130,246,0.2); }
+
+.result-box {
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 0.6rem 0.75rem;
+  margin-top: 0.5rem;
+  font-size: 0.82rem;
+  line-height: 1.7;
+}
+.result-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+.result-row .rl { color: #6b7280; font-size: 0.75rem; white-space: nowrap; }
+.result-row .rv { font-weight: 500; font-variant-numeric: tabular-nums; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.common-val {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.35rem 0;
+  border-bottom: 1px solid #f3f4f6;
+  font-size: 0.8rem;
+}
+.common-val:last-child { border-bottom: none; }
+.common-val .cv-name { color: #6b7280; }
+.common-val .cv-val { font-weight: 500; font-variant-numeric: tabular-nums; }
+
+.history-list {
+  max-height: 280px;
+  overflow-y: auto;
+  font-size: 0.78rem;
+}
+.history-item {
+  padding: 0.4rem 0;
+  border-bottom: 1px solid #f3f4f6;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.history-item:last-child { border-bottom: none; }
+.hi-type {
+  font-size: 0.65rem;
+  font-weight: 600;
+  padding: 0.1rem 0.35rem;
+  border-radius: 4px;
+  background: rgba(59,130,246,0.1);
+  color: #3b82f6;
+  text-transform: uppercase;
+}
+.hi-text { flex: 1; margin: 0 0.5rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.hi-time { color: #9ca3af; font-size: 0.7rem; white-space: nowrap; }
+
+.toast {
+  position: fixed;
+  bottom: 1.5rem;
+  left: 50%;
+  transform: translateX(-50%) translateY(60px);
+  background: #1a1a2e;
+  color: #fff;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  opacity: 0;
+  transition: all 0.3s;
+  z-index: 999;
+  pointer-events: none;
+}
+.toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+.footer {
+  text-align: center;
+  margin-top: 2rem;
+  color: #9ca3af;
+  font-size: 0.8rem;
+}
+</style>
+</head>
+<body>
+
+<a href="index.html" class="back"><svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="10 14 4 8 10 2"/></svg> Back to Analytics</a>
+
+<div class="header">
+  <h1>Epoch & Timestamp Converter</h1>
+  <p>Convert, compare, and calculate timestamps</p>
+</div>
+
+<!-- Live Epoch -->
+<div class="live-epoch">
+  <div class="epoch-value" id="liveEpoch" title="Click to copy">0</div>
+  <div class="epoch-label">Current Unix Epoch (seconds) &mdash; click to copy</div>
+  <div class="live-formats">
+    <div class="live-fmt"><span class="label">UTC</span><span class="value" id="liveUTC"></span></div>
+    <div class="live-fmt"><span class="label">Local</span><span class="value" id="liveLocal"></span></div>
+    <div class="live-fmt"><span class="label">ISO 8601</span><span class="value" id="liveISO"></span></div>
+    <div class="live-fmt"><span class="label">RFC 2822</span><span class="value" id="liveRFC"></span></div>
+  </div>
+</div>
+
+<div class="grid">
+
+  <!-- Epoch to Human -->
+  <div class="card">
+    <h2><svg width="18" height="18" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="8"/><polyline points="9 5 9 9 12 11"/></svg> Epoch to Human</h2>
+    <label>Enter epoch timestamp (seconds or milliseconds)</label>
+    <div class="row">
+      <input type="text" id="e2hInput" placeholder="e.g. 1714400000 or 1714400000000">
+      <button class="btn-primary" onclick="epochToHuman()">Convert</button>
+    </div>
+    <div class="result-box" id="e2hResult" style="display:none;"></div>
+  </div>
+
+  <!-- Human to Epoch -->
+  <div class="card">
+    <h2><svg width="18" height="18" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="14" height="13" rx="2"/><line x1="9" y1="1" x2="9" y2="5"/><line x1="5" y1="1" x2="5" y2="5"/><line x1="2" y1="8" x2="16" y2="8"/></svg> Human to Epoch</h2>
+    <div class="row">
+      <div><label>Date</label><input type="date" id="h2eDate"></div>
+      <div><label>Time</label><input type="time" id="h2eTime" step="1" value="00:00:00"></div>
+    </div>
+    <button class="btn-primary" onclick="humanToEpoch()" style="margin-top:0.25rem;">Convert</button>
+    <div class="result-box" id="h2eResult" style="display:none;"></div>
+  </div>
+
+  <!-- Relative Time -->
+  <div class="card">
+    <h2><svg width="18" height="18" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 1.5v4.5h-4.5"/><path d="M16.24 10.62A7.5 7.5 0 112.26 6.38L16.5 6"/></svg> Relative Time</h2>
+    <label>Enter an epoch timestamp or date</label>
+    <div class="row">
+      <input type="text" id="relInput" placeholder="Epoch or YYYY-MM-DD HH:MM:SS">
+      <button class="btn-primary" onclick="relativeTime()">Calculate</button>
+    </div>
+    <div class="result-box" id="relResult" style="display:none;"></div>
+  </div>
+
+  <!-- Time Zone Converter -->
+  <div class="card">
+    <h2><svg width="18" height="18" fill="none" stroke="#8b5cf6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="8"/><line x1="1" y1="9" x2="17" y2="9"/><path d="M9 1a12 12 0 013 8 12 12 0 01-3 8 12 12 0 01-3-8 12 12 0 013-8z"/></svg> Time Zone Converter</h2>
+    <div class="row">
+      <div><label>Date & Time</label><input type="datetime-local" id="tzInput" step="1"></div>
+    </div>
+    <div class="row">
+      <div><label>From</label><select id="tzFrom"></select></div>
+      <div><label>To</label><select id="tzTo"></select></div>
+    </div>
+    <button class="btn-primary" onclick="convertTimezone()">Convert</button>
+    <div class="result-box" id="tzResult" style="display:none;"></div>
+  </div>
+
+  <!-- Duration Calculator -->
+  <div class="card">
+    <h2><svg width="18" height="18" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="9" x2="17" y2="9"/><polyline points="12 5 17 9 12 13"/></svg> Duration Calculator</h2>
+    <div class="row">
+      <div><label>Start (epoch or date)</label><input type="text" id="durStart" placeholder="Epoch or YYYY-MM-DD HH:MM:SS"></div>
+    </div>
+    <div class="row">
+      <div><label>End (epoch or date)</label><input type="text" id="durEnd" placeholder="Epoch or YYYY-MM-DD HH:MM:SS"></div>
+    </div>
+    <button class="btn-primary" onclick="calcDuration()">Calculate</button>
+    <div class="result-box" id="durResult" style="display:none;"></div>
+  </div>
+
+  <!-- Date Math -->
+  <div class="card">
+    <h2><svg width="18" height="18" fill="none" stroke="#06b6d4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="9" y1="3" x2="9" y2="15"/><line x1="3" y1="9" x2="15" y2="9"/></svg> Date Math</h2>
+    <div class="row">
+      <div><label>Start Date</label><input type="datetime-local" id="dmDate" step="1"></div>
+    </div>
+    <div class="row">
+      <div><label>Days</label><input type="number" id="dmDays" value="0"></div>
+      <div><label>Hours</label><input type="number" id="dmHours" value="0"></div>
+      <div><label>Minutes</label><input type="number" id="dmMins" value="0"></div>
+    </div>
+    <div class="row">
+      <button class="btn-primary" onclick="dateMath(1)" style="flex:1">Add +</button>
+      <button class="btn-primary" onclick="dateMath(-1)" style="flex:1;background:#ef4444;">Subtract &minus;</button>
+    </div>
+    <div class="result-box" id="dmResult" style="display:none;"></div>
+  </div>
+
+  <!-- Common Epochs -->
+  <div class="card">
+    <h2><svg width="18" height="18" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="9 1 11.47 6.6 17 7.24 12.97 10.97 14.18 16.79 9 13.77 3.82 16.79 5.03 10.97 1 7.24 6.53 6.6"/></svg> Common Epoch Values</h2>
+    <div id="commonEpochs"></div>
+  </div>
+
+  <!-- History -->
+  <div class="card">
+    <h2 style="justify-content:space-between;">
+      <span style="display:flex;align-items:center;gap:0.5rem;">
+        <svg width="18" height="18" fill="none" stroke="#6b7280" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16.5 1.5v4.5h-4.5"/><path d="M1.5 9a7.5 7.5 0 0114.74-3L16.5 6"/><path d="M1.5 9a7.5 7.5 0 007.5 7.5 7.5 7.5 0 006.36-3.5"/></svg>
+        History
+      </span>
+      <button class="btn-sm" onclick="clearHistory()">Clear</button>
+    </h2>
+    <div class="history-list" id="historyList"><div style="color:#9ca3af;text-align:center;padding:1rem;">No conversions yet</div></div>
+  </div>
+
+</div>
+
+<div class="footer">Epoch & Timestamp Converter &middot; Lumen Analytics &middot; Data in localStorage</div>
+
+<div class="toast" id="toast">Copied!</div>
+
+<script>
+const TIMEZONES = [
+  'UTC','America/New_York','America/Chicago','America/Denver','America/Los_Angeles',
+  'America/Toronto','America/Vancouver','America/Sao_Paulo','America/Mexico_City',
+  'Europe/London','Europe/Paris','Europe/Berlin','Europe/Stockholm','Europe/Moscow',
+  'Asia/Kolkata','Asia/Dubai','Asia/Shanghai','Asia/Tokyo','Asia/Singapore','Asia/Seoul',
+  'Australia/Sydney','Australia/Melbourne','Pacific/Auckland','Pacific/Honolulu',
+  'Africa/Cairo','Africa/Johannesburg'
+];
+
+const LS_KEY = 'epoch-converter-history';
+
+// Init
+(function init() {
+  const now = new Date();
+  const localISO = toLocalISO(now);
+  document.getElementById('h2eDate').value = localISO.split('T')[0];
+  document.getElementById('tzInput').value = localISO;
+  document.getElementById('dmDate').value = localISO;
+
+  const fromSel = document.getElementById('tzFrom');
+  const toSel = document.getElementById('tzTo');
+  TIMEZONES.forEach(tz => {
+    fromSel.add(new Option(tz, tz));
+    toSel.add(new Option(tz, tz));
+  });
+  const localTZ = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  fromSel.value = localTZ || 'UTC';
+  toSel.value = 'UTC';
+
+  renderCommonEpochs();
+  renderHistory();
+  updateLive();
+  setInterval(updateLive, 1000);
+
+  document.getElementById('liveEpoch').addEventListener('click', () => {
+    copyText(Math.floor(Date.now() / 1000).toString());
+  });
+
+  document.getElementById('e2hInput').addEventListener('keydown', e => { if (e.key === 'Enter') epochToHuman(); });
+  document.getElementById('relInput').addEventListener('keydown', e => { if (e.key === 'Enter') relativeTime(); });
+})();
+
+function toLocalISO(d) {
+  const off = d.getTimezoneOffset();
+  const local = new Date(d.getTime() - off * 60000);
+  return local.toISOString().slice(0, 19);
+}
+
+function updateLive() {
+  const now = new Date();
+  const epoch = Math.floor(now.getTime() / 1000);
+  document.getElementById('liveEpoch').textContent = epoch.toLocaleString('en-US');
+  document.getElementById('liveUTC').textContent = now.toUTCString();
+  document.getElementById('liveLocal').textContent = now.toLocaleString();
+  document.getElementById('liveISO').textContent = now.toISOString();
+  document.getElementById('liveRFC').textContent = now.toUTCString();
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg || 'Copied!';
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 1500);
+}
+
+function copyText(text) {
+  navigator.clipboard.writeText(text).then(() => showToast('Copied!')).catch(() => {});
+}
+
+function copyBtn(text) {
+  return `<button class="btn-copy" onclick="copyText('${text.replace(/'/g, "\\'")}')">Copy</button>`;
+}
+
+function parseInput(val) {
+  val = val.trim();
+  if (/^\d{10,13}$/.test(val)) {
+    const n = parseInt(val);
+    return n > 9999999999 ? new Date(n) : new Date(n * 1000);
+  }
+  const d = new Date(val);
+  if (!isNaN(d)) return d;
+  return null;
+}
+
+function addHistory(type, input, output) {
+  let h = JSON.parse(localStorage.getItem(LS_KEY) || '[]');
+  h.unshift({ type, input, output, time: Date.now() });
+  if (h.length > 15) h = h.slice(0, 15);
+  localStorage.setItem(LS_KEY, JSON.stringify(h));
+  renderHistory();
+}
+
+function renderHistory() {
+  const h = JSON.parse(localStorage.getItem(LS_KEY) || '[]');
+  const el = document.getElementById('historyList');
+  if (!h.length) { el.innerHTML = '<div style="color:#9ca3af;text-align:center;padding:1rem;">No conversions yet</div>'; return; }
+  el.innerHTML = h.map(item => {
+    const ago = relStr(new Date(item.time));
+    return `<div class="history-item"><span class="hi-type">${item.type}</span><span class="hi-text">${esc(item.input)} &rarr; ${esc(item.output)}</span><span class="hi-time">${ago}</span></div>`;
+  }).join('');
+}
+
+function clearHistory() {
+  localStorage.removeItem(LS_KEY);
+  renderHistory();
+}
+
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function relStr(d) {
+  const now = Date.now();
+  const diff = now - d.getTime();
+  const abs = Math.abs(diff);
+  const s = Math.floor(abs / 1000);
+  const m = Math.floor(s / 60);
+  const h = Math.floor(m / 60);
+  const dy = Math.floor(h / 24);
+  const yr = Math.floor(dy / 365);
+
+  let str;
+  if (s < 5) str = 'just now';
+  else if (s < 60) str = s + ' seconds';
+  else if (m < 60) str = m + ' minute' + (m > 1 ? 's' : '');
+  else if (h < 24) str = h + ' hour' + (h > 1 ? 's' : '');
+  else if (dy < 365) str = dy + ' day' + (dy > 1 ? 's' : '');
+  else str = yr + ' year' + (yr > 1 ? 's' : '');
+
+  if (str === 'just now') return str;
+  return diff > 0 ? str + ' ago' : 'in ' + str;
+}
+
+// Epoch to Human
+function epochToHuman() {
+  const val = document.getElementById('e2hInput').value.trim();
+  if (!val) return;
+  const d = parseInput(val);
+  if (!d || isNaN(d)) {
+    document.getElementById('e2hResult').style.display = 'block';
+    document.getElementById('e2hResult').innerHTML = '<span style="color:#ef4444;">Invalid epoch timestamp</span>';
+    return;
+  }
+  const epochS = Math.floor(d.getTime() / 1000);
+  const epochMs = d.getTime();
+  const rel = relStr(d);
+  const el = document.getElementById('e2hResult');
+  el.style.display = 'block';
+  el.innerHTML = `
+    <div class="result-row"><span class="rl">UTC</span><span class="rv">${d.toUTCString()}</span>${copyBtn(d.toUTCString())}</div>
+    <div class="result-row"><span class="rl">Local</span><span class="rv">${d.toLocaleString()}</span>${copyBtn(d.toLocaleString())}</div>
+    <div class="result-row"><span class="rl">ISO 8601</span><span class="rv">${d.toISOString()}</span>${copyBtn(d.toISOString())}</div>
+    <div class="result-row"><span class="rl">Relative</span><span class="rv">${rel}</span>${copyBtn(rel)}</div>
+    <div class="result-row"><span class="rl">Day of week</span><span class="rv">${d.toLocaleDateString('en-US',{weekday:'long'})}</span></div>
+    <div class="result-row"><span class="rl">Epoch (s)</span><span class="rv">${epochS}</span>${copyBtn(String(epochS))}</div>
+    <div class="result-row"><span class="rl">Epoch (ms)</span><span class="rv">${epochMs}</span>${copyBtn(String(epochMs))}</div>
+  `;
+  addHistory('E2H', val, d.toISOString());
+}
+
+// Human to Epoch
+function humanToEpoch() {
+  const dateVal = document.getElementById('h2eDate').value;
+  const timeVal = document.getElementById('h2eTime').value || '00:00:00';
+  if (!dateVal) return;
+  const d = new Date(dateVal + 'T' + timeVal);
+  if (isNaN(d)) return;
+  const epochS = Math.floor(d.getTime() / 1000);
+  const epochMs = d.getTime();
+  const el = document.getElementById('h2eResult');
+  el.style.display = 'block';
+  el.innerHTML = `
+    <div class="result-row"><span class="rl">Epoch (seconds)</span><span class="rv">${epochS}</span>${copyBtn(String(epochS))}</div>
+    <div class="result-row"><span class="rl">Epoch (milliseconds)</span><span class="rv">${epochMs}</span>${copyBtn(String(epochMs))}</div>
+    <div class="result-row"><span class="rl">ISO 8601</span><span class="rv">${d.toISOString()}</span>${copyBtn(d.toISOString())}</div>
+    <div class="result-row"><span class="rl">UTC</span><span class="rv">${d.toUTCString()}</span>${copyBtn(d.toUTCString())}</div>
+  `;
+  addHistory('H2E', dateVal + ' ' + timeVal, String(epochS));
+}
+
+// Relative Time
+function relativeTime() {
+  const val = document.getElementById('relInput').value.trim();
+  if (!val) return;
+  const d = parseInput(val);
+  if (!d || isNaN(d)) {
+    document.getElementById('relResult').style.display = 'block';
+    document.getElementById('relResult').innerHTML = '<span style="color:#ef4444;">Invalid input</span>';
+    return;
+  }
+  const now = new Date();
+  const diff = d.getTime() - now.getTime();
+  const abs = Math.abs(diff);
+  const totalSec = Math.floor(abs / 1000);
+  const days = Math.floor(totalSec / 86400);
+  const hours = Math.floor((totalSec % 86400) / 3600);
+  const mins = Math.floor((totalSec % 3600) / 60);
+  const secs = totalSec % 60;
+
+  const direction = diff > 0 ? 'In the future' : 'In the past';
+  const friendly = relStr(d);
+
+  const el = document.getElementById('relResult');
+  el.style.display = 'block';
+  el.innerHTML = `
+    <div class="result-row"><span class="rl">Direction</span><span class="rv">${direction}</span></div>
+    <div class="result-row"><span class="rl">Relative</span><span class="rv">${friendly}</span>${copyBtn(friendly)}</div>
+    <div class="result-row"><span class="rl">Exact diff</span><span class="rv">${days}d ${hours}h ${mins}m ${secs}s</span>${copyBtn(days+'d '+hours+'h '+mins+'m '+secs+'s')}</div>
+    <div class="result-row"><span class="rl">Total seconds</span><span class="rv">${totalSec.toLocaleString()}</span>${copyBtn(String(totalSec))}</div>
+    <div class="result-row"><span class="rl">Date</span><span class="rv">${d.toISOString()}</span>${copyBtn(d.toISOString())}</div>
+  `;
+  addHistory('REL', val, friendly);
+}
+
+// Timezone Converter
+function convertTimezone() {
+  const input = document.getElementById('tzInput').value;
+  const from = document.getElementById('tzFrom').value;
+  const to = document.getElementById('tzTo').value;
+  if (!input) return;
+
+  // Build a date in the "from" timezone
+  // We parse the local input, then calculate what UTC time it would be if it were in 'from' tz
+  const naive = new Date(input);
+  if (isNaN(naive)) return;
+
+  // Get the offset of 'from' timezone at this time
+  const fromStr = naive.toLocaleString('en-US', { timeZone: from });
+  const localStr = naive.toLocaleString('en-US');
+  const fromDate = new Date(fromStr);
+  const localDate = new Date(localStr);
+  const offsetDiff = localDate.getTime() - fromDate.getTime();
+  const utcTime = new Date(naive.getTime() + offsetDiff);
+
+  const converted = utcTime.toLocaleString('en-US', {
+    timeZone: to,
+    weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+    hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true
+  });
+  const convertedShort = utcTime.toLocaleString('en-US', {
+    timeZone: to,
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false
+  });
+  const isoFrom = naive.toLocaleString('sv-SE', { timeZone: from }).replace(' ', 'T');
+  const isoTo = utcTime.toLocaleString('sv-SE', { timeZone: to }).replace(' ', 'T');
+
+  const el = document.getElementById('tzResult');
+  el.style.display = 'block';
+  el.innerHTML = `
+    <div class="result-row"><span class="rl">${from}</span><span class="rv">${isoFrom}</span>${copyBtn(isoFrom)}</div>
+    <div class="result-row"><span class="rl">${to}</span><span class="rv">${converted}</span>${copyBtn(convertedShort)}</div>
+    <div class="result-row"><span class="rl">Epoch</span><span class="rv">${Math.floor(utcTime.getTime()/1000)}</span>${copyBtn(String(Math.floor(utcTime.getTime()/1000)))}</div>
+  `;
+  addHistory('TZ', from + ' -> ' + to, convertedShort);
+}
+
+// Duration Calculator
+function calcDuration() {
+  const startVal = document.getElementById('durStart').value.trim();
+  const endVal = document.getElementById('durEnd').value.trim();
+  if (!startVal || !endVal) return;
+  const startD = parseInput(startVal);
+  const endD = parseInput(endVal);
+  if (!startD || !endD || isNaN(startD) || isNaN(endD)) {
+    document.getElementById('durResult').style.display = 'block';
+    document.getElementById('durResult').innerHTML = '<span style="color:#ef4444;">Invalid date/epoch</span>';
+    return;
+  }
+  const diff = Math.abs(endD.getTime() - startD.getTime());
+  const totalSec = Math.floor(diff / 1000);
+  const days = Math.floor(totalSec / 86400);
+  const hours = Math.floor((totalSec % 86400) / 3600);
+  const mins = Math.floor((totalSec % 3600) / 60);
+  const secs = totalSec % 60;
+  const totalHrs = (diff / 3600000).toFixed(2);
+  const totalMins = (diff / 60000).toFixed(0);
+
+  const el = document.getElementById('durResult');
+  el.style.display = 'block';
+  el.innerHTML = `
+    <div class="result-row"><span class="rl">Duration</span><span class="rv">${days}d ${hours}h ${mins}m ${secs}s</span>${copyBtn(days+'d '+hours+'h '+mins+'m '+secs+'s')}</div>
+    <div class="result-row"><span class="rl">Total hours</span><span class="rv">${totalHrs}</span>${copyBtn(totalHrs)}</div>
+    <div class="result-row"><span class="rl">Total minutes</span><span class="rv">${totalMins}</span>${copyBtn(totalMins)}</div>
+    <div class="result-row"><span class="rl">Total seconds</span><span class="rv">${totalSec.toLocaleString()}</span>${copyBtn(String(totalSec))}</div>
+    <div class="result-row"><span class="rl">Start</span><span class="rv">${startD.toISOString()}</span></div>
+    <div class="result-row"><span class="rl">End</span><span class="rv">${endD.toISOString()}</span></div>
+  `;
+  addHistory('DUR', startVal + ' / ' + endVal, days+'d '+hours+'h '+mins+'m');
+}
+
+// Date Math
+function dateMath(dir) {
+  const dateVal = document.getElementById('dmDate').value;
+  if (!dateVal) return;
+  const d = new Date(dateVal);
+  if (isNaN(d)) return;
+  const days = parseInt(document.getElementById('dmDays').value) || 0;
+  const hours = parseInt(document.getElementById('dmHours').value) || 0;
+  const mins = parseInt(document.getElementById('dmMins').value) || 0;
+  const totalMs = dir * ((days * 86400 + hours * 3600 + mins * 60) * 1000);
+  const result = new Date(d.getTime() + totalMs);
+  const epochS = Math.floor(result.getTime() / 1000);
+
+  const el = document.getElementById('dmResult');
+  el.style.display = 'block';
+  el.innerHTML = `
+    <div class="result-row"><span class="rl">Result</span><span class="rv">${result.toLocaleString()}</span>${copyBtn(result.toLocaleString())}</div>
+    <div class="result-row"><span class="rl">ISO 8601</span><span class="rv">${result.toISOString()}</span>${copyBtn(result.toISOString())}</div>
+    <div class="result-row"><span class="rl">Epoch</span><span class="rv">${epochS}</span>${copyBtn(String(epochS))}</div>
+    <div class="result-row"><span class="rl">Day</span><span class="rv">${result.toLocaleDateString('en-US',{weekday:'long'})}</span></div>
+  `;
+  const op = dir > 0 ? '+' : '-';
+  addHistory('MATH', op + days+'d '+hours+'h '+mins+'m', result.toISOString());
+}
+
+// Common Epochs
+function renderCommonEpochs() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const items = [
+    { name: 'Unix Epoch', epoch: 0, date: 'Jan 1, 1970 00:00:00 UTC' },
+    { name: 'Y2K', epoch: 946684800, date: 'Jan 1, 2000 00:00:00 UTC' },
+    { name: 'Y2K38 Problem', epoch: 2147483647, date: 'Jan 19, 2038 03:14:07 UTC' },
+    { name: year + ' Start', epoch: Math.floor(new Date(year, 0, 1).getTime() / 1000), date: 'Jan 1, ' + year },
+    { name: year + ' End', epoch: Math.floor(new Date(year, 11, 31, 23, 59, 59).getTime() / 1000), date: 'Dec 31, ' + year },
+    { name: 'GPS Epoch', epoch: 315964800, date: 'Jan 6, 1980 00:00:00 UTC' },
+    { name: 'Max 32-bit signed', epoch: 2147483647, date: 'Jan 19, 2038' },
+    { name: 'Max 32-bit unsigned', epoch: 4294967295, date: 'Feb 7, 2106' },
+  ];
+  const el = document.getElementById('commonEpochs');
+  el.innerHTML = items.map(i => `
+    <div class="common-val">
+      <span class="cv-name">${i.name}</span>
+      <span style="display:flex;align-items:center;gap:0.4rem;">
+        <span class="cv-val">${i.epoch.toLocaleString()}</span>
+        ${copyBtn(String(i.epoch))}
+      </span>
+    </div>
+  `).join('');
+}
+</script>
+</body>
+</html>

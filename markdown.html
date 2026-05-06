@@ -1,0 +1,1220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Markdown Editor & Preview</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f8f9fc;
+    --glass: rgba(255,255,255,0.72);
+    --glass-border: rgba(255,255,255,0.6);
+    --text: #1a1a2e;
+    --text-muted: #6b7280;
+    --accent: #3b82f6;
+    --accent-hover: #2563eb;
+    --editor-bg: #ffffff;
+    --editor-text: #1a1a2e;
+    --toolbar-bg: rgba(255,255,255,0.85);
+    --code-bg: #f3f4f6;
+    --border: #e5e7eb;
+    --tab-active: #ffffff;
+    --tab-inactive: rgba(255,255,255,0.4);
+    --preview-bg: #ffffff;
+    --blockquote-border: #3b82f6;
+    --table-stripe: #f9fafb;
+    --find-bg: rgba(255,255,255,0.95);
+  }
+
+  .dark {
+    --bg: #0f1117;
+    --glass: rgba(30,32,40,0.82);
+    --glass-border: rgba(255,255,255,0.08);
+    --text: #e4e5e9;
+    --text-muted: #8b8d97;
+    --accent: #60a5fa;
+    --accent-hover: #3b82f6;
+    --editor-bg: #1a1c25;
+    --editor-text: #e4e5e9;
+    --toolbar-bg: rgba(30,32,40,0.92);
+    --code-bg: #1e2030;
+    --border: #2a2d3a;
+    --tab-active: #1a1c25;
+    --tab-inactive: rgba(30,32,40,0.5);
+    --preview-bg: #1a1c25;
+    --blockquote-border: #60a5fa;
+    --table-stripe: #1e2030;
+    --find-bg: rgba(30,32,40,0.97);
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  /* Header */
+  .app-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.75rem 1rem;
+    background: var(--glass);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--glass-border);
+    flex-shrink: 0;
+  }
+
+  .back-link {
+    color: var(--accent);
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .app-title {
+    font-size: 1rem;
+    font-weight: 600;
+    flex: 1;
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .btn {
+    padding: 0.4rem 0.75rem;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    background: var(--glass);
+    color: var(--text);
+    font-size: 0.8rem;
+    font-family: inherit;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    transition: all 0.15s;
+    backdrop-filter: blur(10px);
+  }
+
+  .btn:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+  .btn-icon {
+    padding: 0.4rem;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+
+  .btn-icon:hover { background: rgba(59,130,246,0.1); color: var(--accent); }
+
+  /* Tabs */
+  .tab-bar {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 0.4rem 1rem;
+    background: var(--toolbar-bg);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--glass-border);
+    overflow-x: auto;
+    flex-shrink: 0;
+  }
+
+  .tab {
+    padding: 0.35rem 0.75rem;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    white-space: nowrap;
+    background: var(--tab-inactive);
+    border: 1px solid transparent;
+    color: var(--text-muted);
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    transition: all 0.15s;
+    position: relative;
+  }
+
+  .tab.active {
+    background: var(--tab-active);
+    color: var(--text);
+    border-color: var(--border);
+    font-weight: 500;
+  }
+
+  .tab-close {
+    width: 14px;
+    height: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 3px;
+    font-size: 0.7rem;
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+
+  .tab:hover .tab-close { opacity: 0.6; }
+  .tab-close:hover { opacity: 1 !important; background: rgba(239,68,68,0.15); color: #ef4444; }
+
+  .tab-name { cursor: text; }
+
+  .tab-add {
+    padding: 0.35rem 0.5rem;
+    border-radius: 6px;
+    font-size: 0.85rem;
+    cursor: pointer;
+    background: transparent;
+    border: 1px dashed var(--border);
+    color: var(--text-muted);
+    transition: all 0.15s;
+  }
+
+  .tab-add:hover { border-color: var(--accent); color: var(--accent); }
+
+  /* Toolbar */
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    padding: 0.35rem 1rem;
+    background: var(--toolbar-bg);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--glass-border);
+    flex-wrap: wrap;
+    flex-shrink: 0;
+  }
+
+  .toolbar-btn {
+    padding: 0.3rem 0.5rem;
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    border-radius: 5px;
+    font-size: 0.8rem;
+    font-family: inherit;
+    font-weight: 500;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 28px;
+    height: 28px;
+  }
+
+  .toolbar-btn:hover { background: rgba(59,130,246,0.1); color: var(--accent); }
+  .toolbar-sep { width: 1px; height: 20px; background: var(--border); margin: 0 0.25rem; }
+
+  /* Main content area */
+  .main {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .pane {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-width: 0;
+  }
+
+  .pane-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+    padding: 0.35rem 1rem;
+    background: var(--toolbar-bg);
+    border-bottom: 1px solid var(--glass-border);
+    backdrop-filter: blur(10px);
+    flex-shrink: 0;
+  }
+
+  .divider {
+    width: 3px;
+    background: var(--border);
+    cursor: col-resize;
+    flex-shrink: 0;
+    transition: background 0.15s;
+  }
+
+  .divider:hover, .divider.dragging { background: var(--accent); }
+
+  #editor {
+    flex: 1;
+    width: 100%;
+    padding: 1rem;
+    border: none;
+    outline: none;
+    resize: none;
+    font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', 'Menlo', monospace;
+    font-size: 0.875rem;
+    line-height: 1.7;
+    background: var(--editor-bg);
+    color: var(--editor-text);
+    tab-size: 2;
+  }
+
+  #preview {
+    flex: 1;
+    padding: 1.5rem;
+    overflow-y: auto;
+    background: var(--preview-bg);
+    font-size: 0.9rem;
+    line-height: 1.7;
+  }
+
+  /* Preview typography */
+  #preview h1 { font-size: 1.8rem; font-weight: 700; margin: 0 0 0.75rem; padding-bottom: 0.5rem; border-bottom: 2px solid var(--border); }
+  #preview h2 { font-size: 1.4rem; font-weight: 600; margin: 1.5rem 0 0.5rem; padding-bottom: 0.35rem; border-bottom: 1px solid var(--border); }
+  #preview h3 { font-size: 1.15rem; font-weight: 600; margin: 1.25rem 0 0.5rem; }
+  #preview h4 { font-size: 1rem; font-weight: 600; margin: 1rem 0 0.4rem; }
+  #preview h5 { font-size: 0.9rem; font-weight: 600; margin: 1rem 0 0.4rem; }
+  #preview h6 { font-size: 0.85rem; font-weight: 600; margin: 1rem 0 0.4rem; color: var(--text-muted); }
+  #preview p { margin: 0.5rem 0; }
+  #preview strong { font-weight: 600; }
+  #preview em { font-style: italic; }
+  #preview a { color: var(--accent); text-decoration: none; }
+  #preview a:hover { text-decoration: underline; }
+  #preview img { max-width: 100%; border-radius: 8px; margin: 0.5rem 0; }
+  #preview code {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    background: var(--code-bg);
+    padding: 0.15rem 0.4rem;
+    border-radius: 4px;
+    font-size: 0.85em;
+  }
+  #preview pre {
+    background: var(--code-bg);
+    border-radius: 8px;
+    padding: 1rem;
+    overflow-x: auto;
+    margin: 0.75rem 0;
+    border: 1px solid var(--border);
+  }
+  #preview pre code { background: none; padding: 0; font-size: 0.85rem; }
+  #preview blockquote {
+    border-left: 3px solid var(--blockquote-border);
+    padding: 0.5rem 1rem;
+    margin: 0.75rem 0;
+    color: var(--text-muted);
+    background: rgba(59,130,246,0.04);
+    border-radius: 0 8px 8px 0;
+  }
+  #preview ul, #preview ol { padding-left: 1.5rem; margin: 0.5rem 0; }
+  #preview li { margin: 0.25rem 0; }
+  #preview li.task-item { list-style: none; margin-left: -1.5rem; }
+  #preview li.task-item input { margin-right: 0.4rem; }
+  #preview hr { border: none; border-top: 2px solid var(--border); margin: 1.5rem 0; }
+  #preview table { width: 100%; border-collapse: collapse; margin: 0.75rem 0; border-radius: 8px; overflow: hidden; }
+  #preview th, #preview td { padding: 0.5rem 0.75rem; border: 1px solid var(--border); text-align: left; font-size: 0.85rem; }
+  #preview th { background: var(--code-bg); font-weight: 600; }
+  #preview tr:nth-child(even) td { background: var(--table-stripe); }
+
+  /* Status bar */
+  .status-bar {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    padding: 0.35rem 1rem;
+    background: var(--glass);
+    backdrop-filter: blur(20px);
+    border-top: 1px solid var(--glass-border);
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    flex-shrink: 0;
+  }
+
+  .status-bar .spacer { flex: 1; }
+
+  /* Find & Replace */
+  .find-bar {
+    display: none;
+    position: absolute;
+    top: 0;
+    right: 1rem;
+    background: var(--find-bg);
+    backdrop-filter: blur(20px);
+    border: 1px solid var(--border);
+    border-radius: 0 0 10px 10px;
+    padding: 0.6rem 0.75rem;
+    gap: 0.5rem;
+    z-index: 100;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    flex-direction: column;
+  }
+
+  .find-bar.visible { display: flex; }
+
+  .find-row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  .find-input {
+    padding: 0.3rem 0.5rem;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    font-size: 0.8rem;
+    font-family: inherit;
+    background: var(--editor-bg);
+    color: var(--text);
+    outline: none;
+    width: 200px;
+  }
+
+  .find-input:focus { border-color: var(--accent); }
+
+  .find-count { font-size: 0.75rem; color: var(--text-muted); min-width: 50px; }
+
+  /* Focus mode */
+  .focus-mode .app-header,
+  .focus-mode .tab-bar,
+  .focus-mode .toolbar,
+  .focus-mode .status-bar,
+  .focus-mode .pane:last-child,
+  .focus-mode .divider,
+  .focus-mode .pane-label { display: none !important; }
+
+  .focus-mode .pane:first-child { flex: 1; }
+  .focus-mode #editor { padding: 2rem 15%; font-size: 1rem; }
+
+  /* Print styles */
+  @media print {
+    body { background: #fff !important; }
+    .app-header, .tab-bar, .toolbar, .status-bar, .pane:first-child, .divider, .find-bar, .pane-label { display: none !important; }
+    .pane:last-child { flex: 1; }
+    #preview { padding: 0; }
+    #preview h1 { font-size: 1.5rem; }
+    #preview pre { border: 1px solid #ccc; }
+  }
+
+  /* Tooltip */
+  [data-tip] { position: relative; }
+  [data-tip]:hover::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: -30px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--text);
+    color: var(--bg);
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    white-space: nowrap;
+    z-index: 200;
+    pointer-events: none;
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 3rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: var(--text);
+    color: var(--bg);
+    padding: 0.5rem 1.25rem;
+    border-radius: 8px;
+    font-size: 0.85rem;
+    z-index: 9999;
+    opacity: 0;
+    transition: all 0.3s;
+    pointer-events: none;
+  }
+
+  .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="app-header">
+  <a href="index.html" class="back-link">
+    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="11 1 4 8 11 15"/></svg>
+    Back
+  </a>
+  <div class="app-title">Markdown Editor</div>
+  <div class="header-actions">
+    <button class="btn" onclick="downloadMd()" data-tip="Download .md">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 1v9m0 0L4 7m3 3l3-3"/><path d="M1 11v1a1 1 0 001 1h10a1 1 0 001-1v-1"/></svg>
+      Download
+    </button>
+    <button class="btn" onclick="copyHtml()" data-tip="Copy HTML">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="5" y="5" width="8" height="8" rx="1"/><path d="M1 9V2a1 1 0 011-1h7"/></svg>
+      Copy HTML
+    </button>
+    <button class="btn-icon" onclick="toggleFocus()" data-tip="Focus mode (Esc to exit)">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 7V2h5m9 0h-5m5 5v5m0-5h-5m-9 5v5h5m4 0h5v-5"/></svg>
+    </button>
+    <button class="btn-icon" onclick="toggleTheme()" id="themeBtn" data-tip="Toggle dark mode">
+      <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="9" cy="9" r="4"/><line x1="9" y1="1" x2="9" y2="3"/><line x1="9" y1="15" x2="9" y2="17"/><line x1="2.64" y1="2.64" x2="4.05" y2="4.05"/><line x1="13.95" y1="13.95" x2="15.36" y2="15.36"/><line x1="1" y1="9" x2="3" y2="9"/><line x1="15" y1="9" x2="17" y2="9"/><line x1="2.64" y1="15.36" x2="4.05" y2="13.95"/><line x1="13.95" y1="4.05" x2="15.36" y2="2.64"/></svg>
+    </button>
+  </div>
+</div>
+
+<!-- Tab bar -->
+<div class="tab-bar" id="tabBar"></div>
+
+<!-- Toolbar -->
+<div class="toolbar" id="toolbar">
+  <button class="toolbar-btn" onclick="wrap('# ','','line')" data-tip="Heading 1">H1</button>
+  <button class="toolbar-btn" onclick="wrap('## ','','line')" data-tip="Heading 2">H2</button>
+  <button class="toolbar-btn" onclick="wrap('### ','','line')" data-tip="Heading 3">H3</button>
+  <div class="toolbar-sep"></div>
+  <button class="toolbar-btn" onclick="wrap('**','**')" data-tip="Bold (Cmd+B)"><b>B</b></button>
+  <button class="toolbar-btn" onclick="wrap('*','*')" data-tip="Italic (Cmd+I)"><i>I</i></button>
+  <button class="toolbar-btn" onclick="wrap('`','`')" data-tip="Inline code">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 3 1 7 4 11"/><polyline points="10 3 13 7 10 11"/></svg>
+  </button>
+  <div class="toolbar-sep"></div>
+  <button class="toolbar-btn" onclick="wrap('[','](url)')" data-tip="Link (Cmd+K)">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a3 3 0 004 1l1.5-1.5a3 3 0 00-4.24-4.24L6 4.5"/><path d="M8 6a3 3 0 00-4-1L2.5 6.5a3 3 0 004.24 4.24L8 9.5"/></svg>
+  </button>
+  <button class="toolbar-btn" onclick="wrap('![alt](',')')" data-tip="Image">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="1" width="12" height="12" rx="2"/><circle cx="4.5" cy="4.5" r="1.5"/><path d="M13 9l-3-3-7 7"/></svg>
+  </button>
+  <div class="toolbar-sep"></div>
+  <button class="toolbar-btn" onclick="wrap('- ','','line')" data-tip="Bullet list">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="3" x2="13" y2="3"/><line x1="5" y1="7" x2="13" y2="7"/><line x1="5" y1="11" x2="13" y2="11"/><circle cx="2" cy="3" r="0.8" fill="currentColor"/><circle cx="2" cy="7" r="0.8" fill="currentColor"/><circle cx="2" cy="11" r="0.8" fill="currentColor"/></svg>
+  </button>
+  <button class="toolbar-btn" onclick="wrap('1. ','','line')" data-tip="Ordered list">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" y1="3" x2="13" y2="3"/><line x1="6" y1="7" x2="13" y2="7"/><line x1="6" y1="11" x2="13" y2="11"/><text x="1" y="5" font-size="5" fill="currentColor" stroke="none" font-family="Inter">1</text><text x="1" y="9" font-size="5" fill="currentColor" stroke="none" font-family="Inter">2</text><text x="1" y="13" font-size="5" fill="currentColor" stroke="none" font-family="Inter">3</text></svg>
+  </button>
+  <button class="toolbar-btn" onclick="wrap('> ','','line')" data-tip="Blockquote">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="1" y1="1" x2="1" y2="13"/><line x1="5" y1="3" x2="13" y2="3"/><line x1="5" y1="7" x2="13" y2="7"/><line x1="5" y1="11" x2="10" y2="11"/></svg>
+  </button>
+  <div class="toolbar-sep"></div>
+  <button class="toolbar-btn" onclick="insertTable()" data-tip="Table">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="1" width="12" height="12" rx="1"/><line x1="1" y1="5" x2="13" y2="5"/><line x1="1" y1="9" x2="13" y2="9"/><line x1="5" y1="1" x2="5" y2="13"/><line x1="9" y1="1" x2="9" y2="13"/></svg>
+  </button>
+  <button class="toolbar-btn" onclick="insertCodeBlock()" data-tip="Code block (Cmd+Shift+C)">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="1" width="12" height="12" rx="2"/><polyline points="4 5 3 7 4 9"/><polyline points="10 5 11 7 10 9"/><line x1="8" y1="4" x2="6" y2="10"/></svg>
+  </button>
+  <button class="toolbar-btn" onclick="insertAtCursor('\n---\n')" data-tip="Horizontal rule">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="1" y1="7" x2="13" y2="7"/></svg>
+  </button>
+</div>
+
+<!-- Main -->
+<div class="main">
+  <!-- Find bar -->
+  <div class="find-bar" id="findBar">
+    <div class="find-row">
+      <input class="find-input" id="findInput" placeholder="Find..." oninput="doFind()">
+      <span class="find-count" id="findCount"></span>
+      <button class="btn-icon" onclick="findNext(-1)" data-tip="Previous">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="11 10 7 5 3 10"/></svg>
+      </button>
+      <button class="btn-icon" onclick="findNext(1)" data-tip="Next">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><polyline points="3 4 7 9 11 4"/></svg>
+      </button>
+      <button class="btn-icon" onclick="toggleReplace()" data-tip="Toggle replace">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 4h12M1 10h12M10 1l3 3-3 3"/></svg>
+      </button>
+      <button class="btn-icon" onclick="closeFindBar()">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="3" y1="3" x2="11" y2="11"/><line x1="11" y1="3" x2="3" y2="11"/></svg>
+      </button>
+    </div>
+    <div class="find-row" id="replaceRow" style="display:none">
+      <input class="find-input" id="replaceInput" placeholder="Replace...">
+      <button class="btn" onclick="doReplace(false)" style="font-size:0.75rem;padding:0.25rem 0.5rem">Replace</button>
+      <button class="btn" onclick="doReplace(true)" style="font-size:0.75rem;padding:0.25rem 0.5rem">All</button>
+    </div>
+  </div>
+
+  <!-- Editor pane -->
+  <div class="pane" id="editorPane">
+    <div class="pane-label">Editor</div>
+    <textarea id="editor" spellcheck="false" placeholder="Start writing markdown..."></textarea>
+  </div>
+
+  <!-- Divider -->
+  <div class="divider" id="divider"></div>
+
+  <!-- Preview pane -->
+  <div class="pane" id="previewPane">
+    <div class="pane-label">Preview</div>
+    <div id="preview"></div>
+  </div>
+</div>
+
+<!-- Status bar -->
+<div class="status-bar">
+  <span id="wordCount">0 words</span>
+  <span id="charCount">0 chars</span>
+  <span id="readTime">0 min read</span>
+  <span class="spacer"></span>
+  <span id="autoSaveStatus">Saved</span>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ---- State ----
+let docs = [];
+let activeDocId = null;
+let autoSaveTimer = null;
+let findMatches = [];
+let findIndex = -1;
+
+const editor = document.getElementById('editor');
+const preview = document.getElementById('preview');
+
+// ---- Markdown Parser ----
+function parseMd(src) {
+  let html = '';
+  const lines = src.split('\n');
+  let i = 0;
+
+  while (i < lines.length) {
+    const line = lines[i];
+
+    // Fenced code block
+    if (/^```/.test(line)) {
+      const lang = line.slice(3).trim();
+      let code = '';
+      i++;
+      while (i < lines.length && !/^```/.test(lines[i])) {
+        code += escHtml(lines[i]) + '\n';
+        i++;
+      }
+      i++; // skip closing ```
+      html += `<pre><code${lang ? ` class="lang-${lang}"` : ''}>${code.replace(/\n$/, '')}</code></pre>\n`;
+      continue;
+    }
+
+    // Table
+    if (/^\|(.+\|)+\s*$/.test(line) && i + 1 < lines.length && /^\|[\s\-:|]+\|/.test(lines[i + 1])) {
+      let tableHtml = '<table><thead><tr>';
+      const headers = line.split('|').filter(c => c.trim() !== '');
+      headers.forEach(h => { tableHtml += `<th>${inlineParse(h.trim())}</th>`; });
+      tableHtml += '</tr></thead><tbody>';
+      i += 2; // skip header + separator
+      while (i < lines.length && /^\|(.+\|)+\s*$/.test(lines[i])) {
+        tableHtml += '<tr>';
+        const cells = lines[i].split('|').filter(c => c.trim() !== '');
+        cells.forEach(c => { tableHtml += `<td>${inlineParse(c.trim())}</td>`; });
+        tableHtml += '</tr>';
+        i++;
+      }
+      tableHtml += '</tbody></table>';
+      html += tableHtml + '\n';
+      continue;
+    }
+
+    // Horizontal rule
+    if (/^(-{3,}|\*{3,}|_{3,})\s*$/.test(line)) {
+      html += '<hr>\n';
+      i++;
+      continue;
+    }
+
+    // Headings
+    const hMatch = line.match(/^(#{1,6})\s+(.+)/);
+    if (hMatch) {
+      const lvl = hMatch[1].length;
+      html += `<h${lvl}>${inlineParse(hMatch[2])}</h${lvl}>\n`;
+      i++;
+      continue;
+    }
+
+    // Blockquote
+    if (/^>\s?/.test(line)) {
+      let bqLines = [];
+      while (i < lines.length && /^>\s?/.test(lines[i])) {
+        bqLines.push(lines[i].replace(/^>\s?/, ''));
+        i++;
+      }
+      html += `<blockquote>${parseMd(bqLines.join('\n'))}</blockquote>\n`;
+      continue;
+    }
+
+    // Unordered list
+    if (/^[\s]*[-*+]\s/.test(line)) {
+      html += parseList(lines, i, 'ul');
+      while (i < lines.length && /^[\s]*[-*+]\s/.test(lines[i])) i++;
+      continue;
+    }
+
+    // Ordered list
+    if (/^[\s]*\d+\.\s/.test(line)) {
+      html += parseList(lines, i, 'ol');
+      while (i < lines.length && /^[\s]*\d+\.\s/.test(lines[i])) i++;
+      continue;
+    }
+
+    // Empty line
+    if (line.trim() === '') {
+      i++;
+      continue;
+    }
+
+    // Paragraph
+    let pLines = [];
+    while (i < lines.length && lines[i].trim() !== '' && !/^#{1,6}\s/.test(lines[i]) && !/^```/.test(lines[i]) && !/^>\s?/.test(lines[i]) && !/^[-*+]\s/.test(lines[i]) && !/^\d+\.\s/.test(lines[i]) && !/^(-{3,}|\*{3,}|_{3,})\s*$/.test(lines[i]) && !/^\|(.+\|)+\s*$/.test(lines[i])) {
+      pLines.push(lines[i]);
+      i++;
+    }
+    if (pLines.length) {
+      html += `<p>${inlineParse(pLines.join('\n'))}</p>\n`;
+    }
+  }
+
+  return html;
+}
+
+function parseList(lines, start, type) {
+  let html = `<${type}>`;
+  let i = start;
+  const pattern = type === 'ul' ? /^[\s]*[-*+]\s(.*)/ : /^[\s]*\d+\.\s(.*)/;
+  while (i < lines.length && pattern.test(lines[i])) {
+    let content = lines[i].match(pattern)[1];
+    // Task list
+    const taskMatch = content.match(/^\[([ xX])\]\s?(.*)/);
+    if (taskMatch) {
+      const checked = taskMatch[1] !== ' ' ? ' checked disabled' : ' disabled';
+      html += `<li class="task-item"><input type="checkbox"${checked}>${inlineParse(taskMatch[2])}</li>`;
+    } else {
+      html += `<li>${inlineParse(content)}</li>`;
+    }
+    i++;
+  }
+  html += `</${type}>\n`;
+  return html;
+}
+
+function inlineParse(text) {
+  // Images (before links)
+  text = text.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1">');
+  // Links
+  text = text.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
+  // Bold + italic
+  text = text.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
+  text = text.replace(/___(.+?)___/g, '<strong><em>$1</em></strong>');
+  // Bold
+  text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  text = text.replace(/__(.+?)__/g, '<strong>$1</strong>');
+  // Italic
+  text = text.replace(/\*(.+?)\*/g, '<em>$1</em>');
+  text = text.replace(/_(.+?)_/g, '<em>$1</em>');
+  // Strikethrough
+  text = text.replace(/~~(.+?)~~/g, '<del>$1</del>');
+  // Inline code
+  text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
+  // Line breaks
+  text = text.replace(/\n/g, '<br>');
+  return text;
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ---- Document Management ----
+function createDoc(name, content) {
+  const doc = {
+    id: Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    name: name || 'Untitled',
+    content: content || '',
+    created: Date.now(),
+    modified: Date.now()
+  };
+  docs.push(doc);
+  return doc;
+}
+
+function switchDoc(id) {
+  // Save current
+  if (activeDocId) {
+    const cur = docs.find(d => d.id === activeDocId);
+    if (cur) {
+      cur.content = editor.value;
+      cur.modified = Date.now();
+    }
+  }
+  activeDocId = id;
+  const doc = docs.find(d => d.id === id);
+  if (doc) {
+    editor.value = doc.content;
+    renderPreview();
+    updateStats();
+  }
+  renderTabs();
+  saveToDisk();
+}
+
+function deleteDoc(id) {
+  if (docs.length <= 1) { toast('Cannot delete last document'); return; }
+  docs = docs.filter(d => d.id !== id);
+  if (activeDocId === id) {
+    switchDoc(docs[0].id);
+  } else {
+    renderTabs();
+  }
+  saveToDisk();
+}
+
+function renameDoc(id) {
+  const doc = docs.find(d => d.id === id);
+  if (!doc) return;
+  const el = document.querySelector(`.tab[data-id="${id}"] .tab-name`);
+  if (!el) return;
+  el.contentEditable = true;
+  el.focus();
+  const range = document.createRange();
+  range.selectNodeContents(el);
+  window.getSelection().removeAllRanges();
+  window.getSelection().addRange(range);
+  const finish = () => {
+    el.contentEditable = false;
+    doc.name = el.textContent.trim() || 'Untitled';
+    el.textContent = doc.name;
+    saveToDisk();
+  };
+  el.onblur = finish;
+  el.onkeydown = (e) => { if (e.key === 'Enter') { e.preventDefault(); el.blur(); } };
+}
+
+function renderTabs() {
+  const bar = document.getElementById('tabBar');
+  bar.innerHTML = '';
+  docs.forEach(doc => {
+    const tab = document.createElement('div');
+    tab.className = 'tab' + (doc.id === activeDocId ? ' active' : '');
+    tab.dataset.id = doc.id;
+    tab.innerHTML = `<span class="tab-name">${escHtml(doc.name)}</span><span class="tab-close" onclick="event.stopPropagation();deleteDoc('${doc.id}')">x</span>`;
+    tab.onclick = () => switchDoc(doc.id);
+    tab.ondblclick = (e) => { e.stopPropagation(); renameDoc(doc.id); };
+    bar.appendChild(tab);
+  });
+  const addBtn = document.createElement('button');
+  addBtn.className = 'tab-add';
+  addBtn.textContent = '+';
+  addBtn.onclick = () => { const d = createDoc(); switchDoc(d.id); };
+  bar.appendChild(addBtn);
+}
+
+// ---- Render & Stats ----
+function renderPreview() {
+  preview.innerHTML = parseMd(editor.value);
+}
+
+function updateStats() {
+  const text = editor.value;
+  const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+  const chars = text.length;
+  const mins = Math.max(1, Math.ceil(words / 200));
+  document.getElementById('wordCount').textContent = `${words} word${words !== 1 ? 's' : ''}`;
+  document.getElementById('charCount').textContent = `${chars} char${chars !== 1 ? 's' : ''}`;
+  document.getElementById('readTime').textContent = words === 0 ? '0 min read' : `${mins} min read`;
+}
+
+// ---- Persistence ----
+function saveToDisk() {
+  if (activeDocId) {
+    const cur = docs.find(d => d.id === activeDocId);
+    if (cur) {
+      cur.content = editor.value;
+      cur.modified = Date.now();
+    }
+  }
+  localStorage.setItem('md-editor-docs', JSON.stringify(docs));
+  localStorage.setItem('md-editor-active', activeDocId);
+  document.getElementById('autoSaveStatus').textContent = 'Saved';
+}
+
+function loadFromDisk() {
+  try {
+    const saved = localStorage.getItem('md-editor-docs');
+    if (saved) {
+      docs = JSON.parse(saved);
+      activeDocId = localStorage.getItem('md-editor-active') || (docs[0] && docs[0].id);
+    }
+  } catch (e) {}
+  if (!docs.length) {
+    const sample = createDoc('Sample Document', getSampleContent());
+    activeDocId = sample.id;
+  }
+}
+
+function scheduleAutoSave() {
+  document.getElementById('autoSaveStatus').textContent = 'Editing...';
+  clearTimeout(autoSaveTimer);
+  autoSaveTimer = setTimeout(saveToDisk, 2000);
+}
+
+// ---- Toolbar actions ----
+function wrap(before, after, mode) {
+  editor.focus();
+  const start = editor.selectionStart;
+  const end = editor.selectionEnd;
+  const text = editor.value;
+
+  if (mode === 'line') {
+    // Apply to start of current line
+    const lineStart = text.lastIndexOf('\n', start - 1) + 1;
+    editor.value = text.slice(0, lineStart) + before + text.slice(lineStart);
+    editor.selectionStart = editor.selectionEnd = start + before.length;
+  } else {
+    const selected = text.slice(start, end);
+    const replacement = before + (selected || 'text') + after;
+    editor.value = text.slice(0, start) + replacement + text.slice(end);
+    if (selected) {
+      editor.selectionStart = start;
+      editor.selectionEnd = start + replacement.length;
+    } else {
+      editor.selectionStart = start + before.length;
+      editor.selectionEnd = start + before.length + 4; // select "text"
+    }
+  }
+  onInput();
+}
+
+function insertAtCursor(text) {
+  editor.focus();
+  const start = editor.selectionStart;
+  editor.value = editor.value.slice(0, start) + text + editor.value.slice(editor.selectionEnd);
+  editor.selectionStart = editor.selectionEnd = start + text.length;
+  onInput();
+}
+
+function insertTable() {
+  insertAtCursor('\n| Header 1 | Header 2 | Header 3 |\n| -------- | -------- | -------- |\n| Cell 1   | Cell 2   | Cell 3   |\n| Cell 4   | Cell 5   | Cell 6   |\n');
+}
+
+function insertCodeBlock() {
+  const start = editor.selectionStart;
+  const end = editor.selectionEnd;
+  const selected = editor.value.slice(start, end);
+  const block = '\n```\n' + (selected || 'code here') + '\n```\n';
+  editor.value = editor.value.slice(0, start) + block + editor.value.slice(end);
+  editor.selectionStart = start + 5;
+  editor.selectionEnd = start + 5 + (selected || 'code here').length;
+  editor.focus();
+  onInput();
+}
+
+// ---- Downloads & Copy ----
+function downloadMd() {
+  const doc = docs.find(d => d.id === activeDocId);
+  const name = doc ? doc.name.replace(/[^a-zA-Z0-9_-]/g, '_') : 'document';
+  const blob = new Blob([editor.value], { type: 'text/markdown' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name + '.md';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast('Downloaded ' + name + '.md');
+}
+
+function copyHtml() {
+  navigator.clipboard.writeText(preview.innerHTML).then(() => toast('HTML copied to clipboard'));
+}
+
+// ---- Theme ----
+function toggleTheme() {
+  document.body.classList.toggle('dark');
+  localStorage.setItem('md-editor-theme', document.body.classList.contains('dark') ? 'dark' : 'light');
+}
+
+// ---- Focus mode ----
+function toggleFocus() {
+  document.body.classList.toggle('focus-mode');
+  if (document.body.classList.contains('focus-mode')) {
+    editor.focus();
+  }
+}
+
+// ---- Find & Replace ----
+function openFindBar() {
+  const bar = document.getElementById('findBar');
+  bar.classList.add('visible');
+  document.getElementById('findInput').focus();
+  const selected = editor.value.slice(editor.selectionStart, editor.selectionEnd);
+  if (selected) {
+    document.getElementById('findInput').value = selected;
+    doFind();
+  }
+}
+
+function closeFindBar() {
+  document.getElementById('findBar').classList.remove('visible');
+  findMatches = [];
+  findIndex = -1;
+  document.getElementById('findCount').textContent = '';
+  editor.focus();
+}
+
+function toggleReplace() {
+  const row = document.getElementById('replaceRow');
+  row.style.display = row.style.display === 'none' ? 'flex' : 'none';
+}
+
+function doFind() {
+  const query = document.getElementById('findInput').value;
+  findMatches = [];
+  findIndex = -1;
+  if (!query) { document.getElementById('findCount').textContent = ''; return; }
+  const text = editor.value.toLowerCase();
+  const q = query.toLowerCase();
+  let pos = 0;
+  while ((pos = text.indexOf(q, pos)) !== -1) {
+    findMatches.push(pos);
+    pos += q.length;
+  }
+  document.getElementById('findCount').textContent = findMatches.length ? `${findMatches.length} found` : 'No matches';
+  if (findMatches.length) findNext(1);
+}
+
+function findNext(dir) {
+  if (!findMatches.length) return;
+  findIndex = (findIndex + dir + findMatches.length) % findMatches.length;
+  const pos = findMatches[findIndex];
+  const len = document.getElementById('findInput').value.length;
+  editor.focus();
+  editor.selectionStart = pos;
+  editor.selectionEnd = pos + len;
+  // Scroll into view
+  const lineNum = editor.value.slice(0, pos).split('\n').length;
+  const lineHeight = parseFloat(getComputedStyle(editor).lineHeight);
+  editor.scrollTop = Math.max(0, (lineNum - 5) * lineHeight);
+  document.getElementById('findCount').textContent = `${findIndex + 1}/${findMatches.length}`;
+}
+
+function doReplace(all) {
+  const query = document.getElementById('findInput').value;
+  const replacement = document.getElementById('replaceInput').value;
+  if (!query) return;
+  if (all) {
+    editor.value = editor.value.split(query).join(replacement);
+    onInput();
+    doFind();
+    toast('Replaced all occurrences');
+  } else {
+    if (findIndex >= 0 && findIndex < findMatches.length) {
+      const pos = findMatches[findIndex];
+      editor.value = editor.value.slice(0, pos) + replacement + editor.value.slice(pos + query.length);
+      onInput();
+      doFind();
+    }
+  }
+}
+
+// ---- Divider drag ----
+(function() {
+  const divider = document.getElementById('divider');
+  const editorPane = document.getElementById('editorPane');
+  const previewPane = document.getElementById('previewPane');
+  const main = document.querySelector('.main');
+  let dragging = false;
+
+  divider.addEventListener('mousedown', (e) => {
+    dragging = true;
+    divider.classList.add('dragging');
+    e.preventDefault();
+  });
+
+  document.addEventListener('mousemove', (e) => {
+    if (!dragging) return;
+    const rect = main.getBoundingClientRect();
+    const ratio = (e.clientX - rect.left) / rect.width;
+    const clamped = Math.max(0.2, Math.min(0.8, ratio));
+    editorPane.style.flex = `${clamped}`;
+    previewPane.style.flex = `${1 - clamped}`;
+  });
+
+  document.addEventListener('mouseup', () => {
+    dragging = false;
+    divider.classList.remove('dragging');
+  });
+})();
+
+// ---- Event handlers ----
+function onInput() {
+  renderPreview();
+  updateStats();
+  scheduleAutoSave();
+}
+
+editor.addEventListener('input', onInput);
+editor.addEventListener('scroll', () => {
+  // Sync scroll roughly
+  const ratio = editor.scrollTop / (editor.scrollHeight - editor.clientHeight || 1);
+  preview.scrollTop = ratio * (preview.scrollHeight - preview.clientHeight);
+});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', (e) => {
+  const mod = e.metaKey || e.ctrlKey;
+
+  if (mod && e.key === 'b') {
+    e.preventDefault(); wrap('**', '**');
+  } else if (mod && e.key === 'i') {
+    e.preventDefault(); wrap('*', '*');
+  } else if (mod && e.key === 'k') {
+    e.preventDefault(); wrap('[', '](url)');
+  } else if (mod && e.shiftKey && (e.key === 'C' || e.key === 'c')) {
+    e.preventDefault(); insertCodeBlock();
+  } else if (mod && e.key === 'f') {
+    e.preventDefault(); openFindBar();
+  } else if (e.key === 'Escape') {
+    if (document.getElementById('findBar').classList.contains('visible')) {
+      closeFindBar();
+    } else if (document.body.classList.contains('focus-mode')) {
+      toggleFocus();
+    }
+  } else if (e.key === 'Tab' && document.activeElement === editor) {
+    e.preventDefault();
+    insertAtCursor('  ');
+  }
+});
+
+// ---- Toast ----
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2000);
+}
+
+// ---- Sample content ----
+function getSampleContent() {
+  return `# Markdown Editor
+
+Welcome to the **Markdown Editor & Preview** tool. This document demonstrates all supported syntax.
+
+## Text Formatting
+
+This is **bold text** and this is *italic text*. You can also use ***bold italic*** together.
+
+~~Strikethrough~~ is supported too.
+
+Inline \`code\` looks like this.
+
+## Links & Images
+
+[Visit Lumen](https://lumen.parallelromb.dev) is a link.
+
+![Placeholder Image](https://via.placeholder.com/600x200/3b82f6/ffffff?text=Markdown+Editor)
+
+## Lists
+
+### Unordered
+- First item
+- Second item
+- Third item
+
+### Ordered
+1. Step one
+2. Step two
+3. Step three
+
+### Task List
+- [x] Build markdown parser
+- [x] Add live preview
+- [ ] Add syntax highlighting
+- [ ] Ship to production
+
+## Blockquote
+
+> "The best way to predict the future is to invent it."
+> -- Alan Kay
+
+## Code Block
+
+\`\`\`javascript
+function greet(name) {
+  console.log(\`Hello, \${name}!\`);
+  return { greeting: 'welcome', timestamp: Date.now() };
+}
+
+greet('World');
+\`\`\`
+
+## Table
+
+| Feature | Status | Priority |
+| ------- | ------ | -------- |
+| Parser | Done | High |
+| Preview | Done | High |
+| Toolbar | Done | Medium |
+| Dark Mode | Done | Medium |
+| Export | Done | Low |
+
+## Horizontal Rule
+
+---
+
+## Heading Levels
+
+### H3 Heading
+#### H4 Heading
+##### H5 Heading
+###### H6 Heading
+
+## Keyboard Shortcuts
+
+- **Cmd+B** - Bold
+- **Cmd+I** - Italic
+- **Cmd+K** - Link
+- **Cmd+Shift+C** - Code block
+- **Cmd+F** - Find & replace
+- **Esc** - Exit focus mode / close find bar
+
+---
+
+*Built for Lumen Analytics. All data stored locally in your browser.*`;
+}
+
+// ---- Init ----
+(function init() {
+  // Load theme
+  if (localStorage.getItem('md-editor-theme') === 'dark') {
+    document.body.classList.add('dark');
+  }
+
+  loadFromDisk();
+
+  const doc = docs.find(d => d.id === activeDocId);
+  if (doc) {
+    editor.value = doc.content;
+  }
+
+  renderTabs();
+  renderPreview();
+  updateStats();
+})();
+</script>
+</body>
+</html>

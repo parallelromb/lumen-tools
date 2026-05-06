@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Project Health — Lumen Analytics</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #f8f9fc;
+    color: #1a1a2e;
+    min-height: 100vh;
+    padding: 1.5rem;
+  }
+  a { color: #3b82f6; text-decoration: none; }
+  .nav { margin-bottom: 1.5rem; font-size: 0.85rem; }
+  h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.25rem; }
+  .subtitle { color: #6b7280; font-size: 0.9rem; margin-bottom: 1.5rem; }
+  .glass {
+    background: rgba(255,255,255,0.72);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.6);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .glass h2 { font-size: 1rem; font-weight: 600; margin-bottom: 1rem; }
+
+  /* Revenue banner */
+  .revenue-banner {
+    background: linear-gradient(135deg, rgba(59,130,246,0.08), rgba(139,92,246,0.08));
+    border: 1px solid rgba(59,130,246,0.2);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  .revenue-left h2 { font-size: 1rem; font-weight: 600; margin: 0 0 0.25rem; }
+  .revenue-left .amount { font-size: 2.5rem; font-weight: 700; color: #1a1a2e; }
+  .revenue-left .target { font-size: 0.85rem; color: #6b7280; }
+  .revenue-right { text-align: right; }
+  .revenue-right .countdown { font-size: 1.5rem; font-weight: 700; color: #f59e0b; }
+  .revenue-right .countdown-label { font-size: 0.8rem; color: #6b7280; }
+  .revenue-input {
+    display: flex; align-items: center; gap: 0.5rem; margin-top: 0.75rem;
+  }
+  .revenue-input input {
+    width: 100px; padding: 0.35rem 0.5rem; border: 1px solid #e5e7eb;
+    border-radius: 6px; font-family: inherit; font-size: 0.85rem; text-align: right;
+  }
+  .revenue-input input:focus { outline: none; border-color: #3b82f6; }
+  .revenue-input label { font-size: 0.8rem; color: #6b7280; }
+
+  /* Stats row */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .stat-card {
+    background: rgba(255,255,255,0.72);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.6);
+    border-radius: 12px;
+    padding: 1rem;
+    text-align: center;
+  }
+  .stat-card .value { font-size: 1.5rem; font-weight: 700; }
+  .stat-card .label { font-size: 0.7rem; color: #6b7280; margin-top: 0.2rem; }
+
+  /* Project cards grid */
+  .projects-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1.25rem;
+  }
+  .project-card {
+    background: rgba(255,255,255,0.72);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.6);
+    border-radius: 16px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+  .project-card .header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+  }
+  .project-card h3 { font-size: 1.05rem; font-weight: 600; }
+  .status-badge {
+    display: inline-flex; align-items: center; gap: 0.35rem;
+    padding: 0.2rem 0.6rem; border-radius: 20px; font-size: 0.7rem; font-weight: 500;
+  }
+  .status-live { background: #dcfce7; color: #166534; }
+  .status-dev { background: #dbeafe; color: #1d4ed8; }
+  .status-paused { background: #fef3c7; color: #92400e; }
+  .status-archived { background: #f3f4f6; color: #6b7280; }
+  .status-dot { width: 6px; height: 6px; border-radius: 50%; }
+  .status-live .status-dot { background: #16a34a; }
+  .status-dev .status-dot { background: #3b82f6; }
+  .status-paused .status-dot { background: #f59e0b; }
+  .status-archived .status-dot { background: #9ca3af; }
+  .project-card .desc { font-size: 0.8rem; color: #6b7280; line-height: 1.4; }
+  .metrics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem; }
+  .metric { padding: 0.5rem; background: #f9fafb; border-radius: 8px; }
+  .metric .m-label { font-size: 0.65rem; color: #9ca3af; text-transform: uppercase; letter-spacing: 0.05em; }
+  .metric .m-value { font-size: 0.85rem; font-weight: 600; margin-top: 0.1rem; }
+  .metric input {
+    width: 100%; padding: 0.25rem 0.4rem; border: 1px solid #e5e7eb;
+    border-radius: 4px; font-family: inherit; font-size: 0.8rem; background: #fff;
+  }
+  .metric input:focus { outline: none; border-color: #3b82f6; }
+  .project-card .links { display: flex; gap: 0.75rem; margin-top: 0.25rem; }
+  .project-card .links a { font-size: 0.8rem; font-weight: 500; }
+
+  .chart-container { position: relative; height: 250px; }
+  button {
+    padding: 0.5rem 1rem; border: none; border-radius: 8px;
+    font-family: inherit; font-size: 0.85rem; font-weight: 500; cursor: pointer;
+  }
+  .btn-primary { background: #3b82f6; color: #fff; }
+  .btn-primary:hover { background: #2563eb; }
+  .btn-secondary { background: #e5e7eb; color: #374151; }
+  .btn-secondary:hover { background: #d1d5db; }
+  .btn-danger { background: #fee2e2; color: #ef4444; }
+  .actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  @media (max-width: 640px) {
+    body { padding: 1rem; }
+    .revenue-banner { flex-direction: column; text-align: center; }
+    .revenue-right { text-align: center; }
+  }
+</style>
+</head>
+<body>
+  <div class="nav"><a href="index.html">&larr; Lumen Analytics</a></div>
+  <h1>Project Health</h1>
+  <p class="subtitle">Status, metrics, and revenue tracking across all Lumen projects</p>
+
+  <!-- Revenue banner -->
+  <div class="revenue-banner">
+    <div class="revenue-left">
+      <h2>Monthly Revenue</h2>
+      <div class="amount" id="revenue-display">$0</div>
+      <div class="target">Target: 1 paid customer by May 13, 2026</div>
+      <div class="revenue-input">
+        <label>Update: $</label>
+        <input type="number" id="revenue-input" step="0.01" min="0" value="0" onchange="updateRevenue(this.value)">
+      </div>
+    </div>
+    <div class="revenue-right">
+      <div class="countdown" id="countdown"></div>
+      <div class="countdown-label">days until target date</div>
+    </div>
+  </div>
+
+  <div class="stats-row" id="stats-row"></div>
+
+  <div class="projects-grid" id="projects-grid"></div>
+
+  <div class="glass" style="margin-top:1.5rem">
+    <h2>Project Activity (last 30 days)</h2>
+    <div class="chart-container"><canvas id="activityChart"></canvas></div>
+  </div>
+
+  <div class="glass">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;">
+      <h2 style="margin:0">Data Management</h2>
+      <div class="actions">
+        <button class="btn-primary" onclick="saveProjects()">Save All Changes</button>
+        <button class="btn-secondary" onclick="exportProjects()">Export JSON</button>
+        <button class="btn-danger" onclick="resetProjects()">Reset to Defaults</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+const STORAGE_KEY = 'project_health';
+const REVENUE_KEY = 'project_revenue';
+const TARGET_DATE = new Date(Date.now() + 30 * 86400000); // 30 days out
+
+// Example projects — replace with your own.
+const DEFAULT_PROJECTS = [
+  {
+    id: 'example-saas',
+    name: 'Example SaaS',
+    desc: 'Replace this with your live product.',
+    status: 'live',
+    lastDeploy: new Date().toISOString().slice(0, 10),
+    uptime: '99.5%',
+    visitors: '—',
+    revenue: '$0',
+    url: '',
+    admin: '',
+    repo: '',
+    metrics: { requests: '—', latency: '—', errors: '—', storage: '—' }
+  },
+  {
+    id: 'example-side',
+    name: 'Side Project',
+    desc: 'Replace this with a project in development.',
+    status: 'dev',
+    lastDeploy: new Date().toISOString().slice(0, 10),
+    uptime: 'N/A',
+    visitors: '0',
+    revenue: '$0',
+    url: '',
+    admin: '',
+    repo: '',
+    metrics: { commits: '—', issues: '—', stars: '—', users: '—' }
+  }
+];
+
+function load() {
+  const d = localStorage.getItem(STORAGE_KEY);
+  return d ? JSON.parse(d) : JSON.parse(JSON.stringify(DEFAULT_PROJECTS));
+}
+function save(d) { localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); }
+
+let activityChart;
+
+function init() {
+  updateCountdown();
+  const rev = localStorage.getItem(REVENUE_KEY) || '0';
+  document.getElementById('revenue-input').value = rev;
+  document.getElementById('revenue-display').textContent = '$' + parseFloat(rev).toFixed(2);
+  render();
+}
+
+function updateCountdown() {
+  const now = new Date();
+  const diff = Math.ceil((TARGET_DATE - now) / (1000 * 60 * 60 * 24));
+  document.getElementById('countdown').textContent = diff > 0 ? diff : (diff === 0 ? 'TODAY' : 'PAST DUE');
+}
+
+function updateRevenue(val) {
+  localStorage.setItem(REVENUE_KEY, val);
+  document.getElementById('revenue-display').textContent = '$' + parseFloat(val || 0).toFixed(2);
+}
+
+function render() {
+  const projects = load();
+  renderStats(projects);
+  renderCards(projects);
+  renderActivityChart(projects);
+}
+
+function renderStats(projects) {
+  const live = projects.filter(p => p.status === 'live').length;
+  const dev = projects.filter(p => p.status === 'dev').length;
+  const paused = projects.filter(p => p.status === 'paused' || p.status === 'archived').length;
+  document.getElementById('stats-row').innerHTML = `
+    <div class="stat-card"><div class="value" style="color:#10b981">${live}</div><div class="label">Live</div></div>
+    <div class="stat-card"><div class="value" style="color:#3b82f6">${dev}</div><div class="label">In Development</div></div>
+    <div class="stat-card"><div class="value" style="color:#f59e0b">${paused}</div><div class="label">Paused / Archived</div></div>
+    <div class="stat-card"><div class="value" style="color:#1a1a2e">${projects.length}</div><div class="label">Total Projects</div></div>
+  `;
+}
+
+function renderCards(projects) {
+  const container = document.getElementById('projects-grid');
+  container.innerHTML = projects.map((p, i) => {
+    const statusClass = 'status-' + p.status;
+    const statusLabel = { live: 'Live', dev: 'In Development', paused: 'Paused', archived: 'Archived' }[p.status] || p.status;
+    const metricEntries = Object.entries(p.metrics || {});
+    const links = [];
+    if (p.url) links.push(`<a href="${p.url}" target="_blank">Website</a>`);
+    if (p.admin) links.push(`<a href="${p.admin}" target="_blank">Admin</a>`);
+    if (p.repo) links.push(`<a href="${p.repo}" target="_blank">Repo</a>`);
+
+    return `<div class="project-card">
+      <div class="header-row">
+        <h3>${p.name}</h3>
+        <span class="status-badge ${statusClass}"><span class="status-dot"></span>${statusLabel}</span>
+      </div>
+      <div class="desc">${p.desc}</div>
+      <div class="metrics-grid">
+        <div class="metric"><div class="m-label">Last Deploy</div><div class="m-value"><input type="date" value="${p.lastDeploy}" data-idx="${i}" data-field="lastDeploy" onchange="updateField(this)"></div></div>
+        <div class="metric"><div class="m-label">Uptime</div><div class="m-value"><input value="${p.uptime}" data-idx="${i}" data-field="uptime" onchange="updateField(this)"></div></div>
+        <div class="metric"><div class="m-label">Visitors</div><div class="m-value"><input value="${p.visitors}" data-idx="${i}" data-field="visitors" onchange="updateField(this)"></div></div>
+        <div class="metric"><div class="m-label">Revenue</div><div class="m-value"><input value="${p.revenue}" data-idx="${i}" data-field="revenue" onchange="updateField(this)"></div></div>
+        ${metricEntries.map(([k, v]) => `<div class="metric"><div class="m-label">${k}</div><div class="m-value"><input value="${v}" data-idx="${i}" data-metric="${k}" onchange="updateMetric(this)"></div></div>`).join('')}
+      </div>
+      ${links.length ? `<div class="links">${links.join('')}</div>` : ''}
+      <div style="margin-top:auto;display:flex;gap:0.5rem;">
+        <select style="font-size:0.75rem;padding:0.25rem;border:1px solid #e5e7eb;border-radius:4px;font-family:inherit" data-idx="${i}" onchange="updateStatus(this)">
+          <option value="live" ${p.status==='live'?'selected':''}>Live</option>
+          <option value="dev" ${p.status==='dev'?'selected':''}>In Development</option>
+          <option value="paused" ${p.status==='paused'?'selected':''}>Paused</option>
+          <option value="archived" ${p.status==='archived'?'selected':''}>Archived</option>
+        </select>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function updateField(el) {
+  const projects = load();
+  projects[el.dataset.idx][el.dataset.field] = el.value;
+  save(projects);
+}
+
+function updateMetric(el) {
+  const projects = load();
+  projects[el.dataset.idx].metrics[el.dataset.metric] = el.value;
+  save(projects);
+}
+
+function updateStatus(el) {
+  const projects = load();
+  projects[el.dataset.idx].status = el.value;
+  save(projects);
+  render();
+}
+
+function renderActivityChart(projects) {
+  const ctx = document.getElementById('activityChart').getContext('2d');
+  if (activityChart) activityChart.destroy();
+  // generate synthetic activity data based on last deploy recency
+  const now = new Date();
+  const colors = ['#3b82f6','#10b981','#f59e0b','#8b5cf6','#ef4444'];
+  const datasets = projects.map((p, i) => {
+    const deployDate = new Date(p.lastDeploy);
+    const daysSinceDeploy = Math.max(0, Math.floor((now - deployDate) / (1000*60*60*24)));
+    const data = [];
+    for (let d = 29; d >= 0; d--) {
+      const dt = new Date(now);
+      dt.setDate(dt.getDate() - d);
+      // activity decays from deploy date
+      const daysFromDeploy = Math.floor((dt - deployDate) / (1000*60*60*24));
+      let activity = 0;
+      if (daysFromDeploy >= 0 && daysFromDeploy < 30) {
+        activity = p.status === 'live' ? 3 + Math.floor(Math.random() * 5) : Math.max(0, 5 - daysFromDeploy * 0.3 + Math.random() * 2);
+      } else if (p.status === 'live') {
+        activity = 1 + Math.floor(Math.random() * 3);
+      }
+      data.push(Math.max(0, Math.round(activity)));
+    }
+    return {
+      label: p.name,
+      data,
+      borderColor: colors[i % colors.length],
+      backgroundColor: colors[i % colors.length] + '22',
+      fill: true,
+      tension: 0.3,
+      pointRadius: 0,
+      borderWidth: 2
+    };
+  });
+  const labels = [];
+  for (let d = 29; d >= 0; d--) {
+    const dt = new Date(now);
+    dt.setDate(dt.getDate() - d);
+    labels.push(dt.toISOString().slice(5,10));
+  }
+  activityChart = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } },
+      scales: { y: { beginAtZero: true, title: { display: true, text: 'Activity Score' } } }
+    }
+  });
+}
+
+function saveProjects() {
+  // data is already saved on each field change, but confirm
+  alert('All project data saved to localStorage.');
+}
+
+function exportProjects() {
+  const blob = new Blob([JSON.stringify({ projects: load(), revenue: localStorage.getItem(REVENUE_KEY) || '0' }, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'project-health-' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+}
+
+function resetProjects() {
+  if (!confirm('Reset all project data to defaults?')) return;
+  save(JSON.parse(JSON.stringify(DEFAULT_PROJECTS)));
+  render();
+}
+
+init();
+</script>
+</body>
+</html>

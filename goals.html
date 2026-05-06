@@ -1,0 +1,827 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Goals & Milestones - Lumen Analytics</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#f8f9fc;--glass:rgba(255,255,255,0.72);--border:rgba(255,255,255,0.6);--text:#1a1a2e;--muted:#6b7280;--blue:#3b82f6;--green:#10b981;--red:#ef4444;--orange:#f59e0b;--purple:#8b5cf6;--pink:#ec4899;--radius:16px;--blur:blur(20px)}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;padding:1.5rem}
+.glass{background:var(--glass);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);border:1px solid var(--border);border-radius:var(--radius)}
+button{font-family:inherit;cursor:pointer;border:none;background:none}
+input,textarea,select{font-family:inherit;border:1px solid #e5e7eb;border-radius:8px;padding:0.5rem 0.75rem;font-size:0.875rem;background:#fff;color:var(--text);width:100%}
+input:focus,textarea:focus,select:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(59,130,246,0.1)}
+textarea{resize:vertical;min-height:60px}
+
+/* Header */
+.header{display:flex;align-items:center;justify-content:space-between;max-width:1400px;margin:0 auto 1.5rem;flex-wrap:wrap;gap:1rem}
+.header h1{font-size:1.5rem;font-weight:700;letter-spacing:-0.02em}
+.header-actions{display:flex;gap:0.5rem;flex-wrap:wrap}
+.btn{padding:0.5rem 1rem;border-radius:8px;font-size:0.8rem;font-weight:600;transition:all 0.2s}
+.btn-primary{background:var(--blue);color:#fff}
+.btn-primary:hover{background:#2563eb}
+.btn-outline{border:1px solid #e5e7eb;color:var(--muted)}
+.btn-outline:hover{border-color:var(--blue);color:var(--blue)}
+.btn-danger{background:var(--red);color:#fff}
+.btn-danger:hover{background:#dc2626}
+.btn-sm{padding:0.3rem 0.6rem;font-size:0.75rem}
+.btn-green{background:var(--green);color:#fff}
+.btn-green:hover{background:#059669}
+
+/* Tabs */
+.tabs{display:flex;gap:0.25rem;max-width:1400px;margin:0 auto 1.5rem;flex-wrap:wrap}
+.tab{padding:0.5rem 1rem;border-radius:8px;font-size:0.8rem;font-weight:500;color:var(--muted);transition:all 0.2s}
+.tab:hover{background:rgba(59,130,246,0.08);color:var(--blue)}
+.tab.active{background:var(--blue);color:#fff}
+
+/* Stats */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1rem;max-width:1400px;margin:0 auto 1.5rem}
+.stat-card{padding:1.25rem;text-align:center}
+.stat-value{font-size:1.75rem;font-weight:800;letter-spacing:-0.02em}
+.stat-label{font-size:0.75rem;color:var(--muted);margin-top:0.25rem;font-weight:500}
+
+/* Main layout */
+.main{display:grid;grid-template-columns:1fr;gap:1.5rem;max-width:1400px;margin:0 auto}
+.main.two-col{grid-template-columns:1fr 380px}
+@media(max-width:900px){.main.two-col{grid-template-columns:1fr}}
+
+/* Goal cards */
+.goals-list{display:flex;flex-direction:column;gap:1rem}
+.goal-card{padding:1.25rem;transition:transform 0.15s,box-shadow 0.15s;cursor:pointer}
+.goal-card:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,0,0,0.06)}
+.goal-header{display:flex;align-items:flex-start;justify-content:space-between;gap:0.75rem;margin-bottom:0.75rem}
+.goal-title{font-size:1rem;font-weight:600;flex:1}
+.goal-meta{display:flex;gap:0.5rem;align-items:center;flex-wrap:wrap}
+.badge{padding:0.2rem 0.6rem;border-radius:20px;font-size:0.7rem;font-weight:600}
+.badge-career{background:rgba(59,130,246,0.12);color:#2563eb}
+.badge-financial{background:rgba(16,185,129,0.12);color:#059669}
+.badge-health{background:rgba(239,68,68,0.12);color:#dc2626}
+.badge-learning{background:rgba(139,92,246,0.12);color:#7c3aed}
+.badge-sideprojects{background:rgba(245,158,11,0.12);color:#d97706}
+.badge-family{background:rgba(236,72,153,0.12);color:#db2777}
+.badge-high{background:rgba(239,68,68,0.1);color:var(--red)}
+.badge-medium{background:rgba(245,158,11,0.1);color:var(--orange)}
+.badge-low{background:rgba(16,185,129,0.1);color:var(--green)}
+.progress-bar{height:6px;background:#e5e7eb;border-radius:3px;overflow:hidden;margin:0.5rem 0}
+.progress-fill{height:100%;border-radius:3px;transition:width 0.4s ease}
+.progress-text{font-size:0.75rem;color:var(--muted);display:flex;justify-content:space-between}
+.goal-desc{font-size:0.8rem;color:var(--muted);margin-bottom:0.5rem;line-height:1.5}
+.milestones{margin-top:0.75rem}
+.milestone{display:flex;align-items:center;gap:0.5rem;padding:0.3rem 0;font-size:0.8rem}
+.milestone input[type="checkbox"]{width:16px;height:16px;accent-color:var(--blue);cursor:pointer}
+.milestone.done span{text-decoration:line-through;color:var(--muted)}
+.goal-footer{display:flex;align-items:center;justify-content:space-between;margin-top:0.75rem;padding-top:0.75rem;border-top:1px solid #f0f0f0}
+.goal-date{font-size:0.75rem;color:var(--muted)}
+.goal-date.overdue{color:var(--red);font-weight:600}
+.goal-actions{display:flex;gap:0.4rem}
+.streak-badge{display:inline-flex;align-items:center;gap:0.25rem;padding:0.2rem 0.5rem;border-radius:12px;font-size:0.7rem;font-weight:600;background:rgba(245,158,11,0.12);color:#d97706}
+
+/* Timeline */
+.timeline-container{padding:1.5rem;overflow-x:auto}
+.timeline{position:relative;min-height:300px;padding:2rem 0}
+.timeline-axis{position:absolute;top:50%;left:0;right:0;height:2px;background:#e5e7eb}
+.timeline-now{position:absolute;top:calc(50% - 20px);width:2px;height:40px;background:var(--red);z-index:2}
+.timeline-now::after{content:'Today';position:absolute;top:-20px;left:50%;transform:translateX(-50%);font-size:0.65rem;color:var(--red);font-weight:600;white-space:nowrap}
+.timeline-item{position:absolute;transform:translateX(-50%);z-index:1;text-align:center;cursor:pointer;transition:transform 0.2s}
+.timeline-item:hover{transform:translateX(-50%) scale(1.05)}
+.timeline-dot{width:14px;height:14px;border-radius:50%;margin:0 auto 0.5rem;border:2px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.15)}
+.timeline-label{font-size:0.65rem;font-weight:600;max-width:100px;line-height:1.3;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.timeline-date-label{font-size:0.6rem;color:var(--muted);margin-top:0.2rem}
+
+/* Charts panel */
+.charts-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.5rem;max-width:1400px;margin:0 auto}
+.chart-card{padding:1.5rem}
+.chart-card h3{font-size:0.9rem;font-weight:600;margin-bottom:1rem}
+.chart-wrap{position:relative;height:250px}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.3);backdrop-filter:blur(4px);z-index:100;display:none;align-items:center;justify-content:center;padding:1rem}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:var(--radius);padding:2rem;max-width:600px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.15)}
+.modal h2{font-size:1.15rem;font-weight:700;margin-bottom:1.5rem}
+.form-group{margin-bottom:1rem}
+.form-group label{display:block;font-size:0.8rem;font-weight:600;margin-bottom:0.35rem;color:var(--muted)}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.milestone-inputs{display:flex;flex-direction:column;gap:0.5rem;margin-top:0.5rem}
+.milestone-input-row{display:flex;gap:0.5rem;align-items:center}
+.milestone-input-row input{flex:1}
+.modal-actions{display:flex;gap:0.5rem;justify-content:flex-end;margin-top:1.5rem}
+
+/* Notes panel */
+.notes-panel{margin-top:1rem;padding-top:1rem;border-top:1px solid #f0f0f0}
+.note-entry{padding:0.75rem;background:#f9fafb;border-radius:8px;margin-bottom:0.5rem}
+.note-text{font-size:0.8rem;line-height:1.5}
+.note-time{font-size:0.65rem;color:var(--muted);margin-top:0.25rem}
+.note-input-row{display:flex;gap:0.5rem;margin-top:0.5rem}
+.note-input-row input{flex:1}
+
+/* Filters bar */
+.filters{display:flex;gap:0.5rem;max-width:1400px;margin:0 auto 1rem;flex-wrap:wrap;align-items:center}
+.filters select{width:auto;font-size:0.8rem;padding:0.4rem 0.6rem}
+.filters input[type="text"]{width:200px;font-size:0.8rem;padding:0.4rem 0.6rem}
+
+/* Streaks modal */
+.checkin-btn{padding:0.3rem 0.6rem;font-size:0.7rem;font-weight:600;border-radius:6px;background:rgba(16,185,129,0.12);color:#059669;transition:all 0.2s}
+.checkin-btn:hover{background:#10b981;color:#fff}
+.checkin-btn.checked{background:#10b981;color:#fff;pointer-events:none}
+
+.back-link{display:inline-flex;align-items:center;gap:0.4rem;color:var(--muted);font-size:0.85rem;text-decoration:none;margin-bottom:0.5rem;font-weight:500}
+.back-link:hover{color:var(--blue)}
+
+@media(max-width:600px){
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
+  .form-row{grid-template-columns:1fr}
+  .header{flex-direction:column;align-items:flex-start}
+}
+</style>
+</head>
+<body>
+<a href="index.html" class="back-link">
+  <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6" transform="scale(0.67) translate(2,2)"/></svg>
+  Back to Analytics
+</a>
+<div class="header">
+  <h1>Goals & Milestones</h1>
+  <div class="header-actions">
+    <button class="btn btn-outline" onclick="exportData()">Export JSON</button>
+    <label class="btn btn-outline" style="margin:0">Import <input type="file" accept=".json" onchange="importData(event)" hidden></label>
+    <button class="btn btn-primary" onclick="openAddModal()">+ New Goal</button>
+  </div>
+</div>
+
+<div class="tabs" id="viewTabs">
+  <button class="tab active" data-view="dashboard" onclick="switchView('dashboard',this)">Dashboard</button>
+  <button class="tab" data-view="goals" onclick="switchView('goals',this)">Goals</button>
+  <button class="tab" data-view="timeline" onclick="switchView('timeline',this)">Timeline</button>
+  <button class="tab" data-view="charts" onclick="switchView('charts',this)">Charts</button>
+</div>
+
+<!-- STATS -->
+<div class="stats-grid" id="statsGrid">
+  <div class="stat-card glass"><div class="stat-value" id="statTotal">0</div><div class="stat-label">Total Goals</div></div>
+  <div class="stat-card glass"><div class="stat-value" style="color:var(--green)" id="statCompleted">0</div><div class="stat-label">Completed</div></div>
+  <div class="stat-card glass"><div class="stat-value" style="color:var(--blue)" id="statInProgress">0</div><div class="stat-label">In Progress</div></div>
+  <div class="stat-card glass"><div class="stat-value" style="color:var(--red)" id="statOverdue">0</div><div class="stat-label">Overdue</div></div>
+  <div class="stat-card glass"><div class="stat-value" style="color:var(--purple)" id="statRate">0%</div><div class="stat-label">Completion Rate</div></div>
+  <div class="stat-card glass"><div class="stat-value" style="color:var(--orange)" id="statStreak">0</div><div class="stat-label">Best Streak</div></div>
+</div>
+
+<!-- FILTERS -->
+<div class="filters" id="filtersBar" style="display:none">
+  <select id="filterCat" onchange="renderGoals()">
+    <option value="">All Categories</option>
+    <option value="Career">Career</option>
+    <option value="Financial">Financial</option>
+    <option value="Health">Health</option>
+    <option value="Learning">Learning</option>
+    <option value="Side Projects">Side Projects</option>
+    <option value="Family">Family</option>
+  </select>
+  <select id="filterPriority" onchange="renderGoals()">
+    <option value="">All Priorities</option>
+    <option value="High">High</option>
+    <option value="Medium">Medium</option>
+    <option value="Low">Low</option>
+  </select>
+  <select id="filterStatus" onchange="renderGoals()">
+    <option value="">All Status</option>
+    <option value="active">Active</option>
+    <option value="completed">Completed</option>
+    <option value="overdue">Overdue</option>
+  </select>
+  <select id="filterSort" onchange="renderGoals()">
+    <option value="date-asc">Target Date (Soonest)</option>
+    <option value="date-desc">Target Date (Latest)</option>
+    <option value="progress-desc">Most Progress</option>
+    <option value="progress-asc">Least Progress</option>
+    <option value="priority">Priority</option>
+  </select>
+  <input type="text" id="filterSearch" placeholder="Search goals..." oninput="renderGoals()">
+</div>
+
+<!-- VIEWS -->
+<div id="viewDashboard" class="main two-col">
+  <div>
+    <div class="goals-list" id="dashGoals"></div>
+  </div>
+  <div>
+    <div class="chart-card glass" style="margin-bottom:1rem"><h3>By Category</h3><div class="chart-wrap" style="height:220px"><canvas id="dashPie"></canvas></div></div>
+    <div class="chart-card glass"><h3>Category Balance</h3><div class="chart-wrap" style="height:220px"><canvas id="dashRadar"></canvas></div></div>
+  </div>
+</div>
+
+<div id="viewGoals" class="main" style="display:none">
+  <div class="goals-list" id="allGoals"></div>
+</div>
+
+<div id="viewTimeline" style="display:none">
+  <div class="timeline-container glass" style="max-width:1400px;margin:0 auto">
+    <div class="timeline" id="timelinePlot"></div>
+  </div>
+</div>
+
+<div id="viewCharts" style="display:none">
+  <div class="charts-grid">
+    <div class="chart-card glass"><h3>Goals by Category</h3><div class="chart-wrap"><canvas id="chartPie"></canvas></div></div>
+    <div class="chart-card glass"><h3>Completions Over Time (6 Months)</h3><div class="chart-wrap"><canvas id="chartBar"></canvas></div></div>
+    <div class="chart-card glass"><h3>Category Balance</h3><div class="chart-wrap"><canvas id="chartRadar"></canvas></div></div>
+  </div>
+</div>
+
+<!-- MODAL: Add/Edit Goal -->
+<div class="modal-overlay" id="goalModal">
+  <div class="modal">
+    <h2 id="modalTitle">New Goal</h2>
+    <input type="hidden" id="editId">
+    <div class="form-group"><label>Title</label><input type="text" id="goalTitle" placeholder="What do you want to achieve?"></div>
+    <div class="form-row">
+      <div class="form-group"><label>Category</label>
+        <select id="goalCat">
+          <option>Career</option><option>Financial</option><option>Health</option>
+          <option>Learning</option><option>Side Projects</option><option>Family</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Priority</label>
+        <select id="goalPriority"><option>High</option><option>Medium</option><option>Low</option></select>
+      </div>
+    </div>
+    <div class="form-group"><label>Target Date</label><input type="date" id="goalDate"></div>
+    <div class="form-group"><label>Description</label><textarea id="goalDesc" rows="2" placeholder="Details..."></textarea></div>
+    <div class="form-group">
+      <label>Milestones</label>
+      <div class="milestone-inputs" id="milestoneInputs"></div>
+      <button class="btn btn-sm btn-outline" style="margin-top:0.5rem" onclick="addMilestoneInput()">+ Add Milestone</button>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-danger" id="deleteBtn" style="display:none" onclick="deleteGoal()">Delete</button>
+      <button class="btn btn-primary" onclick="saveGoal()">Save Goal</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: Goal Detail -->
+<div class="modal-overlay" id="detailModal">
+  <div class="modal" style="max-width:650px">
+    <div id="detailContent"></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeDetail()">Close</button>
+      <button class="btn btn-primary" id="detailEditBtn">Edit</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const LS_KEY = 'lumen_goals_v1';
+const LS_STREAK_KEY = 'lumen_goals_streaks_v1';
+const LS_NOTES_KEY = 'lumen_goals_notes_v1';
+const LS_HISTORY_KEY = 'lumen_goals_history_v1';
+
+const CATEGORY_COLORS = {
+  'Career':'#3b82f6','Financial':'#10b981','Health':'#ef4444',
+  'Learning':'#8b5cf6','Side Projects':'#f59e0b','Family':'#ec4899'
+};
+const PRIORITY_ORDER = {High:0,Medium:1,Low:2};
+
+let goals = [];
+let streaks = {};
+let notes = {};
+let history = [];
+let charts = {};
+
+function load() {
+  try { goals = JSON.parse(localStorage.getItem(LS_KEY)) || []; } catch(e) { goals = []; }
+  try { streaks = JSON.parse(localStorage.getItem(LS_STREAK_KEY)) || {}; } catch(e) { streaks = {}; }
+  try { notes = JSON.parse(localStorage.getItem(LS_NOTES_KEY)) || {}; } catch(e) { notes = {}; }
+  try { history = JSON.parse(localStorage.getItem(LS_HISTORY_KEY)) || []; } catch(e) { history = []; }
+  if (goals.length === 0) loadSampleData();
+}
+
+function save() {
+  localStorage.setItem(LS_KEY, JSON.stringify(goals));
+  localStorage.setItem(LS_STREAK_KEY, JSON.stringify(streaks));
+  localStorage.setItem(LS_NOTES_KEY, JSON.stringify(notes));
+  localStorage.setItem(LS_HISTORY_KEY, JSON.stringify(history));
+}
+
+function loadSampleData() {
+  const samples = [
+    {id:genId(),title:'Get AWS Solutions Architect certification',category:'Career',priority:'High',
+     targetDate:'2026-06-30',desc:'Pass the AWS Solutions Architect Associate exam with a score above 800.',
+     milestones:[{id:genId(),text:'Complete Stephane Maarek course',done:false},{id:genId(),text:'Finish 3 practice exams',done:false},{id:genId(),text:'Score 80%+ on practice exam',done:false},{id:genId(),text:'Schedule and pass exam',done:false}],createdAt:new Date('2026-04-01').toISOString()},
+    {id:genId(),title:'Build $5K/mo passive income',category:'Financial',priority:'High',
+     targetDate:'2026-12-31',desc:'Diversified passive income streams totaling $5,000/month by end of 2026.',
+     milestones:[{id:genId(),text:'Smara revenue to $500/mo',done:false},{id:genId(),text:'Scoper revenue to $500/mo',done:false},{id:genId(),text:'Consulting contracts at $2K/mo',done:false},{id:genId(),text:'Content income at $1K/mo',done:false},{id:genId(),text:'Investment returns at $1K/mo',done:false}],createdAt:new Date('2026-04-01').toISOString()},
+    {id:genId(),title:'Run 5K under 25 minutes',category:'Health',priority:'Medium',
+     targetDate:'2026-09-30',desc:'Build running endurance and speed to complete a 5K race in under 25 minutes.',
+     milestones:[{id:genId(),text:'Run 5K without stopping',done:false},{id:genId(),text:'Complete 5K under 30 min',done:false},{id:genId(),text:'Complete 5K under 27 min',done:false},{id:genId(),text:'Complete 5K under 25 min',done:false}],createdAt:new Date('2026-04-01').toISOString()},
+    {id:genId(),title:'Complete 3 AI/ML courses',category:'Learning',priority:'Medium',
+     targetDate:'2026-08-31',desc:'Deepen AI/ML knowledge through structured courses covering transformers, MLOps, and fine-tuning.',
+     milestones:[{id:genId(),text:'Complete fast.ai Practical Deep Learning',done:false},{id:genId(),text:'Complete MLOps Zoomcamp',done:false},{id:genId(),text:'Complete HuggingFace course',done:false}],createdAt:new Date('2026-04-01').toISOString()},
+    {id:genId(),title:'Launch Smara to 100 paying users',category:'Side Projects',priority:'High',
+     targetDate:'2026-07-31',desc:'Scale Smara from MVP to 100 paying subscribers with solid retention.',
+     milestones:[{id:genId(),text:'Ship Teams feature (v1.2)',done:false},{id:genId(),text:'Launch Product Hunt',done:false},{id:genId(),text:'Reach 50 users',done:false},{id:genId(),text:'Reach 100 paying users',done:false}],createdAt:new Date('2026-04-01').toISOString()},
+    {id:genId(),title:'Plan summer vacation to India',category:'Family',priority:'High',
+     targetDate:'2026-05-31',desc:'Plan and book a family trip to India for summer 2026. Visit grandparents in Hyderabad.',
+     milestones:[{id:genId(),text:'Book flights',done:false},{id:genId(),text:'Plan itinerary',done:false},{id:genId(),text:'Book accommodations',done:false},{id:genId(),text:'Get travel insurance',done:false}],createdAt:new Date('2026-04-01').toISOString()},
+  ];
+  goals = samples;
+  save();
+}
+
+function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2,8); }
+
+function getProgress(goal) {
+  if (!goal.milestones || goal.milestones.length === 0) return 0;
+  const done = goal.milestones.filter(m => m.done).length;
+  return Math.round((done / goal.milestones.length) * 100);
+}
+
+function isOverdue(goal) {
+  return new Date(goal.targetDate) < new Date() && getProgress(goal) < 100;
+}
+
+function isCompleted(goal) { return getProgress(goal) === 100; }
+
+function getFiltered() {
+  let list = [...goals];
+  const cat = document.getElementById('filterCat')?.value;
+  const pri = document.getElementById('filterPriority')?.value;
+  const status = document.getElementById('filterStatus')?.value;
+  const search = document.getElementById('filterSearch')?.value?.toLowerCase() || '';
+  const sort = document.getElementById('filterSort')?.value || 'date-asc';
+
+  if (cat) list = list.filter(g => g.category === cat);
+  if (pri) list = list.filter(g => g.priority === pri);
+  if (status === 'active') list = list.filter(g => !isCompleted(g) && !isOverdue(g));
+  if (status === 'completed') list = list.filter(g => isCompleted(g));
+  if (status === 'overdue') list = list.filter(g => isOverdue(g));
+  if (search) list = list.filter(g => g.title.toLowerCase().includes(search) || (g.desc||'').toLowerCase().includes(search));
+
+  list.sort((a,b) => {
+    if (sort === 'date-asc') return new Date(a.targetDate) - new Date(b.targetDate);
+    if (sort === 'date-desc') return new Date(b.targetDate) - new Date(a.targetDate);
+    if (sort === 'progress-desc') return getProgress(b) - getProgress(a);
+    if (sort === 'progress-asc') return getProgress(a) - getProgress(b);
+    if (sort === 'priority') return (PRIORITY_ORDER[a.priority]||1) - (PRIORITY_ORDER[b.priority]||1);
+    return 0;
+  });
+  return list;
+}
+
+function progressColor(pct) {
+  if (pct >= 100) return 'var(--green)';
+  if (pct >= 60) return 'var(--blue)';
+  if (pct >= 30) return 'var(--orange)';
+  return 'var(--red)';
+}
+
+function catClass(cat) { return 'badge-' + cat.toLowerCase().replace(/\s+/g,''); }
+
+function renderGoalCard(goal, compact) {
+  const pct = getProgress(goal);
+  const overdue = isOverdue(goal);
+  const completed = isCompleted(goal);
+  const streak = getStreak(goal.id);
+  const today = new Date().toISOString().slice(0,10);
+  const checkedIn = streaks[goal.id] && streaks[goal.id].lastDate === today;
+
+  let milestonesHtml = '';
+  if (!compact && goal.milestones && goal.milestones.length > 0) {
+    milestonesHtml = '<div class="milestones">' + goal.milestones.map(m =>
+      `<div class="milestone ${m.done?'done':''}">
+        <input type="checkbox" ${m.done?'checked':''} onchange="toggleMilestone('${goal.id}','${m.id}',event)">
+        <span>${esc(m.text)}</span>
+      </div>`
+    ).join('') + '</div>';
+  }
+
+  const daysLeft = Math.ceil((new Date(goal.targetDate) - new Date()) / 86400000);
+  const dateText = completed ? 'Completed' : overdue ? `Overdue by ${Math.abs(daysLeft)} days` : `${daysLeft} days left`;
+
+  return `<div class="goal-card glass" onclick="openDetail('${goal.id}')">
+    <div class="goal-header">
+      <div class="goal-title">${esc(goal.title)}</div>
+      <div class="goal-meta">
+        <span class="badge ${catClass(goal.category)}">${goal.category}</span>
+        <span class="badge badge-${goal.priority.toLowerCase()}">${goal.priority}</span>
+      </div>
+    </div>
+    ${goal.desc && !compact ? `<div class="goal-desc">${esc(goal.desc)}</div>` : ''}
+    <div class="progress-bar"><div class="progress-fill" style="width:${pct}%;background:${progressColor(pct)}"></div></div>
+    <div class="progress-text"><span>${pct}% complete</span><span>${goal.milestones?goal.milestones.filter(m=>m.done).length:0}/${goal.milestones?goal.milestones.length:0} milestones</span></div>
+    ${milestonesHtml}
+    <div class="goal-footer">
+      <span class="goal-date ${overdue?'overdue':''}">${dateText} &middot; ${goal.targetDate}</span>
+      <div class="goal-actions">
+        ${streak > 0 ? `<span class="streak-badge">&#128293; ${streak}d streak</span>` : ''}
+        ${!completed ? `<button class="checkin-btn ${checkedIn?'checked':''}" onclick="checkIn('${goal.id}',event)">${checkedIn?'Checked in':'Check in'}</button>` : ''}
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderGoals() {
+  const filtered = getFiltered();
+  const allGoalsEl = document.getElementById('allGoals');
+  const dashGoalsEl = document.getElementById('dashGoals');
+
+  if (allGoalsEl) allGoalsEl.innerHTML = filtered.length ? filtered.map(g => renderGoalCard(g, false)).join('') : '<p style="color:var(--muted);text-align:center;padding:2rem">No goals match your filters</p>';
+  if (dashGoalsEl) dashGoalsEl.innerHTML = goals.slice().sort((a,b) => (PRIORITY_ORDER[a.priority]||1) - (PRIORITY_ORDER[b.priority]||1)).slice(0,5).map(g => renderGoalCard(g, true)).join('');
+}
+
+function updateStats() {
+  const total = goals.length;
+  const completed = goals.filter(g => isCompleted(g)).length;
+  const overdue = goals.filter(g => isOverdue(g)).length;
+  const inProgress = total - completed - overdue;
+  const rate = total ? Math.round((completed / total) * 100) : 0;
+  const bestStreak = Math.max(0, ...Object.values(streaks).map(s => s.best || 0));
+
+  document.getElementById('statTotal').textContent = total;
+  document.getElementById('statCompleted').textContent = completed;
+  document.getElementById('statInProgress').textContent = inProgress;
+  document.getElementById('statOverdue').textContent = overdue;
+  document.getElementById('statRate').textContent = rate + '%';
+  document.getElementById('statStreak').textContent = bestStreak;
+}
+
+// Streaks
+function getStreak(goalId) {
+  const s = streaks[goalId];
+  if (!s) return 0;
+  const today = new Date().toISOString().slice(0,10);
+  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0,10);
+  if (s.lastDate === today || s.lastDate === yesterday) return s.current;
+  return 0;
+}
+
+function checkIn(goalId, e) {
+  e.stopPropagation();
+  const today = new Date().toISOString().slice(0,10);
+  if (!streaks[goalId]) streaks[goalId] = {current:0,best:0,lastDate:null};
+  const s = streaks[goalId];
+  if (s.lastDate === today) return;
+  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0,10);
+  if (s.lastDate === yesterday) {
+    s.current++;
+  } else {
+    s.current = 1;
+  }
+  s.lastDate = today;
+  if (s.current > s.best) s.best = s.current;
+  save();
+  refreshAll();
+}
+
+function toggleMilestone(goalId, milestoneId, e) {
+  e.stopPropagation();
+  const goal = goals.find(g => g.id === goalId);
+  if (!goal) return;
+  const m = goal.milestones.find(ms => ms.id === milestoneId);
+  if (!m) return;
+  m.done = !m.done;
+  // Record history
+  const now = new Date().toISOString();
+  history.push({goalId, milestoneId, done: m.done, date: now, category: goal.category});
+  save();
+  refreshAll();
+}
+
+// Modal
+function openAddModal() {
+  document.getElementById('modalTitle').textContent = 'New Goal';
+  document.getElementById('editId').value = '';
+  document.getElementById('goalTitle').value = '';
+  document.getElementById('goalCat').value = 'Career';
+  document.getElementById('goalPriority').value = 'Medium';
+  document.getElementById('goalDate').value = '';
+  document.getElementById('goalDesc').value = '';
+  document.getElementById('deleteBtn').style.display = 'none';
+  document.getElementById('milestoneInputs').innerHTML = '';
+  addMilestoneInput();
+  addMilestoneInput();
+  document.getElementById('goalModal').classList.add('open');
+}
+
+function openEditModal(goalId) {
+  const goal = goals.find(g => g.id === goalId);
+  if (!goal) return;
+  document.getElementById('modalTitle').textContent = 'Edit Goal';
+  document.getElementById('editId').value = goal.id;
+  document.getElementById('goalTitle').value = goal.title;
+  document.getElementById('goalCat').value = goal.category;
+  document.getElementById('goalPriority').value = goal.priority;
+  document.getElementById('goalDate').value = goal.targetDate;
+  document.getElementById('goalDesc').value = goal.desc || '';
+  document.getElementById('deleteBtn').style.display = 'inline-flex';
+  const mi = document.getElementById('milestoneInputs');
+  mi.innerHTML = '';
+  (goal.milestones||[]).forEach(m => addMilestoneInput(m.text));
+  document.getElementById('goalModal').classList.add('open');
+}
+
+function closeModal() { document.getElementById('goalModal').classList.remove('open'); }
+
+function addMilestoneInput(val) {
+  const div = document.createElement('div');
+  div.className = 'milestone-input-row';
+  div.innerHTML = `<input type="text" placeholder="Milestone..." value="${esc(val||'')}"><button class="btn btn-sm btn-outline" onclick="this.parentElement.remove()">&#10005;</button>`;
+  document.getElementById('milestoneInputs').appendChild(div);
+}
+
+function saveGoal() {
+  const title = document.getElementById('goalTitle').value.trim();
+  if (!title) return alert('Title is required');
+  const date = document.getElementById('goalDate').value;
+  if (!date) return alert('Target date is required');
+
+  const editId = document.getElementById('editId').value;
+  const milestoneEls = document.querySelectorAll('#milestoneInputs input');
+  const milestones = [];
+  milestoneEls.forEach(el => {
+    const t = el.value.trim();
+    if (t) milestones.push({id:genId(),text:t,done:false});
+  });
+
+  if (editId) {
+    const goal = goals.find(g => g.id === editId);
+    if (goal) {
+      // Preserve done state for matching milestones
+      const oldMilestones = goal.milestones || [];
+      milestones.forEach(nm => {
+        const match = oldMilestones.find(om => om.text === nm.text);
+        if (match) nm.done = match.done;
+      });
+      goal.title = title;
+      goal.category = document.getElementById('goalCat').value;
+      goal.priority = document.getElementById('goalPriority').value;
+      goal.targetDate = date;
+      goal.desc = document.getElementById('goalDesc').value.trim();
+      goal.milestones = milestones;
+    }
+  } else {
+    goals.push({
+      id: genId(),
+      title,
+      category: document.getElementById('goalCat').value,
+      priority: document.getElementById('goalPriority').value,
+      targetDate: date,
+      desc: document.getElementById('goalDesc').value.trim(),
+      milestones,
+      createdAt: new Date().toISOString()
+    });
+  }
+  save();
+  closeModal();
+  refreshAll();
+}
+
+function deleteGoal() {
+  const editId = document.getElementById('editId').value;
+  if (!editId) return;
+  if (!confirm('Delete this goal?')) return;
+  goals = goals.filter(g => g.id !== editId);
+  delete streaks[editId];
+  delete notes[editId];
+  save();
+  closeModal();
+  refreshAll();
+}
+
+// Detail
+function openDetail(goalId) {
+  const goal = goals.find(g => g.id === goalId);
+  if (!goal) return;
+  const pct = getProgress(goal);
+  const goalNotes = notes[goalId] || [];
+  const streak = getStreak(goalId);
+
+  let html = `
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:1rem">
+      <div>
+        <h2 style="margin-bottom:0.5rem">${esc(goal.title)}</h2>
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+          <span class="badge ${catClass(goal.category)}">${goal.category}</span>
+          <span class="badge badge-${goal.priority.toLowerCase()}">${goal.priority}</span>
+          ${streak > 0 ? `<span class="streak-badge">&#128293; ${streak}d streak</span>` : ''}
+        </div>
+      </div>
+    </div>
+    ${goal.desc ? `<p style="font-size:0.875rem;color:var(--muted);margin-bottom:1rem;line-height:1.6">${esc(goal.desc)}</p>` : ''}
+    <div style="margin-bottom:1rem">
+      <div style="display:flex;justify-content:space-between;font-size:0.8rem;margin-bottom:0.35rem">
+        <span style="font-weight:600">${pct}% complete</span>
+        <span style="color:var(--muted)">Target: ${goal.targetDate}</span>
+      </div>
+      <div class="progress-bar" style="height:8px"><div class="progress-fill" style="width:${pct}%;background:${progressColor(pct)}"></div></div>
+    </div>
+    <div class="milestones" style="margin-bottom:1rem">
+      <h3 style="font-size:0.85rem;font-weight:600;margin-bottom:0.5rem">Milestones</h3>
+      ${(goal.milestones||[]).map(m => `
+        <div class="milestone ${m.done?'done':''}">
+          <input type="checkbox" ${m.done?'checked':''} onchange="toggleMilestone('${goal.id}','${m.id}',event);openDetail('${goal.id}')">
+          <span>${esc(m.text)}</span>
+        </div>
+      `).join('')}
+    </div>
+    <div class="notes-panel">
+      <h3 style="font-size:0.85rem;font-weight:600;margin-bottom:0.5rem">Notes & Journal</h3>
+      ${goalNotes.map((n,i) => `
+        <div class="note-entry">
+          <div class="note-text">${esc(n.text)}</div>
+          <div class="note-time">${new Date(n.date).toLocaleString()}</div>
+        </div>
+      `).join('')}
+      <div class="note-input-row">
+        <input type="text" id="noteInput_${goalId}" placeholder="Add a note..." onkeydown="if(event.key==='Enter')addNote('${goalId}')">
+        <button class="btn btn-sm btn-green" onclick="addNote('${goalId}')">Add</button>
+      </div>
+    </div>
+  `;
+  document.getElementById('detailContent').innerHTML = html;
+  document.getElementById('detailEditBtn').onclick = () => { closeDetail(); openEditModal(goalId); };
+  document.getElementById('detailModal').classList.add('open');
+}
+
+function closeDetail() { document.getElementById('detailModal').classList.remove('open'); }
+
+function addNote(goalId) {
+  const input = document.getElementById('noteInput_' + goalId);
+  if (!input) return;
+  const text = input.value.trim();
+  if (!text) return;
+  if (!notes[goalId]) notes[goalId] = [];
+  notes[goalId].unshift({text, date: new Date().toISOString()});
+  save();
+  openDetail(goalId);
+}
+
+// Timeline
+function renderTimeline() {
+  const container = document.getElementById('timelinePlot');
+  if (!container) return;
+  const sorted = [...goals].sort((a,b) => new Date(a.targetDate) - new Date(b.targetDate));
+  if (sorted.length === 0) { container.innerHTML = '<p style="text-align:center;color:var(--muted);padding:3rem">No goals to display</p>'; return; }
+
+  const earliest = new Date(Math.min(new Date(), ...sorted.map(g => new Date(g.createdAt || g.targetDate))));
+  const latest = new Date(Math.max(...sorted.map(g => new Date(g.targetDate))));
+  earliest.setMonth(earliest.getMonth() - 1);
+  latest.setMonth(latest.getMonth() + 1);
+  const range = latest - earliest;
+  const now = new Date();
+  const nowPct = ((now - earliest) / range) * 100;
+
+  let html = '<div class="timeline-axis"></div>';
+  html += `<div class="timeline-now" style="left:${Math.min(98,Math.max(2,nowPct))}%"></div>`;
+
+  sorted.forEach((goal, i) => {
+    const pct = ((new Date(goal.targetDate) - earliest) / range) * 100;
+    const top = i % 2 === 0 ? 'calc(50% - 60px)' : 'calc(50% + 20px)';
+    const color = CATEGORY_COLORS[goal.category] || '#6b7280';
+    const progress = getProgress(goal);
+    html += `<div class="timeline-item" style="left:${Math.min(97,Math.max(3,pct))}%;top:${top}" onclick="openDetail('${goal.id}')">
+      <div class="timeline-dot" style="background:${color}${progress>=100?'':''};opacity:${progress>=100?'0.5':'1'}"></div>
+      <div class="timeline-label">${esc(goal.title)}</div>
+      <div class="timeline-date-label">${goal.targetDate}</div>
+    </div>`;
+  });
+
+  container.innerHTML = html;
+  container.style.minWidth = Math.max(800, sorted.length * 140) + 'px';
+}
+
+// Charts
+function renderCharts() {
+  // Category pie
+  const catCounts = {};
+  goals.forEach(g => { catCounts[g.category] = (catCounts[g.category]||0) + 1; });
+  const catLabels = Object.keys(catCounts);
+  const catData = Object.values(catCounts);
+  const catColors = catLabels.map(c => CATEGORY_COLORS[c] || '#6b7280');
+
+  ['dashPie','chartPie'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (charts[id]) charts[id].destroy();
+    charts[id] = new Chart(el, {
+      type:'doughnut',
+      data:{labels:catLabels,datasets:[{data:catData,backgroundColor:catColors,borderWidth:0}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}}}}
+    });
+  });
+
+  // Completions over time (bar)
+  const months = [];
+  for (let i = 5; i >= 0; i--) {
+    const d = new Date();
+    d.setMonth(d.getMonth() - i);
+    months.push(d.toISOString().slice(0,7));
+  }
+  const monthLabels = months.map(m => {
+    const d = new Date(m + '-01');
+    return d.toLocaleString('default',{month:'short',year:'2-digit'});
+  });
+  const completionData = months.map(m => {
+    return history.filter(h => h.done && h.date.slice(0,7) === m).length;
+  });
+
+  const barEl = document.getElementById('chartBar');
+  if (barEl) {
+    if (charts.chartBar) charts.chartBar.destroy();
+    charts.chartBar = new Chart(barEl, {
+      type:'bar',
+      data:{labels:monthLabels,datasets:[{label:'Milestones Completed',data:completionData,backgroundColor:'rgba(59,130,246,0.6)',borderRadius:6}]},
+      options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:1}}}}
+    });
+  }
+
+  // Radar
+  const categories = ['Career','Financial','Health','Learning','Side Projects','Family'];
+  const radarData = categories.map(cat => {
+    const catGoals = goals.filter(g => g.category === cat);
+    if (catGoals.length === 0) return 0;
+    return Math.round(catGoals.reduce((sum,g) => sum + getProgress(g), 0) / catGoals.length);
+  });
+
+  ['dashRadar','chartRadar'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    if (charts[id]) charts[id].destroy();
+    charts[id] = new Chart(el, {
+      type:'radar',
+      data:{labels:categories,datasets:[{label:'Avg Progress %',data:radarData,backgroundColor:'rgba(139,92,246,0.15)',borderColor:'#8b5cf6',pointBackgroundColor:'#8b5cf6',borderWidth:2}]},
+      options:{responsive:true,maintainAspectRatio:false,scales:{r:{min:0,max:100,ticks:{stepSize:25,font:{size:10}}}},plugins:{legend:{display:false}}}
+    });
+  });
+}
+
+// View switching
+function switchView(view, tabEl) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  tabEl.classList.add('active');
+  ['Dashboard','Goals','Timeline','Charts'].forEach(v => {
+    const el = document.getElementById('view'+v);
+    if (el) el.style.display = 'none';
+  });
+  const target = document.getElementById('view' + view.charAt(0).toUpperCase() + view.slice(1));
+  if (target) target.style.display = '';
+
+  const fb = document.getElementById('filtersBar');
+  fb.style.display = view === 'goals' ? 'flex' : 'none';
+
+  if (view === 'timeline') renderTimeline();
+  if (view === 'charts' || view === 'dashboard') renderCharts();
+}
+
+function esc(s) { const d = document.createElement('div'); d.textContent = s||''; return d.innerHTML; }
+
+// Export / Import
+function exportData() {
+  const data = {goals, streaks, notes, history, exportDate: new Date().toISOString()};
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'goals-backup-' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+}
+
+function importData(e) {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      const data = JSON.parse(ev.target.result);
+      if (data.goals) goals = data.goals;
+      if (data.streaks) streaks = data.streaks;
+      if (data.notes) notes = data.notes;
+      if (data.history) history = data.history;
+      save();
+      refreshAll();
+      alert('Data imported successfully!');
+    } catch(err) { alert('Invalid file: ' + err.message); }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+}
+
+function refreshAll() {
+  updateStats();
+  renderGoals();
+  renderCharts();
+}
+
+// Init
+load();
+refreshAll();
+
+// Close modals on overlay click
+document.getElementById('goalModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeModal(); });
+document.getElementById('detailModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeDetail(); });
+</script>
+</body>
+</html>

@@ -1,0 +1,697 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gratitude Journal</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f8f9fc;
+    --glass: rgba(255,255,255,0.72);
+    --glass-border: rgba(255,255,255,0.6);
+    --text: #1a1a2e;
+    --text-secondary: #6b7280;
+    --accent: #e85d75;
+    --accent-warm: #f59e0b;
+    --blur: blur(20px);
+    --radius: 16px;
+    --shadow: 0 4px 24px rgba(0,0,0,0.06);
+  }
+  .dark {
+    --bg: #1a1520;
+    --glass: rgba(40,30,45,0.82);
+    --glass-border: rgba(60,50,65,0.5);
+    --text: #f0e6d3;
+    --text-secondary: #a89b8c;
+    --accent: #e8a87c;
+    --accent-warm: #d4915e;
+    --shadow: 0 4px 24px rgba(0,0,0,0.3);
+  }
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    transition: background 0.4s, color 0.4s;
+  }
+  .container { max-width: 960px; margin: 0 auto; padding: 2rem 1.5rem; }
+  .glass {
+    background: var(--glass);
+    backdrop-filter: var(--blur);
+    -webkit-backdrop-filter: var(--blur);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    transition: background 0.4s, border-color 0.4s;
+  }
+
+  /* Header */
+  .header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 1.5rem; flex-wrap: wrap; gap: 1rem;
+  }
+  .header-left { display: flex; align-items: center; gap: 0.75rem; }
+  .header-icon svg { width: 36px; height: 36px; }
+  .header h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -0.02em; }
+  .header-right { display: flex; align-items: center; gap: 0.75rem; }
+
+  /* Quote */
+  .quote-bar {
+    text-align: center; padding: 1rem 1.5rem; margin-bottom: 1.5rem;
+    font-style: italic; font-size: 0.9rem; color: var(--text-secondary);
+    line-height: 1.5; cursor: pointer;
+  }
+  .quote-bar .author { font-style: normal; font-weight: 500; margin-top: 0.35rem; font-size: 0.8rem; }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 0.25rem; margin-bottom: 1.5rem; overflow-x: auto; padding-bottom: 0.25rem; }
+  .tab {
+    padding: 0.5rem 1rem; border-radius: 10px; border: none; background: transparent;
+    color: var(--text-secondary); font-family: inherit; font-size: 0.85rem; font-weight: 500;
+    cursor: pointer; white-space: nowrap; transition: all 0.2s;
+  }
+  .tab:hover { background: var(--glass); }
+  .tab.active { background: var(--accent); color: #fff; }
+
+  /* Stats bar */
+  .stats-bar { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 0.75rem; margin-bottom: 1.5rem; }
+  .stat-card { text-align: center; padding: 1rem; }
+  .stat-card .stat-value { font-size: 1.5rem; font-weight: 700; color: var(--accent); }
+  .stat-card .stat-label { font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem; }
+
+  /* Panel */
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* Form */
+  .entry-form { display: flex; flex-direction: column; gap: 1rem; }
+  .form-row { display: flex; flex-direction: column; gap: 0.35rem; }
+  .form-row label { font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.04em; }
+  .form-row input, .form-row textarea {
+    background: var(--glass); border: 1px solid var(--glass-border); border-radius: 10px;
+    padding: 0.65rem 0.85rem; font-family: inherit; font-size: 0.9rem; color: var(--text);
+    outline: none; transition: border-color 0.2s;
+  }
+  .form-row input:focus, .form-row textarea:focus { border-color: var(--accent); }
+  .form-row textarea { resize: vertical; min-height: 60px; }
+  .rating-row { display: flex; gap: 0.5rem; align-items: center; }
+  .rating-btn {
+    width: 44px; height: 44px; border-radius: 12px; border: 2px solid var(--glass-border);
+    background: var(--glass); font-size: 1.3rem; cursor: pointer; transition: all 0.2s;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .rating-btn:hover, .rating-btn.selected { border-color: var(--accent); transform: scale(1.1); }
+  .rating-btn.selected { background: var(--accent); }
+  .btn {
+    padding: 0.65rem 1.25rem; border-radius: 10px; border: none;
+    font-family: inherit; font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s;
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { opacity: 0.9; transform: translateY(-1px); }
+  .btn-secondary { background: var(--glass); color: var(--text); border: 1px solid var(--glass-border); }
+  .btn-secondary:hover { border-color: var(--accent); }
+  .btn-row { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+
+  /* Streak */
+  .streak-badge {
+    display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.35rem 0.85rem;
+    border-radius: 20px; font-size: 0.85rem; font-weight: 600;
+    background: linear-gradient(135deg, #f59e0b22, #e85d7522); color: var(--accent-warm);
+  }
+
+  /* Calendar */
+  .cal-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 1rem; }
+  .cal-nav h3 { font-size: 1rem; font-weight: 600; }
+  .cal-nav button { background: none; border: none; font-size: 1.2rem; cursor: pointer; color: var(--text); padding: 0.25rem 0.5rem; border-radius: 8px; }
+  .cal-nav button:hover { background: var(--glass); }
+  .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+  .cal-header { font-size: 0.7rem; font-weight: 600; color: var(--text-secondary); text-align: center; padding: 0.35rem; }
+  .cal-day {
+    aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+    border-radius: 10px; font-size: 0.8rem; cursor: pointer; transition: all 0.15s;
+    position: relative;
+  }
+  .cal-day:hover { background: var(--glass); }
+  .cal-day.has-entry { background: rgba(232,93,117,0.15); color: var(--accent); font-weight: 600; }
+  .cal-day.has-entry:hover { background: rgba(232,93,117,0.25); }
+  .cal-day.today { box-shadow: inset 0 0 0 2px var(--accent); }
+  .cal-day.empty { pointer-events: none; }
+
+  /* Word cloud */
+  .word-cloud { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; padding: 1rem 0; min-height: 120px; align-items: center; }
+  .word-tag {
+    padding: 0.3rem 0.7rem; border-radius: 20px; font-weight: 500;
+    background: linear-gradient(135deg, rgba(232,93,117,0.1), rgba(245,158,11,0.1));
+    color: var(--accent);
+  }
+
+  /* Entry card */
+  .entry-card { margin-bottom: 1rem; }
+  .entry-card .entry-date { font-size: 0.8rem; color: var(--text-secondary); font-weight: 600; margin-bottom: 0.5rem; }
+  .entry-card .entry-items { list-style: none; }
+  .entry-card .entry-items li { padding: 0.3rem 0; font-size: 0.9rem; }
+  .entry-card .entry-items li::before { content: ''; margin-right: 0.5rem; }
+  .entry-card .entry-highlight { margin-top: 0.5rem; font-size: 0.85rem; color: var(--accent-warm); }
+  .entry-card .entry-rating { margin-top: 0.35rem; font-size: 1.1rem; }
+
+  /* Monthly review */
+  .review-section { margin-bottom: 1rem; }
+  .review-section h4 { font-size: 0.85rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.04em; }
+  .review-metric { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid var(--glass-border); font-size: 0.9rem; }
+  .review-metric:last-child { border: none; }
+
+  /* Remember */
+  .remember-card { text-align: center; padding: 2rem 1rem; }
+  .remember-card h3 { font-size: 1rem; color: var(--text-secondary); margin-bottom: 1rem; }
+  .remember-content { font-size: 1.1rem; line-height: 1.6; }
+
+  /* Export */
+  .export-area { width: 100%; min-height: 200px; font-family: 'SF Mono', Monaco, monospace; font-size: 0.8rem; background: var(--glass); border: 1px solid var(--glass-border); border-radius: 10px; padding: 1rem; color: var(--text); resize: vertical; }
+
+  /* Toggle */
+  .toggle {
+    width: 48px; height: 26px; border-radius: 13px; border: none; cursor: pointer;
+    background: var(--glass-border); position: relative; transition: background 0.3s;
+  }
+  .toggle::after {
+    content: ''; position: absolute; width: 20px; height: 20px; border-radius: 50%;
+    background: #fff; top: 3px; left: 3px; transition: transform 0.3s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .toggle.on { background: var(--accent); }
+  .toggle.on::after { transform: translateX(22px); }
+
+  /* Modal overlay */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.4);
+    backdrop-filter: blur(8px); z-index: 100; align-items: center; justify-content: center;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal { max-width: 500px; width: 90%; max-height: 80vh; overflow-y: auto; padding: 2rem; }
+  .modal h3 { margin-bottom: 1rem; }
+
+  .empty-state { text-align: center; padding: 3rem 1rem; color: var(--text-secondary); }
+  .empty-state .big-emoji { font-size: 3rem; margin-bottom: 1rem; }
+
+  @media (max-width: 640px) {
+    .container { padding: 1rem; }
+    .stats-bar { grid-template-columns: repeat(2, 1fr); }
+    .header h1 { font-size: 1.3rem; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <!-- Header -->
+  <div class="header">
+    <div class="header-left">
+      <div class="header-icon">
+        <svg viewBox="0 0 36 36" fill="none">
+          <circle cx="18" cy="18" r="16" fill="url(#sunGrad)" opacity="0.15"/>
+          <path d="M18 8C13.2 8 9 11.4 9 16c0 6 9 14 9 14s9-8 9-14c0-4.6-4.2-8-9-8z" fill="url(#heartGrad)"/>
+          <defs>
+            <linearGradient id="heartGrad" x1="9" y1="8" x2="27" y2="30">
+              <stop stop-color="#e85d75"/><stop offset="1" stop-color="#f59e0b"/>
+            </linearGradient>
+            <radialGradient id="sunGrad" cx="18" cy="18" r="16">
+              <stop stop-color="#f59e0b"/><stop offset="1" stop-color="#e85d75"/>
+            </radialGradient>
+          </defs>
+        </svg>
+      </div>
+      <div>
+        <h1>Gratitude Journal</h1>
+        <div class="streak-badge" id="streakBadge">0 day streak</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <button class="toggle" id="darkToggle" title="Dark mode" onclick="toggleDark()"></button>
+      <a href="index.html" class="btn btn-secondary" style="text-decoration:none;font-size:0.8rem;">Back</a>
+    </div>
+  </div>
+
+  <!-- Quote -->
+  <div class="glass quote-bar" id="quoteBar" onclick="nextQuote()">
+    <div id="quoteText"></div>
+    <div class="author" id="quoteAuthor"></div>
+  </div>
+
+  <!-- Stats bar -->
+  <div class="stats-bar" id="statsBar">
+    <div class="glass stat-card"><div class="stat-value" id="statTotal">0</div><div class="stat-label">Total Entries</div></div>
+    <div class="glass stat-card"><div class="stat-value" id="statStreak">0</div><div class="stat-label">Current Streak</div></div>
+    <div class="glass stat-card"><div class="stat-value" id="statLongest">0</div><div class="stat-label">Longest Streak</div></div>
+    <div class="glass stat-card"><div class="stat-value" id="statAvgRating">--</div><div class="stat-label">Avg Rating</div></div>
+    <div class="glass stat-card"><div class="stat-value" id="statGratitudes">0</div><div class="stat-label">Gratitudes Written</div></div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" onclick="showPanel('write')">Write</button>
+    <button class="tab" onclick="showPanel('calendar')">Calendar</button>
+    <button class="tab" onclick="showPanel('cloud')">Word Cloud</button>
+    <button class="tab" onclick="showPanel('review')">Monthly Review</button>
+    <button class="tab" onclick="showPanel('remember')">Remember</button>
+    <button class="tab" onclick="showPanel('export')">Export</button>
+  </div>
+
+  <!-- Write Panel -->
+  <div class="panel active" id="panel-write">
+    <div class="glass">
+      <div class="entry-form" id="entryForm">
+        <div class="form-row">
+          <label>Date</label>
+          <input type="date" id="entryDate">
+        </div>
+        <div class="form-row">
+          <label>Three things I'm grateful for</label>
+          <input type="text" id="g1" placeholder="1. Something that made me smile...">
+          <input type="text" id="g2" placeholder="2. Someone I appreciate...">
+          <input type="text" id="g3" placeholder="3. A small moment of joy...">
+        </div>
+        <div class="form-row">
+          <label>Highlight of the day</label>
+          <textarea id="highlight" placeholder="What was the best part of today?"></textarea>
+        </div>
+        <div class="form-row">
+          <label>How was your day?</label>
+          <div class="rating-row">
+            <button class="rating-btn" data-r="1" onclick="setRating(1)">1</button>
+            <button class="rating-btn" data-r="2" onclick="setRating(2)">2</button>
+            <button class="rating-btn" data-r="3" onclick="setRating(3)">3</button>
+            <button class="rating-btn" data-r="4" onclick="setRating(4)">4</button>
+            <button class="rating-btn" data-r="5" onclick="setRating(5)">5</button>
+          </div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="saveEntry()">Save Entry</button>
+          <button class="btn btn-secondary" onclick="clearForm()">Clear</button>
+        </div>
+      </div>
+    </div>
+    <div id="recentEntries" style="margin-top:1.5rem;"></div>
+  </div>
+
+  <!-- Calendar Panel -->
+  <div class="panel" id="panel-calendar">
+    <div class="glass">
+      <div class="cal-nav">
+        <button onclick="calNav(-1)">&larr;</button>
+        <h3 id="calTitle"></h3>
+        <button onclick="calNav(1)">&rarr;</button>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+    </div>
+    <div id="calDetail" style="margin-top:1rem;"></div>
+  </div>
+
+  <!-- Word Cloud Panel -->
+  <div class="panel" id="panel-cloud">
+    <div class="glass">
+      <h3 style="margin-bottom:1rem;font-size:1rem;">Most Mentioned Themes</h3>
+      <div class="word-cloud" id="wordCloud"></div>
+    </div>
+  </div>
+
+  <!-- Monthly Review Panel -->
+  <div class="panel" id="panel-review">
+    <div class="glass">
+      <div class="cal-nav">
+        <button onclick="reviewNav(-1)">&larr;</button>
+        <h3 id="reviewTitle"></h3>
+        <button onclick="reviewNav(1)">&rarr;</button>
+      </div>
+      <div id="reviewContent"></div>
+    </div>
+  </div>
+
+  <!-- Remember Panel -->
+  <div class="panel" id="panel-remember">
+    <div class="glass remember-card">
+      <h3>Remember when...</h3>
+      <div id="rememberContent" class="remember-content">
+        <div class="empty-state"><div class="big-emoji">&#127800;</div><p>Click below to recall a past gratitude</p></div>
+      </div>
+      <button class="btn btn-primary" style="margin-top:1.5rem;" onclick="showRandom()">Show me a memory</button>
+    </div>
+  </div>
+
+  <!-- Export Panel -->
+  <div class="panel" id="panel-export">
+    <div class="glass">
+      <h3 style="margin-bottom:1rem;font-size:1rem;">Export Your Journal</h3>
+      <div class="btn-row" style="margin-bottom:1rem;">
+        <button class="btn btn-secondary" onclick="exportJSON()">Export JSON</button>
+        <button class="btn btn-secondary" onclick="exportMarkdown()">Export Markdown</button>
+        <button class="btn btn-secondary" onclick="copyExport()">Copy to Clipboard</button>
+      </div>
+      <textarea class="export-area" id="exportArea" readonly placeholder="Click an export button above..."></textarea>
+    </div>
+  </div>
+</div>
+
+<!-- Modal for calendar day view -->
+<div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)closeModal()">
+  <div class="glass modal" id="modalContent"></div>
+</div>
+
+<script>
+const STORAGE_KEY = 'gratitude_journal_entries';
+const RATINGEMOJI = ['','&#128546;','&#128533;','&#128528;','&#128522;','&#129321;'];
+const MONTHS = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const DAYS = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+const STOP_WORDS = new Set(['the','a','an','and','or','but','in','on','at','to','for','of','with','by','from','is','it','its','was','were','be','been','being','have','has','had','do','does','did','will','would','shall','should','may','might','can','could','i','me','my','we','our','you','your','he','him','his','she','her','they','them','their','this','that','these','those','am','are','not','no','so','if','then','than','too','very','just','about','up','out','into','over','after','before','between','under','again','once','here','there','when','where','why','how','all','each','every','both','few','more','most','other','some','such','only','own','same','also','back','even','still','new','well','way','because','any','many','much','now','really','since','what','which','who','while','get','got','like','make','made','know','think','thought','see','saw','go','went','going','come','came','take','took','day','time','today','something','someone','thing','things','one','two','three','able','around','good','great','feel','felt','first','last','long']);
+
+const QUOTES = [
+  {t:"Wealth consists not in having great possessions, but in having few wants.",a:"Epictetus"},
+  {t:"The happiness of your life depends upon the quality of your thoughts.",a:"Marcus Aurelius"},
+  {t:"He is a wise man who does not grieve for the things which he has not, but rejoices for those which he has.",a:"Epictetus"},
+  {t:"True happiness is to enjoy the present, without anxious dependence upon the future.",a:"Seneca"},
+  {t:"When you arise in the morning, think of what a precious privilege it is to be alive.",a:"Marcus Aurelius"},
+  {t:"It is not the man who has too little who is poor, but the one who hankers after more.",a:"Seneca"},
+  {t:"Gratitude is not only the greatest of virtues, but the parent of all others.",a:"Cicero"},
+  {t:"Do not spoil what you have by desiring what you have not.",a:"Epicurus"},
+  {t:"The soul that sees beauty may sometimes walk alone.",a:"Johann Wolfgang von Goethe"},
+  {t:"Enough is a feast.",a:"Buddhist proverb"},
+  {t:"Gratitude turns what we have into enough.",a:"Melody Beattie"},
+  {t:"Acknowledging the good that you already have in your life is the foundation for all abundance.",a:"Eckhart Tolle"},
+  {t:"Enjoy the little things, for one day you may look back and realize they were the big things.",a:"Robert Brault"},
+  {t:"The more you praise and celebrate your life, the more there is in life to celebrate.",a:"Oprah Winfrey"},
+  {t:"Piglet noticed that even though he had a Very Small Heart, it could hold a rather large amount of Gratitude.",a:"A.A. Milne"},
+  {t:"Let us be grateful to the people who make us happy; they are the charming gardeners who make our souls blossom.",a:"Marcel Proust"},
+  {t:"We can complain because rose bushes have thorns, or rejoice because thorns have roses.",a:"Alphonse Karr"},
+  {t:"Reflect upon your present blessings, of which every man has plenty.",a:"Charles Dickens"},
+  {t:"If you look at what you have in life, you'll always have more.",a:"Oprah Winfrey"},
+  {t:"No act of kindness, no matter how small, is ever wasted.",a:"Aesop"}
+];
+
+let entries = {};
+let selectedRating = 0;
+let calYear, calMonth, reviewYear, reviewMonth, quoteIdx = 0;
+
+// ---- Init ----
+function init() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (raw) { try { entries = JSON.parse(raw); } catch(e) { entries = {}; } }
+  if (Object.keys(entries).length === 0) loadSampleData();
+
+  const today = new Date();
+  document.getElementById('entryDate').value = fmt(today);
+  calYear = today.getFullYear(); calMonth = today.getMonth();
+  reviewYear = today.getFullYear(); reviewMonth = today.getMonth();
+
+  // Load existing entry for today
+  loadEntryForDate(fmt(today));
+
+  // Dark mode
+  if (localStorage.getItem('gratitude_dark') === '1') document.body.classList.add('dark'), document.getElementById('darkToggle').classList.add('on');
+
+  quoteIdx = Math.floor(Math.random() * QUOTES.length);
+  showQuote();
+  updateAll();
+}
+
+function fmt(d) { return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function parseDate(s) { const p=s.split('-'); return new Date(+p[0],+p[1]-1,+p[2]); }
+function save() { localStorage.setItem(STORAGE_KEY, JSON.stringify(entries)); }
+
+// ---- Quotes ----
+function showQuote() {
+  const q = QUOTES[quoteIdx % QUOTES.length];
+  document.getElementById('quoteText').innerHTML = '"'+q.t+'"';
+  document.getElementById('quoteAuthor').textContent = '-- '+q.a;
+}
+function nextQuote() { quoteIdx++; showQuote(); }
+
+// ---- Dark mode ----
+function toggleDark() {
+  document.body.classList.toggle('dark');
+  const on = document.body.classList.contains('dark');
+  document.getElementById('darkToggle').classList.toggle('on', on);
+  localStorage.setItem('gratitude_dark', on?'1':'0');
+}
+
+// ---- Tabs ----
+function showPanel(name) {
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('panel-'+name).classList.add('active');
+  event.target.classList.add('active');
+  if (name==='calendar') renderCalendar();
+  if (name==='cloud') renderCloud();
+  if (name==='review') renderReview();
+}
+
+// ---- Rating ----
+function setRating(r) {
+  selectedRating = r;
+  document.querySelectorAll('.rating-btn').forEach(b => {
+    const br = +b.dataset.r;
+    b.classList.toggle('selected', br === r);
+    b.innerHTML = br <= r ? RATINGEMOJI[br] : br;
+  });
+}
+
+// ---- Load entry for date ----
+function loadEntryForDate(dateStr) {
+  const e = entries[dateStr];
+  if (e) {
+    document.getElementById('g1').value = e.gratitudes[0]||'';
+    document.getElementById('g2').value = e.gratitudes[1]||'';
+    document.getElementById('g3').value = e.gratitudes[2]||'';
+    document.getElementById('highlight').value = e.highlight||'';
+    setRating(e.rating||0);
+  } else {
+    clearForm();
+  }
+}
+
+// Date change handler
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('entryDate').addEventListener('change', function() {
+    loadEntryForDate(this.value);
+  });
+});
+
+// ---- Save ----
+function saveEntry() {
+  const date = document.getElementById('entryDate').value;
+  if (!date) return;
+  const g = [document.getElementById('g1').value.trim(), document.getElementById('g2').value.trim(), document.getElementById('g3').value.trim()].filter(Boolean);
+  if (g.length === 0) { alert('Write at least one gratitude!'); return; }
+  entries[date] = { gratitudes: g, highlight: document.getElementById('highlight').value.trim(), rating: selectedRating || 3 };
+  save(); updateAll();
+}
+
+function clearForm() {
+  document.getElementById('g1').value=''; document.getElementById('g2').value=''; document.getElementById('g3').value='';
+  document.getElementById('highlight').value=''; setRating(0);
+}
+
+// ---- Update all ----
+function updateAll() {
+  updateStats(); renderRecent(); renderCalendar(); renderCloud(); renderReview();
+}
+
+// ---- Stats ----
+function updateStats() {
+  const keys = Object.keys(entries).sort();
+  const total = keys.length;
+  let gratCount = 0; let ratingSum = 0;
+  keys.forEach(k => { gratCount += entries[k].gratitudes.length; ratingSum += (entries[k].rating||3); });
+
+  // Streaks
+  let cur = 0, longest = 0;
+  const today = new Date(); today.setHours(0,0,0,0);
+  let d = new Date(today);
+  while (true) {
+    const ds = fmt(d);
+    if (entries[ds]) { cur++; d.setDate(d.getDate()-1); } else break;
+  }
+  // Longest streak
+  let streak = 0;
+  for (let i = 0; i < keys.length; i++) {
+    if (i === 0) { streak = 1; } else {
+      const prev = parseDate(keys[i-1]); const curr = parseDate(keys[i]);
+      const diff = (curr - prev) / 86400000;
+      streak = diff === 1 ? streak + 1 : 1;
+    }
+    if (streak > longest) longest = streak;
+  }
+
+  document.getElementById('statTotal').textContent = total;
+  document.getElementById('statStreak').textContent = cur;
+  document.getElementById('statLongest').textContent = longest;
+  document.getElementById('statAvgRating').innerHTML = total ? (ratingSum/total).toFixed(1)+' '+RATINGEMOJI[Math.round(ratingSum/total)] : '--';
+  document.getElementById('statGratitudes').textContent = gratCount;
+  document.getElementById('streakBadge').innerHTML = cur + ' day streak &#128293;';
+}
+
+// ---- Recent entries ----
+function renderRecent() {
+  const keys = Object.keys(entries).sort().reverse().slice(0,5);
+  const el = document.getElementById('recentEntries');
+  if (keys.length === 0) { el.innerHTML = ''; return; }
+  el.innerHTML = '<h3 style="font-size:1rem;margin-bottom:0.75rem;">Recent Entries</h3>' +
+    keys.map(k => {
+      const e = entries[k];
+      const d = parseDate(k);
+      return '<div class="glass entry-card"><div class="entry-date">'+d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'})+'</div>'+
+        '<ul class="entry-items">'+e.gratitudes.map(g=>'<li>'+esc(g)+'</li>').join('')+'</ul>'+
+        (e.highlight?'<div class="entry-highlight">Highlight: '+esc(e.highlight)+'</div>':'')+
+        '<div class="entry-rating">'+RATINGEMOJI[e.rating||3]+'</div></div>';
+    }).join('');
+}
+
+// ---- Calendar ----
+function calNav(dir) { calMonth+=dir; if(calMonth<0){calMonth=11;calYear--;}if(calMonth>11){calMonth=0;calYear++;} renderCalendar(); }
+function renderCalendar() {
+  document.getElementById('calTitle').textContent = MONTHS[calMonth]+' '+calYear;
+  const first = new Date(calYear, calMonth, 1);
+  const daysInMonth = new Date(calYear, calMonth+1, 0).getDate();
+  const startDay = first.getDay();
+  const today = fmt(new Date());
+  let html = DAYS.map(d=>'<div class="cal-header">'+d+'</div>').join('');
+  for (let i=0;i<startDay;i++) html+='<div class="cal-day empty"></div>';
+  for (let d=1;d<=daysInMonth;d++) {
+    const ds = calYear+'-'+String(calMonth+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    const has = entries[ds] ? ' has-entry' : '';
+    const isToday = ds === today ? ' today' : '';
+    html+='<div class="cal-day'+has+isToday+'" onclick="showCalDay(\''+ds+'\')">'+d+'</div>';
+  }
+  document.getElementById('calGrid').innerHTML = html;
+}
+function showCalDay(ds) {
+  const e = entries[ds];
+  const d = parseDate(ds);
+  const el = document.getElementById('calDetail');
+  if (!e) { el.innerHTML='<div class="glass" style="margin-top:0.5rem;text-align:center;padding:1.5rem;color:var(--text-secondary)">No entry for '+d.toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})+'</div>'; return; }
+  el.innerHTML='<div class="glass entry-card"><div class="entry-date">'+d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'})+'</div>'+
+    '<ul class="entry-items">'+e.gratitudes.map(g=>'<li>'+esc(g)+'</li>').join('')+'</ul>'+
+    (e.highlight?'<div class="entry-highlight">Highlight: '+esc(e.highlight)+'</div>':'')+
+    '<div class="entry-rating">'+RATINGEMOJI[e.rating||3]+'</div></div>';
+}
+
+// ---- Word Cloud ----
+function renderCloud() {
+  const freq = {};
+  Object.values(entries).forEach(e => {
+    const text = [...e.gratitudes, e.highlight||''].join(' ').toLowerCase();
+    text.split(/[^a-z']+/).forEach(w => {
+      if (w.length > 2 && !STOP_WORDS.has(w)) freq[w] = (freq[w]||0)+1;
+    });
+  });
+  const sorted = Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,40);
+  if (sorted.length === 0) { document.getElementById('wordCloud').innerHTML='<div class="empty-state">Write more entries to see your themes</div>'; return; }
+  const max = sorted[0][1];
+  document.getElementById('wordCloud').innerHTML = sorted.map(([w,c]) => {
+    const size = 0.75 + (c/max)*1.2;
+    const opacity = 0.5 + (c/max)*0.5;
+    return '<span class="word-tag" style="font-size:'+size+'rem;opacity:'+opacity+'">'+w+' <sup style="font-size:0.6em">'+c+'</sup></span>';
+  }).join('');
+}
+
+// ---- Monthly Review ----
+function reviewNav(dir) { reviewMonth+=dir; if(reviewMonth<0){reviewMonth=11;reviewYear--;}if(reviewMonth>11){reviewMonth=0;reviewYear++;} renderReview(); }
+function renderReview() {
+  document.getElementById('reviewTitle').textContent = MONTHS[reviewMonth]+' '+reviewYear;
+  const prefix = reviewYear+'-'+String(reviewMonth+1).padStart(2,'0');
+  const monthEntries = Object.entries(entries).filter(([k])=>k.startsWith(prefix));
+  const el = document.getElementById('reviewContent');
+  if (monthEntries.length === 0) { el.innerHTML='<div class="empty-state" style="padding:2rem;">No entries for this month</div>'; return; }
+
+  const ratings = monthEntries.map(([,e])=>e.rating||3);
+  const avg = (ratings.reduce((a,b)=>a+b,0)/ratings.length).toFixed(1);
+  const best = monthEntries.reduce((a,b)=>(b[1].rating||3)>(a[1].rating||3)?b:a);
+  const bestDate = parseDate(best[0]).toLocaleDateString('en-US',{month:'long',day:'numeric'});
+
+  // Themes
+  const freq = {};
+  monthEntries.forEach(([,e]) => {
+    [...e.gratitudes, e.highlight||''].join(' ').toLowerCase().split(/[^a-z']+/).forEach(w => {
+      if (w.length > 2 && !STOP_WORDS.has(w)) freq[w] = (freq[w]||0)+1;
+    });
+  });
+  const topThemes = Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,8).map(([w])=>w);
+
+  el.innerHTML = '<div class="review-section"><h4>Summary</h4>'+
+    '<div class="review-metric"><span>Total entries</span><span><strong>'+monthEntries.length+'</strong></span></div>'+
+    '<div class="review-metric"><span>Average rating</span><span><strong>'+avg+'</strong> '+RATINGEMOJI[Math.round(+avg)]+'</span></div>'+
+    '<div class="review-metric"><span>Best day</span><span><strong>'+bestDate+'</strong> '+RATINGEMOJI[best[1].rating||3]+'</span></div>'+
+    '<div class="review-metric"><span>Total gratitudes</span><span><strong>'+monthEntries.reduce((s,[,e])=>s+e.gratitudes.length,0)+'</strong></span></div>'+
+    '</div>'+
+    '<div class="review-section"><h4>Top Themes</h4>'+
+    '<div class="word-cloud" style="justify-content:flex-start;">'+topThemes.map(t=>'<span class="word-tag">'+t+'</span>').join('')+'</div>'+
+    '</div>'+
+    '<div class="review-section"><h4>Best Day Highlight</h4>'+
+    '<p style="font-size:0.9rem;line-height:1.6;">'+(best[1].highlight?esc(best[1].highlight):'No highlight recorded')+'</p>'+
+    '</div>';
+}
+
+// ---- Random Remember ----
+function showRandom() {
+  const keys = Object.keys(entries);
+  if (keys.length === 0) return;
+  const k = keys[Math.floor(Math.random()*keys.length)];
+  const e = entries[k]; const d = parseDate(k);
+  document.getElementById('rememberContent').innerHTML =
+    '<div style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:0.75rem;">'+d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'})+'</div>'+
+    '<ul class="entry-items" style="list-style:none;text-align:left;display:inline-block;">'+e.gratitudes.map(g=>'<li>'+esc(g)+'</li>').join('')+'</ul>'+
+    (e.highlight?'<div class="entry-highlight" style="margin-top:0.75rem;">'+esc(e.highlight)+'</div>':'')+
+    '<div style="margin-top:0.5rem;font-size:1.2rem;">'+RATINGEMOJI[e.rating||3]+'</div>';
+}
+
+// ---- Export ----
+function exportJSON() {
+  document.getElementById('exportArea').value = JSON.stringify(entries, null, 2);
+}
+function exportMarkdown() {
+  const keys = Object.keys(entries).sort().reverse();
+  let md = '# Gratitude Journal\n\n';
+  keys.forEach(k => {
+    const e = entries[k]; const d = parseDate(k);
+    md += '## '+d.toLocaleDateString('en-US',{weekday:'long',month:'long',day:'numeric',year:'numeric'})+'\n\n';
+    md += '**Rating:** '+['','Terrible','Rough','Okay','Good','Amazing'][e.rating||3]+'\n\n';
+    md += '### Grateful for:\n';
+    e.gratitudes.forEach(g => md += '- '+g+'\n');
+    if (e.highlight) md += '\n**Highlight:** '+e.highlight+'\n';
+    md += '\n---\n\n';
+  });
+  document.getElementById('exportArea').value = md;
+}
+function copyExport() {
+  const area = document.getElementById('exportArea');
+  if (!area.value) { exportJSON(); }
+  navigator.clipboard.writeText(area.value).then(()=>{ area.style.borderColor='var(--accent)'; setTimeout(()=>area.style.borderColor='',1000); });
+}
+
+// ---- Modal ----
+function closeModal() { document.getElementById('modalOverlay').classList.remove('show'); }
+
+// ---- Helpers ----
+function esc(s) { const d=document.createElement('div'); d.textContent=s; return d.innerHTML; }
+
+// ---- Sample Data ----
+function loadSampleData() {
+  entries = {
+    '2026-04-01': { gratitudes:['Warm cup of chai in the morning','PJ asking me to read her a story','Finally fixed the Redis connection'], highlight:'PJ said "I love you daddy" unprompted at dinner', rating:5 },
+    '2026-04-03': { gratitudes:['Clear blue sky after days of rain','Good feedback on Smara API design','A quiet hour of focused coding'], highlight:'Shipped the memory search endpoint and it works beautifully', rating:4 },
+    '2026-04-05': { gratitudes:['Weekend family breakfast together','Found a great article on system design','PJ learning to count to 20'], highlight:'Took a walk in the park and felt genuinely at peace', rating:4 },
+    '2026-04-08': { gratitudes:['Gemma 4 migration freed 22 GB of disk','Home-cooked dal and rice','A kind message from a colleague'], highlight:'Everything just clicked during the migration - clean execution', rating:5 },
+    '2026-04-11': { gratitudes:['Morning meditation felt centered','Good progress on the Lumen dashboard','PJ drew a picture of our family'], highlight:'PJ\'s drawing had everyone smiling - she included the cat', rating:4 },
+    '2026-04-14': { gratitudes:['Fresh coffee from the new roaster','Solved a tricky Cloudflare tunnel issue','Video call with parents in India'], highlight:'Dad told stories about his college days - never heard those before', rating:5 },
+    '2026-04-17': { gratitudes:['Lumen iOS scaffold working first try','Sunshine through the office window','PJ sleeping peacefully'], highlight:'Scaffolded the entire Expo app and it built on first attempt', rating:4 },
+    '2026-04-20': { gratitudes:['Sunday morning pancakes','Finished reading a chapter of Meditations','Garden tomatoes starting to sprout'], highlight:'Lazy Sunday with no agenda - just being present', rating:5 },
+    '2026-04-23': { gratitudes:['Productive deep work session','Kind words from a stranger online','Clean kitchen before bed'], highlight:'Hit a flow state for three hours straight on Scoper', rating:4 },
+    '2026-04-26': { gratitudes:['Saturday farmer\'s market haul','PJ riding her balance bike','Warm evening on the porch'], highlight:'Watched the sunset with the whole family - simple and perfect', rating:5 }
+  };
+  save();
+}
+
+init();
+</script>
+</body>
+</html>

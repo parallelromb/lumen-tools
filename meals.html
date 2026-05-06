@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Meal Planner & Recipe Book</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #f8f9fc;
+  color: #1a1a2e;
+  min-height: 100vh;
+  padding: 1.5rem;
+}
+.glass {
+  background: rgba(255,255,255,0.72);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.6);
+  border-radius: 16px;
+}
+.header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+.header h1 { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; }
+.header p { color: #6b7280; font-size: 0.9rem; margin-top: 0.25rem; }
+.back-link {
+  position: absolute; top: 1.5rem; left: 1.5rem;
+  color: #3b82f6; text-decoration: none; font-size: 0.875rem; font-weight: 500;
+}
+.back-link:hover { text-decoration: underline; }
+
+/* Tabs */
+.tabs {
+  display: flex; gap: 0.5rem; justify-content: center; margin-bottom: 1.5rem; flex-wrap: wrap;
+}
+.tab-btn {
+  padding: 0.5rem 1.25rem; border: none; border-radius: 10px;
+  font-family: inherit; font-size: 0.85rem; font-weight: 500;
+  cursor: pointer; transition: all 0.2s;
+  background: rgba(255,255,255,0.5); color: #6b7280;
+}
+.tab-btn.active { background: #3b82f6; color: #fff; }
+.tab-btn:hover:not(.active) { background: rgba(255,255,255,0.8); }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* Week nav */
+.week-nav {
+  display: flex; align-items: center; justify-content: center; gap: 1rem; margin-bottom: 1rem;
+}
+.week-nav button {
+  background: rgba(255,255,255,0.6); border: 1px solid rgba(0,0,0,0.08); border-radius: 8px;
+  padding: 0.4rem 0.8rem; cursor: pointer; font-family: inherit; font-size: 0.85rem; font-weight: 500;
+}
+.week-nav button:hover { background: rgba(255,255,255,0.9); }
+.week-nav span { font-weight: 600; font-size: 0.95rem; }
+
+/* Planner grid */
+.planner-grid {
+  display: grid;
+  grid-template-columns: 90px repeat(7, 1fr);
+  gap: 2px;
+  margin-bottom: 1.5rem;
+}
+.planner-header {
+  padding: 0.5rem; text-align: center; font-size: 0.75rem; font-weight: 600;
+  color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em;
+}
+.meal-label {
+  padding: 0.5rem; font-size: 0.75rem; font-weight: 600; color: #6b7280;
+  display: flex; align-items: center; justify-content: center;
+}
+.meal-cell {
+  background: rgba(255,255,255,0.5); border-radius: 8px; padding: 0.4rem;
+  min-height: 56px; cursor: pointer; transition: all 0.15s;
+  font-size: 0.75rem; color: #374151; display: flex; align-items: center;
+  justify-content: center; text-align: center; word-break: break-word;
+  border: 1px solid transparent;
+}
+.meal-cell:hover { background: rgba(59,130,246,0.08); border-color: rgba(59,130,246,0.2); }
+.meal-cell.filled { background: rgba(59,130,246,0.06); font-weight: 500; }
+.meal-cell.empty { color: #9ca3af; }
+.generate-btn {
+  display: block; margin: 0 auto 1.5rem;
+  background: #3b82f6; color: #fff; border: none; border-radius: 10px;
+  padding: 0.6rem 1.5rem; font-family: inherit; font-size: 0.875rem;
+  font-weight: 500; cursor: pointer; transition: background 0.2s;
+}
+.generate-btn:hover { background: #2563eb; }
+
+/* Recipe book */
+.recipe-toolbar {
+  display: flex; gap: 0.75rem; margin-bottom: 1rem; flex-wrap: wrap; align-items: center;
+}
+.recipe-toolbar input, .recipe-toolbar select {
+  padding: 0.5rem 0.75rem; border: 1px solid rgba(0,0,0,0.1); border-radius: 8px;
+  font-family: inherit; font-size: 0.85rem; background: rgba(255,255,255,0.7);
+  outline: none;
+}
+.recipe-toolbar input:focus, .recipe-toolbar select:focus { border-color: #3b82f6; }
+.recipe-toolbar input { flex: 1; min-width: 180px; }
+.add-recipe-btn {
+  background: #10b981; color: #fff; border: none; border-radius: 8px;
+  padding: 0.5rem 1rem; font-family: inherit; font-size: 0.85rem;
+  font-weight: 500; cursor: pointer; white-space: nowrap;
+}
+.add-recipe-btn:hover { background: #059669; }
+.recipe-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem; margin-bottom: 1rem;
+}
+.recipe-card {
+  padding: 1.25rem; cursor: pointer; transition: transform 0.15s, box-shadow 0.15s;
+  position: relative;
+}
+.recipe-card:hover { transform: translateY(-2px); box-shadow: 0 8px 24px rgba(0,0,0,0.06); }
+.recipe-card h3 { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.35rem; padding-right: 2rem; }
+.recipe-card .meta { font-size: 0.75rem; color: #6b7280; margin-bottom: 0.5rem; }
+.recipe-card .tags { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+.tag {
+  font-size: 0.65rem; padding: 0.15rem 0.5rem; border-radius: 999px;
+  background: rgba(59,130,246,0.1); color: #3b82f6; font-weight: 500;
+}
+.star-btn {
+  position: absolute; top: 1rem; right: 1rem; background: none; border: none;
+  cursor: pointer; font-size: 1.1rem; color: #d1d5db; transition: color 0.15s;
+}
+.star-btn.active { color: #f59e0b; }
+
+/* Recipe modal */
+.modal-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.3);
+  z-index: 100; align-items: center; justify-content: center; padding: 1rem;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: #fff; border-radius: 16px; padding: 2rem; max-width: 600px;
+  width: 100%; max-height: 85vh; overflow-y: auto; position: relative;
+}
+.modal h2 { font-size: 1.25rem; font-weight: 700; margin-bottom: 1rem; }
+.modal-close {
+  position: absolute; top: 1rem; right: 1rem; background: none; border: none;
+  font-size: 1.25rem; cursor: pointer; color: #6b7280;
+}
+.form-row { margin-bottom: 0.75rem; }
+.form-row label { display: block; font-size: 0.8rem; font-weight: 500; color: #374151; margin-bottom: 0.25rem; }
+.form-row input, .form-row textarea, .form-row select {
+  width: 100%; padding: 0.5rem 0.75rem; border: 1px solid rgba(0,0,0,0.12);
+  border-radius: 8px; font-family: inherit; font-size: 0.85rem; outline: none;
+}
+.form-row textarea { min-height: 80px; resize: vertical; }
+.form-row input:focus, .form-row textarea:focus { border-color: #3b82f6; }
+.form-actions { display: flex; gap: 0.5rem; justify-content: flex-end; margin-top: 1rem; }
+.form-actions button {
+  padding: 0.5rem 1.25rem; border-radius: 8px; font-family: inherit;
+  font-size: 0.85rem; font-weight: 500; cursor: pointer; border: none;
+}
+.btn-primary { background: #3b82f6; color: #fff; }
+.btn-primary:hover { background: #2563eb; }
+.btn-secondary { background: rgba(0,0,0,0.05); color: #374151; }
+.btn-danger { background: #ef4444; color: #fff; }
+.btn-danger:hover { background: #dc2626; }
+.inline-row { display: flex; gap: 0.75rem; }
+.inline-row .form-row { flex: 1; }
+
+/* Grocery list */
+.grocery-section { margin-bottom: 1.5rem; }
+.grocery-section h3 {
+  font-size: 0.85rem; font-weight: 600; color: #6b7280;
+  text-transform: uppercase; letter-spacing: 0.05em;
+  margin-bottom: 0.5rem; padding-bottom: 0.35rem;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+.grocery-item {
+  display: flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0;
+  font-size: 0.85rem;
+}
+.grocery-item input[type="checkbox"] {
+  width: 16px; height: 16px; accent-color: #3b82f6; cursor: pointer;
+}
+.grocery-item.checked span { text-decoration: line-through; color: #9ca3af; }
+.grocery-empty { text-align: center; color: #9ca3af; padding: 2rem; font-size: 0.9rem; }
+
+/* Nutrition */
+.nutrition-chart-wrap {
+  max-width: 600px; margin: 0 auto;
+}
+.nutrition-summary {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.75rem; margin-top: 1rem;
+}
+.nutrition-day {
+  padding: 0.75rem; text-align: center;
+}
+.nutrition-day .day-name { font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; }
+.nutrition-day .cal-value { font-size: 1.5rem; font-weight: 700; color: #1a1a2e; margin-top: 0.25rem; }
+.nutrition-day .cal-label { font-size: 0.7rem; color: #9ca3af; }
+
+/* Cell picker modal */
+.picker-list {
+  max-height: 300px; overflow-y: auto; margin: 0.75rem 0;
+}
+.picker-item {
+  padding: 0.5rem 0.75rem; border-radius: 8px; cursor: pointer;
+  font-size: 0.85rem; transition: background 0.1s;
+}
+.picker-item:hover { background: rgba(59,130,246,0.08); }
+.picker-divider { font-size: 0.75rem; color: #9ca3af; padding: 0.5rem 0.75rem 0.25rem; font-weight: 500; }
+.quick-meal-input {
+  width: 100%; padding: 0.5rem 0.75rem; border: 1px solid rgba(0,0,0,0.12);
+  border-radius: 8px; font-family: inherit; font-size: 0.85rem; outline: none;
+  margin-bottom: 0.5rem;
+}
+.quick-meal-input:focus { border-color: #3b82f6; }
+.clear-cell-btn {
+  width: 100%; padding: 0.4rem; background: rgba(239,68,68,0.08); color: #ef4444;
+  border: none; border-radius: 8px; cursor: pointer; font-family: inherit;
+  font-size: 0.8rem; font-weight: 500; margin-top: 0.5rem;
+}
+.clear-cell-btn:hover { background: rgba(239,68,68,0.15); }
+
+/* Recipe detail modal */
+.detail-meta { display: flex; gap: 1.5rem; margin-bottom: 1rem; }
+.detail-meta div { text-align: center; }
+.detail-meta .label { font-size: 0.7rem; color: #9ca3af; text-transform: uppercase; }
+.detail-meta .value { font-size: 1.1rem; font-weight: 600; }
+.detail-section { margin-bottom: 1rem; }
+.detail-section h4 { font-size: 0.85rem; font-weight: 600; margin-bottom: 0.5rem; color: #374151; }
+.detail-section ul { padding-left: 1.25rem; }
+.detail-section li { font-size: 0.85rem; margin-bottom: 0.25rem; color: #4b5563; }
+.detail-section p { font-size: 0.85rem; color: #4b5563; line-height: 1.6; white-space: pre-line; }
+
+.footer {
+  text-align: center; margin-top: 2rem; color: #9ca3af; font-size: 0.8rem;
+}
+</style>
+</head>
+<body>
+<a href="index.html" class="back-link">&larr; Back to Analytics</a>
+<div class="header">
+  <h1>Meal Planner & Recipe Book</h1>
+  <p>Plan your week, collect recipes, generate grocery lists</p>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" data-tab="planner">Weekly Planner</button>
+  <button class="tab-btn" data-tab="recipes">Recipe Book</button>
+  <button class="tab-btn" data-tab="grocery">Grocery List</button>
+  <button class="tab-btn" data-tab="nutrition">Nutrition</button>
+</div>
+
+<!-- PLANNER TAB -->
+<div id="tab-planner" class="tab-panel active">
+  <div class="glass" style="padding:1.5rem;">
+    <div class="week-nav">
+      <button id="prevWeek">&larr; Prev</button>
+      <span id="weekLabel"></span>
+      <button id="nextWeek">Next &rarr;</button>
+    </div>
+    <div class="planner-grid" id="plannerGrid"></div>
+    <button class="generate-btn" id="generateGrocery">Generate Grocery List from This Week</button>
+  </div>
+</div>
+
+<!-- RECIPES TAB -->
+<div id="tab-recipes" class="tab-panel">
+  <div class="glass" style="padding:1.5rem;">
+    <div class="recipe-toolbar">
+      <input type="text" id="recipeSearch" placeholder="Search recipes...">
+      <select id="tagFilter"><option value="">All Tags</option></select>
+      <select id="timeFilter">
+        <option value="">Any Time</option>
+        <option value="15">Under 15 min</option>
+        <option value="30">Under 30 min</option>
+        <option value="60">Under 1 hour</option>
+      </select>
+      <label style="font-size:0.85rem;cursor:pointer;display:flex;align-items:center;gap:0.3rem;">
+        <input type="checkbox" id="favFilter"> Favorites
+      </label>
+      <button class="add-recipe-btn" id="addRecipeBtn">+ Add Recipe</button>
+    </div>
+    <div class="recipe-grid" id="recipeGrid"></div>
+  </div>
+</div>
+
+<!-- GROCERY TAB -->
+<div id="tab-grocery" class="tab-panel">
+  <div class="glass" style="padding:1.5rem;">
+    <h2 style="font-size:1.1rem;font-weight:600;margin-bottom:1rem;">Grocery List</h2>
+    <div id="groceryList"></div>
+  </div>
+</div>
+
+<!-- NUTRITION TAB -->
+<div id="tab-nutrition" class="tab-panel">
+  <div class="glass" style="padding:1.5rem;">
+    <h2 style="font-size:1.1rem;font-weight:600;margin-bottom:1rem;">Weekly Nutrition Summary</h2>
+    <div class="nutrition-chart-wrap">
+      <canvas id="nutritionChart"></canvas>
+    </div>
+    <div class="nutrition-summary" id="nutritionSummary"></div>
+  </div>
+</div>
+
+<!-- MEAL CELL PICKER MODAL -->
+<div class="modal-overlay" id="cellPickerModal">
+  <div class="modal" style="max-width:400px;">
+    <button class="modal-close" id="closeCellPicker">&times;</button>
+    <h2 id="cellPickerTitle">Assign Meal</h2>
+    <input type="text" class="quick-meal-input" id="quickMealInput" placeholder="Type a quick meal or search recipes...">
+    <div class="picker-list" id="pickerList"></div>
+    <button class="btn-primary" id="quickMealSave" style="width:100%;padding:0.5rem;border-radius:8px;border:none;font-family:inherit;font-size:0.85rem;font-weight:500;cursor:pointer;background:#3b82f6;color:#fff;">Save Quick Meal</button>
+    <button class="clear-cell-btn" id="clearCellBtn">Clear This Cell</button>
+  </div>
+</div>
+
+<!-- ADD/EDIT RECIPE MODAL -->
+<div class="modal-overlay" id="recipeModal">
+  <div class="modal">
+    <button class="modal-close" id="closeRecipeModal">&times;</button>
+    <h2 id="recipeModalTitle">Add Recipe</h2>
+    <div class="form-row"><label>Name</label><input type="text" id="rName"></div>
+    <div class="inline-row">
+      <div class="form-row"><label>Prep Time (min)</label><input type="number" id="rPrep" min="0"></div>
+      <div class="form-row"><label>Cook Time (min)</label><input type="number" id="rCook" min="0"></div>
+      <div class="form-row"><label>Servings</label><input type="number" id="rServings" min="1"></div>
+    </div>
+    <div class="form-row"><label>Estimated Calories per Serving</label><input type="number" id="rCalories" min="0"></div>
+    <div class="form-row"><label>Ingredients (one per line, e.g. "2 cups rice")</label><textarea id="rIngredients"></textarea></div>
+    <div class="form-row"><label>Instructions</label><textarea id="rInstructions" style="min-height:100px;"></textarea></div>
+    <div class="form-row"><label>Tags (comma-separated)</label><input type="text" id="rTags" placeholder="vegetarian, quick, indian..."></div>
+    <div class="form-actions">
+      <button class="btn-secondary" id="cancelRecipe">Cancel</button>
+      <button class="btn-danger" id="deleteRecipe" style="display:none;">Delete</button>
+      <button class="btn-primary" id="saveRecipe">Save Recipe</button>
+    </div>
+  </div>
+</div>
+
+<!-- RECIPE DETAIL MODAL -->
+<div class="modal-overlay" id="recipeDetailModal">
+  <div class="modal">
+    <button class="modal-close" id="closeDetailModal">&times;</button>
+    <div id="recipeDetailContent"></div>
+    <div class="form-actions" style="margin-top:1.5rem;">
+      <button class="btn-secondary" id="editFromDetail">Edit Recipe</button>
+    </div>
+  </div>
+</div>
+
+<div class="footer">Lumen Analytics &middot; Meal Planner &middot; Data stored in browser localStorage</div>
+
+<script>
+// ===== DATA =====
+const DAYS = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+const MEALS = ['Breakfast','Lunch','Dinner','Snack'];
+const CATEGORIES = {
+  Produce: ['onion','tomato','potato','garlic','ginger','spinach','cilantro','lemon','lime','avocado','banana','apple','carrot','bell pepper','cucumber','lettuce','broccoli','cauliflower','green beans','peas','mushroom','zucchini','eggplant','mango','berries','corn','cabbage','celery','kale','parsley','basil','mint','chili','jalapeno','sweet potato'],
+  Dairy: ['milk','cream','butter','cheese','yogurt','paneer','ghee','sour cream','mozzarella','parmesan','cheddar','ricotta','cream cheese','whipping cream','condensed milk'],
+  Protein: ['chicken','beef','lamb','fish','shrimp','tofu','eggs','egg','lentils','chickpeas','black beans','kidney beans','salmon','tuna','turkey','pork','ground beef','ground chicken','sausage','bacon'],
+  Grains: ['rice','pasta','bread','flour','tortilla','naan','oats','quinoa','couscous','noodles','penne','spaghetti','basmati','roti','pita','breadcrumbs'],
+  Pantry: ['oil','olive oil','salt','pepper','sugar','cumin','turmeric','coriander','garam masala','chili powder','paprika','cinnamon','soy sauce','vinegar','tomato sauce','coconut milk','stock','broth','honey','mustard','ketchup','hot sauce','sesame oil','cornstarch','baking powder','vanilla','cocoa','peanut butter','jam','maple syrup','canned tomatoes','tomato paste'],
+  Frozen: ['frozen peas','frozen corn','frozen berries','ice cream','frozen naan'],
+  Beverages: ['tea','coffee','juice','water','sparkling water','wine','beer']
+};
+
+const DEFAULT_RECIPES = [
+  {id:'r1',name:'Dal Tadka',prep:10,cook:25,servings:4,calories:280,ingredients:['1 cup toor dal','2 tomatoes, chopped','1 onion, diced','3 cloves garlic, minced','1 tsp cumin','1 tsp turmeric','1 tsp garam masala','2 tbsp ghee','Salt to taste','Cilantro for garnish'],instructions:'Wash and pressure cook dal with turmeric for 3 whistles.\nHeat ghee, add cumin seeds, let them splutter.\nAdd onion, cook until golden. Add garlic and tomatoes.\nCook until tomatoes break down.\nAdd cooked dal, garam masala, salt. Simmer 10 min.\nGarnish with cilantro.',tags:['indian','vegetarian','meal-prep','healthy'],fav:false},
+  {id:'r2',name:'Chicken Tikka Masala',prep:20,cook:35,servings:4,calories:450,ingredients:['500g chicken breast, cubed','1 cup yogurt','2 tbsp tikka masala spice','1 onion, diced','3 cloves garlic','1 inch ginger, grated','1 can tomato sauce','1/2 cup cream','2 tbsp oil','Salt and pepper','Basmati rice for serving'],instructions:'Marinate chicken in yogurt and half the spice for 30 min.\nGrill or pan-sear chicken until charred.\nSaute onion, garlic, ginger until soft.\nAdd remaining spice, tomato sauce. Simmer 15 min.\nAdd cream and chicken. Cook 10 min.\nServe over basmati rice.',tags:['indian','protein','dinner'],fav:false},
+  {id:'r3',name:'Pasta Aglio e Olio',prep:5,cook:15,servings:2,calories:420,ingredients:['200g spaghetti','4 cloves garlic, sliced','1/4 cup olive oil','1/2 tsp chili flakes','Parmesan cheese','Parsley, chopped','Salt'],instructions:'Cook pasta in salted water until al dente. Reserve 1 cup pasta water.\nHeat olive oil, add garlic slices. Cook until golden (not brown).\nAdd chili flakes. Toss in drained pasta.\nAdd pasta water as needed. Top with parmesan and parsley.',tags:['italian','quick','vegetarian'],fav:false},
+  {id:'r4',name:'Avocado Toast',prep:5,cook:3,servings:1,calories:320,ingredients:['2 slices sourdough bread','1 ripe avocado','1 egg','Salt, pepper, chili flakes','Lemon juice','Cherry tomatoes (optional)'],instructions:'Toast bread until golden.\nMash avocado with salt, pepper, lemon juice.\nFry or poach egg.\nSpread avocado on toast, top with egg and chili flakes.',tags:['quick','breakfast','healthy','vegetarian'],fav:false},
+  {id:'r5',name:'Greek Salad',prep:10,cook:0,servings:2,calories:220,ingredients:['2 cucumbers, chopped','3 tomatoes, chopped','1/2 red onion, sliced','100g feta cheese','Kalamata olives','2 tbsp olive oil','1 tbsp red wine vinegar','Oregano','Salt and pepper'],instructions:'Combine cucumbers, tomatoes, onion in a bowl.\nTop with crumbled feta and olives.\nDrizzle with olive oil and vinegar.\nSeason with oregano, salt, and pepper.',tags:['quick','healthy','vegetarian','salad'],fav:false},
+  {id:'r6',name:'Overnight Oats',prep:5,cook:0,servings:1,calories:350,ingredients:['1/2 cup rolled oats','1/2 cup milk','1/4 cup yogurt','1 tbsp honey','1 tbsp chia seeds','Berries for topping','1 tbsp peanut butter (optional)'],instructions:'Mix oats, milk, yogurt, honey, and chia seeds in a jar.\nRefrigerate overnight (at least 6 hours).\nTop with berries and peanut butter before eating.',tags:['breakfast','meal-prep','healthy','quick','vegetarian'],fav:false},
+  {id:'r7',name:'Butter Chicken',prep:15,cook:30,servings:4,calories:480,ingredients:['500g chicken thighs, cubed','2 tbsp butter','1 onion, pureed','3 cloves garlic','1 inch ginger','1 can tomato sauce','1/2 cup cream','1 tbsp garam masala','1 tsp turmeric','1 tsp chili powder','Salt','Naan for serving'],instructions:'Marinate chicken with turmeric, salt, and half the garam masala.\nMelt butter, cook chicken until browned. Set aside.\nIn same pan, cook onion puree, garlic, ginger until fragrant.\nAdd tomato sauce, remaining spices. Simmer 15 min.\nAdd cream and chicken. Cook 10 min.\nServe with naan.',tags:['indian','dinner','protein'],fav:false},
+  {id:'r8',name:'Caprese Sandwich',prep:5,cook:0,servings:1,calories:380,ingredients:['Ciabatta bread','Fresh mozzarella, sliced','2 tomatoes, sliced','Fresh basil leaves','Balsamic glaze','Olive oil','Salt and pepper'],instructions:'Slice ciabatta horizontally.\nLayer mozzarella, tomato slices, and basil.\nDrizzle with olive oil and balsamic glaze.\nSeason with salt and pepper. Close sandwich.',tags:['italian','quick','lunch','vegetarian'],fav:false},
+  {id:'r9',name:'Egg Fried Rice',prep:5,cook:10,servings:2,calories:400,ingredients:['2 cups cooked rice (day-old best)','3 eggs, beaten','1 cup mixed vegetables (peas, corn, carrots)','3 tbsp soy sauce','2 cloves garlic, minced','2 tbsp sesame oil','Green onions, sliced'],instructions:'Heat sesame oil in wok on high heat.\nScramble eggs, set aside.\nStir-fry garlic and vegetables 2 min.\nAdd rice, break up clumps. Stir-fry 3 min.\nAdd soy sauce and eggs back. Toss well.\nGarnish with green onions.',tags:['quick','dinner','meal-prep'],fav:false},
+  {id:'r10',name:'Smoothie Bowl',prep:5,cook:0,servings:1,calories:290,ingredients:['1 frozen banana','1/2 cup frozen berries','1/2 cup yogurt','2 tbsp granola','1 tbsp honey','Chia seeds','Sliced almonds','Fresh fruit for topping'],instructions:'Blend frozen banana, berries, and yogurt until thick and smooth.\nPour into bowl.\nTop with granola, chia seeds, almonds, and fresh fruit.',tags:['breakfast','quick','healthy','vegetarian'],fav:false},
+  {id:'r11',name:'Chana Masala',prep:10,cook:25,servings:4,calories:310,ingredients:['2 cans chickpeas, drained','1 onion, diced','2 tomatoes, pureed','3 cloves garlic','1 inch ginger','1 tsp cumin','1 tsp coriander','1/2 tsp turmeric','1 tsp garam masala','2 tbsp oil','Cilantro, lemon juice'],instructions:'Heat oil, add cumin seeds until they splutter.\nAdd onion, cook until golden.\nAdd garlic, ginger, cook 1 min.\nAdd tomato puree, turmeric, coriander. Cook 5 min.\nAdd chickpeas and 1/2 cup water. Simmer 15 min.\nFinish with garam masala, lemon juice, cilantro.',tags:['indian','vegetarian','healthy','meal-prep','protein'],fav:false},
+  {id:'r12',name:'Margherita Pizza',prep:15,cook:12,servings:2,calories:550,ingredients:['Pizza dough (store-bought or homemade)','1/2 cup tomato sauce','200g fresh mozzarella','Fresh basil leaves','2 tbsp olive oil','Salt'],instructions:'Preheat oven to 475F (245C) with pizza stone if available.\nStretch dough into a round on floured surface.\nSpread tomato sauce, leaving 1-inch border.\nTear mozzarella and distribute evenly.\nBake 10-12 min until crust is golden and cheese bubbles.\nTop with fresh basil and drizzle olive oil.',tags:['italian','dinner','vegetarian'],fav:false},
+  {id:'r13',name:'Grilled Salmon',prep:5,cook:12,servings:2,calories:420,ingredients:['2 salmon fillets','2 tbsp olive oil','2 cloves garlic, minced','1 lemon, juiced','1 tsp paprika','Salt and pepper','Asparagus or broccoli for side'],instructions:'Mix olive oil, garlic, lemon juice, paprika, salt, pepper.\nMarinate salmon 10 min.\nGrill or pan-sear skin-side down 4 min.\nFlip, cook 3-4 min until flaky.\nServe with roasted vegetables.',tags:['healthy','protein','quick','dinner'],fav:false},
+  {id:'r14',name:'Veggie Stir Fry',prep:10,cook:10,servings:2,calories:280,ingredients:['1 bell pepper, sliced','1 cup broccoli florets','1 carrot, julienned','1 cup snap peas','2 cloves garlic','1 inch ginger','3 tbsp soy sauce','1 tbsp sesame oil','1 tbsp cornstarch','Rice or noodles for serving'],instructions:'Mix soy sauce and cornstarch in small bowl.\nHeat sesame oil in wok on high heat.\nStir-fry garlic and ginger 30 seconds.\nAdd vegetables, stir-fry 4-5 min until crisp-tender.\nPour in sauce, toss until glazed.\nServe over rice or noodles.',tags:['quick','healthy','vegetarian','dinner'],fav:false},
+  {id:'r15',name:'Banana Pancakes',prep:5,cook:10,servings:2,calories:340,ingredients:['2 ripe bananas','2 eggs','1/2 cup flour','1/2 tsp baking powder','1/4 tsp cinnamon','Butter for cooking','Maple syrup','Berries for topping'],instructions:'Mash bananas in a bowl.\nWhisk in eggs, then add flour, baking powder, cinnamon.\nHeat butter in pan over medium heat.\nPour small rounds of batter. Cook until bubbles form, flip.\nCook 1-2 min more.\nServe with maple syrup and berries.',tags:['breakfast','quick','vegetarian'],fav:false}
+];
+
+// Calorie lookup for quick meals
+const QUICK_CAL = {
+  'toast':180,'cereal':220,'oatmeal':300,'sandwich':400,'salad':250,
+  'soup':200,'burger':500,'pizza':550,'pasta':450,'rice':350,
+  'fruit':100,'yogurt':150,'smoothie':280,'coffee':5,'tea':2,
+  'chips':300,'nuts':200,'cookie':150,'cake':350,'ice cream':280,
+  'steak':500,'chicken':350,'fish':300,'egg':90,'wrap':380
+};
+
+// ===== STATE =====
+let state = loadState();
+function loadState() {
+  const s = localStorage.getItem('lumen-meals');
+  if (s) return JSON.parse(s);
+  return {
+    recipes: DEFAULT_RECIPES,
+    weekPlans: {},
+    groceryChecked: {},
+    currentWeekOffset: 0
+  };
+}
+function saveState() { localStorage.setItem('lumen-meals', JSON.stringify(state)); }
+
+// ===== WEEK HELPERS =====
+function getWeekStart(offset) {
+  const d = new Date();
+  d.setHours(0,0,0,0);
+  const day = d.getDay();
+  const diff = (day === 0 ? -6 : 1 - day) + (offset * 7);
+  d.setDate(d.getDate() + diff);
+  return d;
+}
+function weekKey(offset) {
+  const s = getWeekStart(offset);
+  return s.toISOString().slice(0,10);
+}
+function formatWeek(offset) {
+  const s = getWeekStart(offset);
+  const e = new Date(s); e.setDate(e.getDate()+6);
+  const opts = {month:'short',day:'numeric'};
+  return s.toLocaleDateString('en-US',opts) + ' - ' + e.toLocaleDateString('en-US',opts) + ', ' + e.getFullYear();
+}
+function getWeekPlan() {
+  const key = weekKey(state.currentWeekOffset);
+  if (!state.weekPlans[key]) state.weekPlans[key] = {};
+  return state.weekPlans[key];
+}
+
+// ===== TABS =====
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-'+btn.dataset.tab).classList.add('active');
+    if (btn.dataset.tab === 'nutrition') renderNutrition();
+    if (btn.dataset.tab === 'grocery') renderGrocery();
+  });
+});
+
+// ===== PLANNER =====
+let activeCellKey = null;
+function renderPlanner() {
+  const grid = document.getElementById('plannerGrid');
+  const plan = getWeekPlan();
+  document.getElementById('weekLabel').textContent = formatWeek(state.currentWeekOffset);
+  let html = '<div class="planner-header"></div>';
+  DAYS.forEach(d => html += `<div class="planner-header">${d}</div>`);
+  MEALS.forEach(meal => {
+    html += `<div class="meal-label">${meal}</div>`;
+    DAYS.forEach(day => {
+      const key = day + '-' + meal;
+      const val = plan[key];
+      const cls = val ? 'meal-cell filled' : 'meal-cell empty';
+      const display = val ? (val.recipeName || val.quickMeal || '') : '+';
+      html += `<div class="${cls}" data-key="${key}" title="${display}">${display}</div>`;
+    });
+  });
+  grid.innerHTML = html;
+  grid.querySelectorAll('.meal-cell').forEach(cell => {
+    cell.addEventListener('click', () => openCellPicker(cell.dataset.key));
+  });
+}
+document.getElementById('prevWeek').addEventListener('click', () => { state.currentWeekOffset--; saveState(); renderPlanner(); });
+document.getElementById('nextWeek').addEventListener('click', () => { state.currentWeekOffset++; saveState(); renderPlanner(); });
+
+function openCellPicker(key) {
+  activeCellKey = key;
+  const [day, meal] = key.split('-');
+  document.getElementById('cellPickerTitle').textContent = `${day} ${meal}`;
+  document.getElementById('quickMealInput').value = '';
+  renderPickerList('');
+  document.getElementById('cellPickerModal').classList.add('open');
+  document.getElementById('quickMealInput').focus();
+}
+function renderPickerList(query) {
+  const list = document.getElementById('pickerList');
+  const q = query.toLowerCase();
+  const filtered = state.recipes.filter(r => !q || r.name.toLowerCase().includes(q));
+  let html = '<div class="picker-divider">Recipes</div>';
+  if (filtered.length === 0) html += '<div style="padding:0.5rem 0.75rem;color:#9ca3af;font-size:0.85rem;">No matching recipes</div>';
+  filtered.forEach(r => {
+    html += `<div class="picker-item" data-rid="${r.id}">${r.name} <span style="color:#9ca3af;font-size:0.75rem;">(${r.prep+r.cook} min, ${r.calories} cal)</span></div>`;
+  });
+  list.innerHTML = html;
+  list.querySelectorAll('.picker-item').forEach(item => {
+    item.addEventListener('click', () => {
+      const recipe = state.recipes.find(r => r.id === item.dataset.rid);
+      const plan = getWeekPlan();
+      plan[activeCellKey] = { recipeId: recipe.id, recipeName: recipe.name };
+      saveState();
+      closeCellPicker();
+      renderPlanner();
+    });
+  });
+}
+document.getElementById('quickMealInput').addEventListener('input', e => renderPickerList(e.target.value));
+document.getElementById('quickMealSave').addEventListener('click', () => {
+  const val = document.getElementById('quickMealInput').value.trim();
+  if (!val) return;
+  const plan = getWeekPlan();
+  plan[activeCellKey] = { quickMeal: val };
+  saveState();
+  closeCellPicker();
+  renderPlanner();
+});
+document.getElementById('quickMealInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('quickMealSave').click();
+});
+document.getElementById('clearCellBtn').addEventListener('click', () => {
+  const plan = getWeekPlan();
+  delete plan[activeCellKey];
+  saveState();
+  closeCellPicker();
+  renderPlanner();
+});
+function closeCellPicker() { document.getElementById('cellPickerModal').classList.remove('open'); }
+document.getElementById('closeCellPicker').addEventListener('click', closeCellPicker);
+document.getElementById('cellPickerModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeCellPicker(); });
+
+// ===== GENERATE GROCERY =====
+document.getElementById('generateGrocery').addEventListener('click', () => {
+  generateGroceryFromWeek();
+  document.querySelector('[data-tab="grocery"]').click();
+});
+
+function generateGroceryFromWeek() {
+  const plan = getWeekPlan();
+  const allIngredients = [];
+  Object.values(plan).forEach(entry => {
+    if (entry.recipeId) {
+      const recipe = state.recipes.find(r => r.id === entry.recipeId);
+      if (recipe) allIngredients.push(...recipe.ingredients);
+    }
+  });
+  // Store raw ingredients grouped
+  const wk = weekKey(state.currentWeekOffset);
+  state.groceryList = { week: wk, items: allIngredients };
+  state.groceryChecked = {};
+  saveState();
+  renderGrocery();
+}
+
+function categorizeIngredient(ing) {
+  const lower = ing.toLowerCase();
+  for (const [cat, keywords] of Object.entries(CATEGORIES)) {
+    if (keywords.some(k => lower.includes(k))) return cat;
+  }
+  return 'Other';
+}
+
+function renderGrocery() {
+  const container = document.getElementById('groceryList');
+  if (!state.groceryList || !state.groceryList.items || state.groceryList.items.length === 0) {
+    container.innerHTML = '<div class="grocery-empty">No grocery list yet. Go to the Weekly Planner and click "Generate Grocery List".</div>';
+    return;
+  }
+  // Group by category
+  const grouped = {};
+  state.groceryList.items.forEach((item, i) => {
+    const cat = categorizeIngredient(item);
+    if (!grouped[cat]) grouped[cat] = [];
+    grouped[cat].push({ text: item, idx: i });
+  });
+  const order = ['Produce','Dairy','Protein','Grains','Pantry','Frozen','Beverages','Other'];
+  let html = '';
+  order.forEach(cat => {
+    if (!grouped[cat]) return;
+    html += `<div class="grocery-section"><h3>${cat}</h3>`;
+    grouped[cat].forEach(item => {
+      const checked = state.groceryChecked[item.idx];
+      html += `<div class="grocery-item ${checked ? 'checked' : ''}">
+        <input type="checkbox" data-idx="${item.idx}" ${checked ? 'checked' : ''}>
+        <span>${item.text}</span>
+      </div>`;
+    });
+    html += '</div>';
+  });
+  container.innerHTML = html;
+  container.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+    cb.addEventListener('change', e => {
+      const idx = e.target.dataset.idx;
+      state.groceryChecked[idx] = e.target.checked;
+      saveState();
+      renderGrocery();
+    });
+  });
+}
+
+// ===== RECIPES =====
+let editingRecipeId = null;
+function getAllTags() {
+  const tags = new Set();
+  state.recipes.forEach(r => (r.tags||[]).forEach(t => tags.add(t)));
+  return [...tags].sort();
+}
+function renderTagFilter() {
+  const sel = document.getElementById('tagFilter');
+  const val = sel.value;
+  sel.innerHTML = '<option value="">All Tags</option>';
+  getAllTags().forEach(t => sel.innerHTML += `<option value="${t}">${t}</option>`);
+  sel.value = val;
+}
+function renderRecipes() {
+  renderTagFilter();
+  const query = document.getElementById('recipeSearch').value.toLowerCase();
+  const tag = document.getElementById('tagFilter').value;
+  const maxTime = parseInt(document.getElementById('timeFilter').value) || 0;
+  const favOnly = document.getElementById('favFilter').checked;
+  let filtered = state.recipes.filter(r => {
+    if (query && !r.name.toLowerCase().includes(query)) return false;
+    if (tag && !(r.tags||[]).includes(tag)) return false;
+    if (maxTime && (r.prep + r.cook) > maxTime) return false;
+    if (favOnly && !r.fav) return false;
+    return true;
+  });
+  const grid = document.getElementById('recipeGrid');
+  if (filtered.length === 0) {
+    grid.innerHTML = '<div style="grid-column:1/-1;text-align:center;color:#9ca3af;padding:2rem;">No recipes match your filters.</div>';
+    return;
+  }
+  grid.innerHTML = filtered.map(r => `
+    <div class="recipe-card glass" data-id="${r.id}">
+      <button class="star-btn ${r.fav ? 'active' : ''}" data-id="${r.id}" title="Toggle favorite">&#9733;</button>
+      <h3>${r.name}</h3>
+      <div class="meta">${r.prep+r.cook} min &middot; ${r.servings} servings &middot; ${r.calories} cal</div>
+      <div class="tags">${(r.tags||[]).map(t => `<span class="tag">${t}</span>`).join('')}</div>
+    </div>
+  `).join('');
+  grid.querySelectorAll('.recipe-card').forEach(card => {
+    card.addEventListener('click', e => {
+      if (e.target.closest('.star-btn')) return;
+      openRecipeDetail(card.dataset.id);
+    });
+  });
+  grid.querySelectorAll('.star-btn').forEach(btn => {
+    btn.addEventListener('click', e => {
+      e.stopPropagation();
+      const r = state.recipes.find(r => r.id === btn.dataset.id);
+      if (r) { r.fav = !r.fav; saveState(); renderRecipes(); }
+    });
+  });
+}
+document.getElementById('recipeSearch').addEventListener('input', renderRecipes);
+document.getElementById('tagFilter').addEventListener('change', renderRecipes);
+document.getElementById('timeFilter').addEventListener('change', renderRecipes);
+document.getElementById('favFilter').addEventListener('change', renderRecipes);
+
+// Add/Edit recipe modal
+document.getElementById('addRecipeBtn').addEventListener('click', () => openRecipeForm(null));
+function openRecipeForm(id) {
+  editingRecipeId = id;
+  const modal = document.getElementById('recipeModal');
+  if (id) {
+    const r = state.recipes.find(r => r.id === id);
+    document.getElementById('recipeModalTitle').textContent = 'Edit Recipe';
+    document.getElementById('rName').value = r.name;
+    document.getElementById('rPrep').value = r.prep;
+    document.getElementById('rCook').value = r.cook;
+    document.getElementById('rServings').value = r.servings;
+    document.getElementById('rCalories').value = r.calories;
+    document.getElementById('rIngredients').value = (r.ingredients||[]).join('\n');
+    document.getElementById('rInstructions').value = r.instructions||'';
+    document.getElementById('rTags').value = (r.tags||[]).join(', ');
+    document.getElementById('deleteRecipe').style.display = 'inline-block';
+  } else {
+    document.getElementById('recipeModalTitle').textContent = 'Add Recipe';
+    ['rName','rIngredients','rInstructions','rTags'].forEach(id => document.getElementById(id).value = '');
+    ['rPrep','rCook'].forEach(id => document.getElementById(id).value = '0');
+    document.getElementById('rServings').value = '2';
+    document.getElementById('rCalories').value = '300';
+    document.getElementById('deleteRecipe').style.display = 'none';
+  }
+  modal.classList.add('open');
+}
+document.getElementById('saveRecipe').addEventListener('click', () => {
+  const name = document.getElementById('rName').value.trim();
+  if (!name) return;
+  const data = {
+    name,
+    prep: parseInt(document.getElementById('rPrep').value)||0,
+    cook: parseInt(document.getElementById('rCook').value)||0,
+    servings: parseInt(document.getElementById('rServings').value)||2,
+    calories: parseInt(document.getElementById('rCalories').value)||300,
+    ingredients: document.getElementById('rIngredients').value.split('\n').map(s=>s.trim()).filter(Boolean),
+    instructions: document.getElementById('rInstructions').value.trim(),
+    tags: document.getElementById('rTags').value.split(',').map(s=>s.trim().toLowerCase()).filter(Boolean)
+  };
+  if (editingRecipeId) {
+    const r = state.recipes.find(r => r.id === editingRecipeId);
+    Object.assign(r, data);
+  } else {
+    data.id = 'r' + Date.now();
+    data.fav = false;
+    state.recipes.push(data);
+  }
+  saveState();
+  closeRecipeModal();
+  renderRecipes();
+});
+document.getElementById('deleteRecipe').addEventListener('click', () => {
+  if (!editingRecipeId) return;
+  if (!confirm('Delete this recipe?')) return;
+  state.recipes = state.recipes.filter(r => r.id !== editingRecipeId);
+  saveState();
+  closeRecipeModal();
+  renderRecipes();
+});
+document.getElementById('cancelRecipe').addEventListener('click', closeRecipeModal);
+document.getElementById('closeRecipeModal').addEventListener('click', closeRecipeModal);
+document.getElementById('recipeModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeRecipeModal(); });
+function closeRecipeModal() { document.getElementById('recipeModal').classList.remove('open'); editingRecipeId = null; }
+
+// Recipe detail modal
+function openRecipeDetail(id) {
+  const r = state.recipes.find(r => r.id === id);
+  if (!r) return;
+  const content = document.getElementById('recipeDetailContent');
+  content.innerHTML = `
+    <h2>${r.name}</h2>
+    <div class="detail-meta">
+      <div><div class="value">${r.prep}</div><div class="label">Prep (min)</div></div>
+      <div><div class="value">${r.cook}</div><div class="label">Cook (min)</div></div>
+      <div><div class="value">${r.servings}</div><div class="label">Servings</div></div>
+      <div><div class="value">${r.calories}</div><div class="label">Calories</div></div>
+    </div>
+    <div class="tags" style="margin-bottom:1rem;">${(r.tags||[]).map(t => `<span class="tag">${t}</span>`).join('')}</div>
+    <div class="detail-section"><h4>Ingredients</h4><ul>${(r.ingredients||[]).map(i => `<li>${i}</li>`).join('')}</ul></div>
+    <div class="detail-section"><h4>Instructions</h4><p>${r.instructions||''}</p></div>
+  `;
+  document.getElementById('editFromDetail').onclick = () => {
+    closeDetailModal();
+    openRecipeForm(id);
+  };
+  document.getElementById('recipeDetailModal').classList.add('open');
+}
+function closeDetailModal() { document.getElementById('recipeDetailModal').classList.remove('open'); }
+document.getElementById('closeDetailModal').addEventListener('click', closeDetailModal);
+document.getElementById('recipeDetailModal').addEventListener('click', e => { if (e.target === e.currentTarget) closeDetailModal(); });
+
+// ===== NUTRITION =====
+let nutritionChart = null;
+function estimateCalories(entry) {
+  if (!entry) return 0;
+  if (entry.recipeId) {
+    const r = state.recipes.find(r => r.id === entry.recipeId);
+    return r ? r.calories : 300;
+  }
+  if (entry.quickMeal) {
+    const lower = entry.quickMeal.toLowerCase();
+    for (const [key, cal] of Object.entries(QUICK_CAL)) {
+      if (lower.includes(key)) return cal;
+    }
+    return 350; // default estimate
+  }
+  return 0;
+}
+function renderNutrition() {
+  const plan = getWeekPlan();
+  const dailyCals = DAYS.map(day => {
+    return MEALS.reduce((sum, meal) => sum + estimateCalories(plan[day+'-'+meal]), 0);
+  });
+  const ctx = document.getElementById('nutritionChart').getContext('2d');
+  if (nutritionChart) nutritionChart.destroy();
+  nutritionChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: DAYS,
+      datasets: [{
+        label: 'Estimated Calories',
+        data: dailyCals,
+        backgroundColor: dailyCals.map(c => c > 2200 ? 'rgba(239,68,68,0.6)' : c > 0 ? 'rgba(59,130,246,0.6)' : 'rgba(209,213,219,0.3)'),
+        borderRadius: 8,
+        borderSkipped: false
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => ctx.parsed.y + ' cal' } }
+      },
+      scales: {
+        y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { callback: v => v + ' cal' } },
+        x: { grid: { display: false } }
+      }
+    }
+  });
+  const summary = document.getElementById('nutritionSummary');
+  summary.innerHTML = DAYS.map((day, i) => `
+    <div class="nutrition-day glass">
+      <div class="day-name">${day}</div>
+      <div class="cal-value" style="color:${dailyCals[i] > 2200 ? '#ef4444' : dailyCals[i] > 0 ? '#1a1a2e' : '#d1d5db'}">${dailyCals[i]}</div>
+      <div class="cal-label">calories</div>
+    </div>
+  `).join('');
+}
+
+// ===== INIT =====
+renderPlanner();
+renderRecipes();
+</script>
+</body>
+</html>

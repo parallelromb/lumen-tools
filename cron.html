@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cron Expression Builder & Scheduler</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #f8f9fc;
+  color: #1a1a2e;
+  min-height: 100vh;
+  padding: 1.5rem;
+}
+.container { max-width: 1100px; margin: 0 auto; }
+.header { text-align: center; margin-bottom: 2rem; }
+.header h1 { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; }
+.header p { color: #6b7280; font-size: 0.9rem; margin-top: 0.25rem; }
+.back-link { position: absolute; top: 1.5rem; left: 1.5rem; color: #3b82f6; text-decoration: none; font-size: 0.875rem; font-weight: 500; }
+.back-link:hover { text-decoration: underline; }
+
+.glass {
+  background: rgba(255,255,255,0.72);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.6);
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.expression-display {
+  text-align: center;
+  padding: 2rem 1.5rem;
+}
+.expression-display .cron-text {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 2rem;
+  font-weight: 700;
+  color: #1a1a2e;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.5rem;
+  word-break: break-all;
+}
+.expression-display .human-text {
+  color: #6b7280;
+  font-size: 0.95rem;
+  margin-bottom: 1rem;
+}
+.expression-display .actions { display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; }
+
+.btn {
+  padding: 0.5rem 1rem;
+  border: 1px solid rgba(0,0,0,0.1);
+  border-radius: 8px;
+  background: rgba(255,255,255,0.8);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  color: #1a1a2e;
+}
+.btn:hover { background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+.btn-primary { background: #3b82f6; color: #fff; border-color: #3b82f6; }
+.btn-primary:hover { background: #2563eb; }
+.btn-success { background: #10b981; color: #fff; border-color: #10b981; }
+.btn-success:hover { background: #059669; }
+.btn-danger { background: #ef4444; color: #fff; border-color: #ef4444; }
+.btn-danger:hover { background: #dc2626; }
+.btn-sm { padding: 0.35rem 0.75rem; font-size: 0.75rem; }
+
+.section-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.section-title svg { opacity: 0.5; }
+
+/* Manual input */
+.manual-input {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0;
+}
+.manual-input input {
+  flex: 1;
+  padding: 0.6rem 1rem;
+  border: 1px solid rgba(0,0,0,0.1);
+  border-radius: 8px;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.9rem;
+  background: rgba(255,255,255,0.6);
+  outline: none;
+}
+.manual-input input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+
+/* Field builder */
+.fields-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.75rem;
+}
+@media (max-width: 700px) { .fields-grid { grid-template-columns: repeat(2, 1fr); } }
+
+.field-card {
+  background: rgba(255,255,255,0.5);
+  border: 1px solid rgba(0,0,0,0.06);
+  border-radius: 12px;
+  padding: 1rem;
+}
+.field-card .field-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6b7280;
+  margin-bottom: 0.5rem;
+}
+.field-card .field-value {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #3b82f6;
+  margin-bottom: 0.5rem;
+}
+.field-card select, .field-card input[type="text"] {
+  width: 100%;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid rgba(0,0,0,0.1);
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 0.78rem;
+  background: #fff;
+  margin-bottom: 0.35rem;
+  outline: none;
+}
+.field-card select:focus, .field-card input[type="text"]:focus {
+  border-color: #3b82f6;
+}
+.field-card .type-select { margin-bottom: 0.4rem; }
+.field-card .detail-input { display: none; }
+.field-card .detail-input.active { display: block; }
+
+/* Presets */
+.presets-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.preset-btn {
+  padding: 0.35rem 0.75rem;
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 6px;
+  background: rgba(255,255,255,0.6);
+  font-family: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: all 0.15s;
+  color: #374151;
+}
+.preset-btn:hover { background: #3b82f6; color: #fff; border-color: #3b82f6; }
+
+/* Two column layout */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+@media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
+
+/* Next runs */
+.next-runs { list-style: none; }
+.next-runs li {
+  padding: 0.4rem 0;
+  border-bottom: 1px solid rgba(0,0,0,0.04);
+  font-size: 0.82rem;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  color: #374151;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.next-runs li:last-child { border-bottom: none; }
+.next-runs .run-num {
+  font-size: 0.65rem;
+  color: #9ca3af;
+  font-family: 'Inter', sans-serif;
+  width: 1.5rem;
+  text-align: right;
+}
+
+/* Export snippets */
+.export-tabs { display: flex; gap: 0.25rem; margin-bottom: 0.75rem; flex-wrap: wrap; }
+.export-tab {
+  padding: 0.35rem 0.75rem;
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 6px;
+  background: transparent;
+  font-family: inherit;
+  font-size: 0.75rem;
+  cursor: pointer;
+  color: #6b7280;
+}
+.export-tab.active { background: #3b82f6; color: #fff; border-color: #3b82f6; }
+.export-output {
+  background: #1a1a2e;
+  color: #e2e8f0;
+  border-radius: 8px;
+  padding: 1rem;
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.78rem;
+  line-height: 1.6;
+  overflow-x: auto;
+  white-space: pre;
+  max-height: 250px;
+  overflow-y: auto;
+  position: relative;
+}
+.copy-snippet {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  background: rgba(255,255,255,0.15);
+  border: none;
+  border-radius: 4px;
+  color: #e2e8f0;
+  font-size: 0.7rem;
+  cursor: pointer;
+}
+.copy-snippet:hover { background: rgba(255,255,255,0.25); }
+.export-wrapper { position: relative; }
+
+/* Saved & History */
+.saved-list, .history-list { max-height: 300px; overflow-y: auto; }
+.saved-item, .history-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(0,0,0,0.04);
+  gap: 0.5rem;
+}
+.saved-item:last-child, .history-item:last-child { border-bottom: none; }
+.saved-item .expr, .history-item .expr {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.82rem;
+  color: #3b82f6;
+  cursor: pointer;
+}
+.saved-item .expr:hover, .history-item .expr:hover { text-decoration: underline; }
+.saved-item .name { font-size: 0.82rem; font-weight: 500; }
+.saved-item .desc { font-size: 0.72rem; color: #9ca3af; }
+.saved-item .meta { flex: 1; min-width: 0; }
+.saved-item .actions-group, .history-item .actions-group { display: flex; gap: 0.25rem; flex-shrink: 0; }
+
+/* Guide */
+.guide-table { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+.guide-table th { text-align: left; font-weight: 600; padding: 0.4rem 0.5rem; border-bottom: 2px solid rgba(0,0,0,0.08); color: #6b7280; font-size: 0.72rem; text-transform: uppercase; }
+.guide-table td { padding: 0.4rem 0.5rem; border-bottom: 1px solid rgba(0,0,0,0.04); }
+.guide-table code { background: rgba(59,130,246,0.08); padding: 0.15rem 0.4rem; border-radius: 4px; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.78rem; }
+
+/* Save dialog */
+.save-dialog { display: flex; gap: 0.5rem; margin-top: 0.75rem; flex-wrap: wrap; }
+.save-dialog input { flex: 1; min-width: 120px; padding: 0.4rem 0.75rem; border: 1px solid rgba(0,0,0,0.1); border-radius: 6px; font-family: inherit; font-size: 0.8rem; outline: none; }
+
+/* Validation badge */
+.valid-badge { display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.25rem 0.6rem; border-radius: 6px; font-size: 0.75rem; font-weight: 500; }
+.valid-badge.valid { background: rgba(16,185,129,0.1); color: #059669; }
+.valid-badge.invalid { background: rgba(239,68,68,0.1); color: #dc2626; }
+
+.footer { text-align: center; margin-top: 2rem; color: #9ca3af; font-size: 0.8rem; }
+
+.empty-state { text-align: center; color: #9ca3af; font-size: 0.82rem; padding: 1.5rem 0; }
+</style>
+</head>
+<body>
+<a href="index.html" class="back-link">&larr; Back to Analytics</a>
+<div class="container">
+  <div class="header">
+    <h1>Cron Expression Builder</h1>
+    <p>Build, validate, and export cron schedules visually</p>
+  </div>
+
+  <!-- Live Expression Display -->
+  <div class="glass expression-display">
+    <div class="cron-text" id="cronDisplay">* * * * *</div>
+    <div class="human-text" id="humanDescription">Every minute</div>
+    <div class="actions">
+      <span class="valid-badge valid" id="validBadge">Valid</span>
+      <button class="btn btn-primary" onclick="copyExpression()">Copy Expression</button>
+      <button class="btn btn-success" onclick="showSaveDialog()">Save to Library</button>
+      <button class="btn" onclick="validateExpression()">Validate</button>
+    </div>
+    <div class="save-dialog" id="saveDialog" style="display:none;">
+      <input type="text" id="saveName" placeholder="Name (e.g. Daily backup)">
+      <input type="text" id="saveDesc" placeholder="Description (optional)">
+      <button class="btn btn-success btn-sm" onclick="saveExpression()">Save</button>
+      <button class="btn btn-sm" onclick="hideSaveDialog()">Cancel</button>
+    </div>
+  </div>
+
+  <!-- Manual Input -->
+  <div class="glass">
+    <div class="section-title">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="4 7 8 3 12 7"/><polyline points="4 13 8 9 12 13"/></svg>
+      Manual Input
+    </div>
+    <div class="manual-input">
+      <input type="text" id="manualInput" placeholder="Enter cron expression (e.g. 0 9 * * 1-5)" spellcheck="false">
+      <button class="btn btn-primary" onclick="parseManualInput()">Parse</button>
+    </div>
+  </div>
+
+  <!-- Visual Builder -->
+  <div class="glass">
+    <div class="section-title">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="12" height="12" rx="2"/><line x1="2" y1="6" x2="14" y2="6"/></svg>
+      Visual Builder
+    </div>
+    <div class="fields-grid">
+      <div class="field-card" data-field="minute">
+        <div class="field-label">Minute (0-59)</div>
+        <div class="field-value" id="minuteValue">*</div>
+        <select class="type-select" onchange="onTypeChange('minute', this.value)">
+          <option value="any">Any (*)</option>
+          <option value="specific">Specific value</option>
+          <option value="range">Range</option>
+          <option value="step">Step / interval</option>
+          <option value="list">List</option>
+        </select>
+        <div class="detail-input" id="minute-specific">
+          <select onchange="onDetailChange('minute')">
+            <script>document.write(Array.from({length:60},(_,i)=>`<option value="${i}">${i}</option>`).join(''))</script>
+          </select>
+        </div>
+        <div class="detail-input" id="minute-range">
+          <input type="text" placeholder="e.g. 0-30" onchange="onDetailChange('minute')">
+        </div>
+        <div class="detail-input" id="minute-step">
+          <input type="text" placeholder="e.g. */5 or 0/10" onchange="onDetailChange('minute')">
+        </div>
+        <div class="detail-input" id="minute-list">
+          <input type="text" placeholder="e.g. 0,15,30,45" onchange="onDetailChange('minute')">
+        </div>
+      </div>
+
+      <div class="field-card" data-field="hour">
+        <div class="field-label">Hour (0-23)</div>
+        <div class="field-value" id="hourValue">*</div>
+        <select class="type-select" onchange="onTypeChange('hour', this.value)">
+          <option value="any">Any (*)</option>
+          <option value="specific">Specific value</option>
+          <option value="range">Range</option>
+          <option value="step">Step / interval</option>
+          <option value="list">List</option>
+        </select>
+        <div class="detail-input" id="hour-specific">
+          <select onchange="onDetailChange('hour')">
+            <script>document.write(Array.from({length:24},(_,i)=>`<option value="${i}">${i}:00</option>`).join(''))</script>
+          </select>
+        </div>
+        <div class="detail-input" id="hour-range">
+          <input type="text" placeholder="e.g. 9-17" onchange="onDetailChange('hour')">
+        </div>
+        <div class="detail-input" id="hour-step">
+          <input type="text" placeholder="e.g. */2 or 0/6" onchange="onDetailChange('hour')">
+        </div>
+        <div class="detail-input" id="hour-list">
+          <input type="text" placeholder="e.g. 9,12,18" onchange="onDetailChange('hour')">
+        </div>
+      </div>
+
+      <div class="field-card" data-field="dom">
+        <div class="field-label">Day of Month (1-31)</div>
+        <div class="field-value" id="domValue">*</div>
+        <select class="type-select" onchange="onTypeChange('dom', this.value)">
+          <option value="any">Any (*)</option>
+          <option value="specific">Specific value</option>
+          <option value="range">Range</option>
+          <option value="step">Step / interval</option>
+          <option value="list">List</option>
+        </select>
+        <div class="detail-input" id="dom-specific">
+          <select onchange="onDetailChange('dom')">
+            <script>document.write(Array.from({length:31},(_,i)=>`<option value="${i+1}">${i+1}</option>`).join(''))</script>
+          </select>
+        </div>
+        <div class="detail-input" id="dom-range">
+          <input type="text" placeholder="e.g. 1-15" onchange="onDetailChange('dom')">
+        </div>
+        <div class="detail-input" id="dom-step">
+          <input type="text" placeholder="e.g. */2 or 1/5" onchange="onDetailChange('dom')">
+        </div>
+        <div class="detail-input" id="dom-list">
+          <input type="text" placeholder="e.g. 1,15,28" onchange="onDetailChange('dom')">
+        </div>
+      </div>
+
+      <div class="field-card" data-field="month">
+        <div class="field-label">Month (1-12)</div>
+        <div class="field-value" id="monthValue">*</div>
+        <select class="type-select" onchange="onTypeChange('month', this.value)">
+          <option value="any">Any (*)</option>
+          <option value="specific">Specific value</option>
+          <option value="range">Range</option>
+          <option value="step">Step / interval</option>
+          <option value="list">List</option>
+        </select>
+        <div class="detail-input" id="month-specific">
+          <select onchange="onDetailChange('month')">
+            <option value="1">January</option><option value="2">February</option><option value="3">March</option>
+            <option value="4">April</option><option value="5">May</option><option value="6">June</option>
+            <option value="7">July</option><option value="8">August</option><option value="9">September</option>
+            <option value="10">October</option><option value="11">November</option><option value="12">December</option>
+          </select>
+        </div>
+        <div class="detail-input" id="month-range">
+          <input type="text" placeholder="e.g. 1-6" onchange="onDetailChange('month')">
+        </div>
+        <div class="detail-input" id="month-step">
+          <input type="text" placeholder="e.g. */3 or 1/2" onchange="onDetailChange('month')">
+        </div>
+        <div class="detail-input" id="month-list">
+          <input type="text" placeholder="e.g. 1,4,7,10" onchange="onDetailChange('month')">
+        </div>
+      </div>
+
+      <div class="field-card" data-field="dow">
+        <div class="field-label">Day of Week (0-6)</div>
+        <div class="field-value" id="dowValue">*</div>
+        <select class="type-select" onchange="onTypeChange('dow', this.value)">
+          <option value="any">Any (*)</option>
+          <option value="specific">Specific value</option>
+          <option value="range">Range</option>
+          <option value="step">Step / interval</option>
+          <option value="list">List</option>
+        </select>
+        <div class="detail-input" id="dow-specific">
+          <select onchange="onDetailChange('dow')">
+            <option value="0">Sunday</option><option value="1">Monday</option><option value="2">Tuesday</option>
+            <option value="3">Wednesday</option><option value="4">Thursday</option><option value="5">Friday</option>
+            <option value="6">Saturday</option>
+          </select>
+        </div>
+        <div class="detail-input" id="dow-range">
+          <input type="text" placeholder="e.g. 1-5" onchange="onDetailChange('dow')">
+        </div>
+        <div class="detail-input" id="dow-step">
+          <input type="text" placeholder="e.g. */2" onchange="onDetailChange('dow')">
+        </div>
+        <div class="detail-input" id="dow-list">
+          <input type="text" placeholder="e.g. 1,3,5" onchange="onDetailChange('dow')">
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Presets -->
+  <div class="glass">
+    <div class="section-title">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="1" width="14" height="14" rx="2"/><line x1="1" y1="5" x2="15" y2="5"/><line x1="5" y1="1" x2="5" y2="5"/></svg>
+      Common Presets
+    </div>
+    <div class="presets-grid" id="presetsGrid"></div>
+  </div>
+
+  <!-- Next Runs + Export -->
+  <div class="two-col">
+    <div class="glass">
+      <div class="section-title">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="8" r="6"/><polyline points="8 4 8 8 11 9"/></svg>
+        Next 10 Executions
+      </div>
+      <ul class="next-runs" id="nextRuns"></ul>
+    </div>
+
+    <div class="glass">
+      <div class="section-title">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v2h8v-2"/><polyline points="8 2 8 10"/><polyline points="5 7 8 10 11 7"/></svg>
+        Generate As
+      </div>
+      <div class="export-tabs">
+        <button class="export-tab active" onclick="setExportTab('crontab')">Crontab</button>
+        <button class="export-tab" onclick="setExportTab('launchd')">Launchd</button>
+        <button class="export-tab" onclick="setExportTab('systemd')">Systemd</button>
+        <button class="export-tab" onclick="setExportTab('github')">GitHub Actions</button>
+      </div>
+      <div class="export-wrapper">
+        <pre class="export-output" id="exportOutput"></pre>
+        <button class="copy-snippet" onclick="copySnippet()">Copy</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Saved + History -->
+  <div class="two-col">
+    <div class="glass">
+      <div class="section-title">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2H3a1 1 0 00-1 1v10l4-3h7a1 1 0 001-1V3a1 1 0 00-1-1z"/></svg>
+        Saved Library
+      </div>
+      <div class="saved-list" id="savedList"></div>
+    </div>
+    <div class="glass">
+      <div class="section-title">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><polyline points="1 8 5 8 7 3 9 13 11 6 13 8 15 8"/></svg>
+        History (last 15)
+      </div>
+      <div class="history-list" id="historyList"></div>
+    </div>
+  </div>
+
+  <!-- Cron Format Guide -->
+  <div class="glass">
+    <div class="section-title">
+      <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><circle cx="8" cy="8" r="7"/><line x1="8" y1="5" x2="8" y2="8"/><circle cx="8" cy="11" r="0.5" fill="currentColor"/></svg>
+      Cron Format Guide (5-field standard)
+    </div>
+    <table class="guide-table">
+      <thead><tr><th>Field</th><th>Values</th><th>Specials</th><th>Example</th></tr></thead>
+      <tbody>
+        <tr><td>Minute</td><td>0-59</td><td><code>*</code> <code>,</code> <code>-</code> <code>/</code></td><td><code>*/5</code> = every 5 min</td></tr>
+        <tr><td>Hour</td><td>0-23</td><td><code>*</code> <code>,</code> <code>-</code> <code>/</code></td><td><code>9-17</code> = 9 AM to 5 PM</td></tr>
+        <tr><td>Day of Month</td><td>1-31</td><td><code>*</code> <code>,</code> <code>-</code> <code>/</code></td><td><code>1,15</code> = 1st & 15th</td></tr>
+        <tr><td>Month</td><td>1-12</td><td><code>*</code> <code>,</code> <code>-</code> <code>/</code></td><td><code>*/3</code> = every quarter</td></tr>
+        <tr><td>Day of Week</td><td>0-6 (Sun=0)</td><td><code>*</code> <code>,</code> <code>-</code> <code>/</code></td><td><code>1-5</code> = weekdays</td></tr>
+      </tbody>
+    </table>
+    <div style="margin-top:1rem;display:flex;flex-wrap:wrap;gap:0.75rem;font-size:0.78rem;color:#6b7280;">
+      <span><code>*</code> = any value</span>
+      <span><code>,</code> = list (1,3,5)</span>
+      <span><code>-</code> = range (1-5)</span>
+      <span><code>/</code> = step (*/5)</span>
+    </div>
+  </div>
+
+  <div class="footer">Lumen Analytics &middot; Cron Builder &middot; Data stored in localStorage</div>
+</div>
+
+<script>
+// --- State ---
+const FIELDS = ['minute','hour','dom','month','dow'];
+const FIELD_RANGES = { minute:[0,59], hour:[0,23], dom:[1,31], month:[1,12], dow:[0,6] };
+const DOW_NAMES = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const MONTH_NAMES = ['','January','February','March','April','May','June','July','August','September','October','November','December'];
+
+let currentExportTab = 'crontab';
+let fieldStates = {
+  minute: { type: 'any', value: '*' },
+  hour:   { type: 'any', value: '*' },
+  dom:    { type: 'any', value: '*' },
+  month:  { type: 'any', value: '*' },
+  dow:    { type: 'any', value: '*' }
+};
+
+// --- Presets ---
+const PRESETS = [
+  { label: 'Every minute', expr: '* * * * *' },
+  { label: 'Every 5 minutes', expr: '*/5 * * * *' },
+  { label: 'Every 10 minutes', expr: '*/10 * * * *' },
+  { label: 'Every 15 minutes', expr: '*/15 * * * *' },
+  { label: 'Every 30 minutes', expr: '*/30 * * * *' },
+  { label: 'Every hour', expr: '0 * * * *' },
+  { label: 'Every 2 hours', expr: '0 */2 * * *' },
+  { label: 'Every 6 hours', expr: '0 */6 * * *' },
+  { label: 'Daily at midnight', expr: '0 0 * * *' },
+  { label: 'Daily at 6 AM', expr: '0 6 * * *' },
+  { label: 'Daily at 9 AM', expr: '0 9 * * *' },
+  { label: 'Daily at noon', expr: '0 12 * * *' },
+  { label: 'Daily at 6 PM', expr: '0 18 * * *' },
+  { label: 'Weekdays at 9 AM', expr: '0 9 * * 1-5' },
+  { label: 'Weekdays at 8:30 AM', expr: '30 8 * * 1-5' },
+  { label: 'Every Monday', expr: '0 0 * * 1' },
+  { label: 'Every Friday at 5 PM', expr: '0 17 * * 5' },
+  { label: 'Weekends at 10 AM', expr: '0 10 * * 0,6' },
+  { label: 'First of month', expr: '0 0 1 * *' },
+  { label: '1st & 15th at 9 AM', expr: '0 9 1,15 * *' },
+  { label: 'Quarterly (Jan/Apr/Jul/Oct)', expr: '0 0 1 1,4,7,10 *' },
+  { label: 'Yearly (Jan 1)', expr: '0 0 1 1 *' },
+];
+
+// --- Init ---
+function init() {
+  renderPresets();
+  loadHistory();
+  loadSaved();
+  updateAll();
+  document.getElementById('manualInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') parseManualInput();
+  });
+}
+
+function renderPresets() {
+  const grid = document.getElementById('presetsGrid');
+  grid.innerHTML = PRESETS.map(p => `<button class="preset-btn" onclick="applyPreset('${p.expr}')">${p.label}</button>`).join('');
+}
+
+// --- Field type changes ---
+function onTypeChange(field, type) {
+  fieldStates[field].type = type;
+  // Show/hide detail inputs
+  const card = document.querySelector(`[data-field="${field}"]`);
+  card.querySelectorAll('.detail-input').forEach(d => d.classList.remove('active'));
+  if (type !== 'any') {
+    const detail = document.getElementById(`${field}-${type}`);
+    if (detail) detail.classList.add('active');
+  }
+  if (type === 'any') {
+    fieldStates[field].value = '*';
+  } else if (type === 'specific') {
+    const sel = document.querySelector(`#${field}-specific select`);
+    fieldStates[field].value = sel ? sel.value : '*';
+  }
+  updateAll();
+}
+
+function onDetailChange(field) {
+  const state = fieldStates[field];
+  const type = state.type;
+  if (type === 'specific') {
+    const sel = document.querySelector(`#${field}-specific select`);
+    state.value = sel ? sel.value : '*';
+  } else if (type === 'range' || type === 'step' || type === 'list') {
+    const inp = document.querySelector(`#${field}-${type} input`);
+    state.value = inp && inp.value.trim() ? inp.value.trim() : '*';
+  }
+  updateAll();
+}
+
+// --- Build expression ---
+function getExpression() {
+  return FIELDS.map(f => fieldStates[f].value).join(' ');
+}
+
+// --- Update everything ---
+function updateAll() {
+  const expr = getExpression();
+  document.getElementById('cronDisplay').textContent = expr;
+  document.getElementById('manualInput').value = expr;
+  FIELDS.forEach(f => {
+    document.getElementById(f + 'Value').textContent = fieldStates[f].value;
+  });
+  document.getElementById('humanDescription').textContent = describeExpression(expr);
+  renderNextRuns(expr);
+  renderExport();
+  updateValidBadge(expr);
+  addToHistory(expr);
+}
+
+// --- Parse manual input into builder ---
+function parseManualInput() {
+  const raw = document.getElementById('manualInput').value.trim();
+  const parts = raw.split(/\s+/);
+  if (parts.length !== 5) { alert('Invalid cron expression. Must have exactly 5 fields.'); return; }
+  FIELDS.forEach((f, i) => {
+    const val = parts[i];
+    fieldStates[f].value = val;
+    // Determine type
+    let type = 'any';
+    if (val === '*') type = 'any';
+    else if (val.includes('/')) type = 'step';
+    else if (val.includes('-') && !val.includes(',')) type = 'range';
+    else if (val.includes(',')) type = 'list';
+    else type = 'specific';
+    fieldStates[f].type = type;
+
+    // Update UI selects
+    const card = document.querySelector(`[data-field="${f}"]`);
+    card.querySelector('.type-select').value = type;
+    card.querySelectorAll('.detail-input').forEach(d => d.classList.remove('active'));
+    if (type !== 'any') {
+      const detail = document.getElementById(`${f}-${type}`);
+      if (detail) {
+        detail.classList.add('active');
+        const inp = detail.querySelector('input');
+        const sel = detail.querySelector('select');
+        if (inp) inp.value = val;
+        if (sel) sel.value = val;
+      }
+    }
+  });
+  updateAll();
+}
+
+function applyPreset(expr) {
+  document.getElementById('manualInput').value = expr;
+  parseManualInput();
+}
+
+// --- Validation ---
+function validateField(val, min, max) {
+  if (val === '*') return true;
+  // Step: */N or M/N
+  if (val.includes('/')) {
+    const [base, step] = val.split('/');
+    if (base !== '*' && (isNaN(+base) || +base < min || +base > max)) return false;
+    if (isNaN(+step) || +step < 1) return false;
+    return true;
+  }
+  // List
+  if (val.includes(',')) {
+    return val.split(',').every(v => {
+      v = v.trim();
+      if (v.includes('-')) { const [a,b] = v.split('-'); return !isNaN(+a) && !isNaN(+b) && +a >= min && +b <= max && +a <= +b; }
+      return !isNaN(+v) && +v >= min && +v <= max;
+    });
+  }
+  // Range
+  if (val.includes('-')) {
+    const [a, b] = val.split('-');
+    return !isNaN(+a) && !isNaN(+b) && +a >= min && +b <= max && +a <= +b;
+  }
+  // Specific
+  return !isNaN(+val) && +val >= min && +val <= max;
+}
+
+function isValidExpression(expr) {
+  const parts = expr.split(/\s+/);
+  if (parts.length !== 5) return false;
+  const ranges = [FIELD_RANGES.minute, FIELD_RANGES.hour, FIELD_RANGES.dom, FIELD_RANGES.month, FIELD_RANGES.dow];
+  return parts.every((p, i) => validateField(p, ranges[i][0], ranges[i][1]));
+}
+
+function updateValidBadge(expr) {
+  const badge = document.getElementById('validBadge');
+  if (isValidExpression(expr)) {
+    badge.className = 'valid-badge valid';
+    badge.textContent = 'Valid';
+  } else {
+    badge.className = 'valid-badge invalid';
+    badge.textContent = 'Invalid';
+  }
+}
+
+function validateExpression() {
+  const expr = getExpression();
+  if (isValidExpression(expr)) {
+    alert('Expression is valid: ' + expr);
+  } else {
+    alert('Expression is INVALID. Check each field for correct values.');
+  }
+}
+
+// --- Human-readable description ---
+function describeExpression(expr) {
+  const parts = expr.split(/\s+/);
+  if (parts.length !== 5) return 'Invalid expression';
+  const [min, hr, dom, mon, dow] = parts;
+  let desc = '';
+
+  // Time part
+  if (min === '*' && hr === '*') {
+    desc = 'Every minute';
+  } else if (min.includes('/')) {
+    const step = min.split('/')[1];
+    desc = `Every ${step} minute${+step>1?'s':''}`;
+    if (hr !== '*') desc += ` past hour ${descHour(hr)}`;
+  } else if (hr.includes('/')) {
+    const step = hr.split('/')[1];
+    desc = `At minute ${min === '*' ? '0' : min} every ${step} hour${+step>1?'s':''}`;
+  } else if (min !== '*' && hr !== '*') {
+    desc = `At ${descTime(hr, min)}`;
+  } else if (min !== '*') {
+    desc = `At minute ${min} of every hour`;
+  } else if (hr !== '*') {
+    desc = `Every minute during hour ${descHour(hr)}`;
+  }
+
+  // DOM
+  if (dom !== '*') {
+    if (dom.includes(',')) desc += ` on day ${dom} of the month`;
+    else if (dom.includes('-')) desc += ` on days ${dom} of the month`;
+    else if (dom.includes('/')) desc += ` every ${dom.split('/')[1]} days`;
+    else desc += ` on day ${dom} of the month`;
+  }
+
+  // Month
+  if (mon !== '*') {
+    if (mon.includes(',')) desc += ` in ${mon.split(',').map(m=>MONTH_NAMES[+m]||m).join(', ')}`;
+    else if (mon.includes('-')) { const [a,b]=mon.split('-'); desc += ` from ${MONTH_NAMES[+a]||a} to ${MONTH_NAMES[+b]||b}`; }
+    else if (mon.includes('/')) desc += ` every ${mon.split('/')[1]} months`;
+    else desc += ` in ${MONTH_NAMES[+mon]||mon}`;
+  }
+
+  // DOW
+  if (dow !== '*') {
+    if (dow.includes(',')) desc += ` on ${dow.split(',').map(d=>DOW_NAMES[+d]||d).join(', ')}`;
+    else if (dow.includes('-')) { const [a,b]=dow.split('-'); desc += ` on ${DOW_NAMES[+a]||a} through ${DOW_NAMES[+b]||b}`; }
+    else if (dow.includes('/')) desc += ` every ${dow.split('/')[1]} days of the week`;
+    else desc += ` on ${DOW_NAMES[+dow]||dow}`;
+  }
+
+  return desc || 'Every minute';
+}
+
+function descTime(hr, min) {
+  if (hr.includes(',') || hr.includes('-') || hr.includes('/')) return `${min === '*' ? '00' : pad(min)} past hour ${descHour(hr)}`;
+  const h = +hr; const m = min === '*' ? 0 : +min;
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+  return `${pad(h12)}:${pad(m)} ${ampm}`;
+}
+
+function descHour(hr) {
+  if (hr.includes(',')) return hr.split(',').map(h => descHour(h)).join(', ');
+  if (hr.includes('-')) return hr;
+  return hr;
+}
+
+function pad(n) { return String(n).padStart(2, '0'); }
+
+// --- Next 10 executions ---
+function expandField(val, min, max) {
+  if (val === '*') return Array.from({length: max - min + 1}, (_, i) => i + min);
+  if (val.includes('/')) {
+    const [base, step] = val.split('/');
+    const start = base === '*' ? min : +base;
+    const s = +step;
+    const res = [];
+    for (let i = start; i <= max; i += s) res.push(i);
+    return res;
+  }
+  if (val.includes(',')) {
+    const vals = [];
+    val.split(',').forEach(v => {
+      v = v.trim();
+      if (v.includes('-')) { const [a,b] = v.split('-'); for(let i=+a;i<=+b;i++) vals.push(i); }
+      else vals.push(+v);
+    });
+    return [...new Set(vals)].sort((a,b)=>a-b);
+  }
+  if (val.includes('-')) {
+    const [a, b] = val.split('-');
+    const res = [];
+    for (let i = +a; i <= +b; i++) res.push(i);
+    return res;
+  }
+  return [+val];
+}
+
+function getNextRuns(expr, count = 10) {
+  const parts = expr.split(/\s+/);
+  if (parts.length !== 5) return [];
+  const [minF, hrF, domF, monF, dowF] = parts;
+  const minutes = expandField(minF, 0, 59);
+  const hours = expandField(hrF, 0, 23);
+  const doms = expandField(domF, 1, 31);
+  const months = expandField(monF, 1, 12);
+  const dows = expandField(dowF, 0, 6);
+  const domIsWild = domF === '*';
+  const dowIsWild = dowF === '*';
+
+  const results = [];
+  const now = new Date();
+  let d = new Date(now.getFullYear(), now.getMonth(), now.getDate(), now.getHours(), now.getMinutes() + 1, 0, 0);
+  const maxIter = 525960; // ~1 year of minutes
+  let iter = 0;
+
+  while (results.length < count && iter < maxIter) {
+    iter++;
+    const mo = d.getMonth() + 1;
+    const dm = d.getDate();
+    const dw = d.getDay();
+    const hr = d.getHours();
+    const mn = d.getMinutes();
+
+    if (!months.includes(mo)) { d = new Date(d.getFullYear(), d.getMonth() + 1, 1, 0, 0); continue; }
+    if (!hours.includes(hr)) { d = new Date(d.getTime() + 60 * 60 * 1000); d.setMinutes(0); continue; }
+    if (!minutes.includes(mn)) { d = new Date(d.getTime() + 60 * 1000); continue; }
+
+    // DOM/DOW logic: if both specified, match either; if only one, match it
+    let domMatch = domIsWild || doms.includes(dm);
+    let dowMatch = dowIsWild || dows.includes(dw);
+    let dateMatch;
+    if (domIsWild && dowIsWild) dateMatch = true;
+    else if (!domIsWild && !dowIsWild) dateMatch = domMatch || dowMatch;
+    else dateMatch = domMatch && dowMatch;
+
+    if (dateMatch) {
+      results.push(new Date(d));
+    }
+    d = new Date(d.getTime() + 60 * 1000);
+  }
+  return results;
+}
+
+function renderNextRuns(expr) {
+  const runs = getNextRuns(expr);
+  const ul = document.getElementById('nextRuns');
+  if (!runs.length) { ul.innerHTML = '<li style="color:#9ca3af">No upcoming runs found</li>'; return; }
+  const opts = { weekday: 'short', year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit', hour12: true };
+  ul.innerHTML = runs.map((r, i) => `<li><span class="run-num">${i+1}.</span>${r.toLocaleString('en-US', opts)}</li>`).join('');
+}
+
+// --- Export ---
+function setExportTab(tab) {
+  currentExportTab = tab;
+  document.querySelectorAll('.export-tab').forEach(t => t.classList.remove('active'));
+  document.querySelector(`.export-tab[onclick="setExportTab('${tab}')"]`).classList.add('active');
+  renderExport();
+}
+
+function renderExport() {
+  const expr = getExpression();
+  const [min, hr, dom, mon, dow] = expr.split(/\s+/);
+  let out = '';
+  switch (currentExportTab) {
+    case 'crontab':
+      out = `# ${describeExpression(expr)}\n${expr}    /path/to/command --arg1 value`;
+      break;
+    case 'launchd':
+      out = launchdPlist(min, hr, dom, mon, dow);
+      break;
+    case 'systemd':
+      out = systemdTimer(expr);
+      break;
+    case 'github':
+      out = `# ${describeExpression(expr)}\non:\n  schedule:\n    - cron: '${expr}'\n\njobs:\n  scheduled-job:\n    runs-on: ubuntu-latest\n    steps:\n      - uses: actions/checkout@v4\n      - name: Run scheduled task\n        run: echo "Running scheduled task"`;
+      break;
+  }
+  document.getElementById('exportOutput').textContent = out;
+}
+
+function launchdPlist(min, hr, dom, mon, dow) {
+  let cal = '';
+  const indent = '            ';
+  if (min !== '*' && !min.includes('/') && !min.includes(',') && !min.includes('-'))
+    cal += `${indent}<key>Minute</key>\n${indent}<integer>${min}</integer>\n`;
+  if (hr !== '*' && !hr.includes('/') && !hr.includes(',') && !hr.includes('-'))
+    cal += `${indent}<key>Hour</key>\n${indent}<integer>${hr}</integer>\n`;
+  if (dom !== '*' && !dom.includes('/') && !dom.includes(',') && !dom.includes('-'))
+    cal += `${indent}<key>Day</key>\n${indent}<integer>${dom}</integer>\n`;
+  if (mon !== '*' && !mon.includes('/') && !mon.includes(',') && !mon.includes('-'))
+    cal += `${indent}<key>Month</key>\n${indent}<integer>${mon}</integer>\n`;
+  if (dow !== '*' && !dow.includes('/') && !dow.includes(',') && !dow.includes('-'))
+    cal += `${indent}<key>Weekday</key>\n${indent}<integer>${dow}</integer>\n`;
+  if (!cal) cal = `${indent}<!-- Every minute -->\n`;
+
+  return `<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.example.myjob</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/path/to/command</string>
+        <string>--arg1</string>
+        <string>value</string>
+    </array>
+    <key>StartCalendarInterval</key>
+    <dict>
+${cal}    </dict>
+</dict>
+</plist>`;
+}
+
+function systemdTimer(expr) {
+  const desc = describeExpression(expr);
+  return `# my-task.timer
+[Unit]
+Description=${desc}
+
+[Timer]
+OnCalendar=${cronToSystemd(expr)}
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+
+# my-task.service
+[Unit]
+Description=${desc} - Service
+
+[Service]
+Type=oneshot
+ExecStart=/path/to/command --arg1 value`;
+}
+
+function cronToSystemd(expr) {
+  const [min, hr, dom, mon, dow] = expr.split(/\s+/);
+  // Approximate: systemd OnCalendar uses different syntax
+  const dowMap = {'0':'Sun','1':'Mon','2':'Tue','3':'Wed','4':'Thu','5':'Fri','6':'Sat','*':'*'};
+  let dowS = dow === '*' ? '' : (dow.includes('-') ? dow.split('-').map(d=>dowMap[d]||d).join('-') : dow.includes(',') ? dow.split(',').map(d=>dowMap[d]||d).join(',') : dowMap[dow] || dow);
+  let prefix = dowS ? dowS + ' ' : '';
+  let monS = mon === '*' ? '*' : mon;
+  let domS = dom === '*' ? '*' : dom;
+  let hrS = hr === '*' ? '*' : hr;
+  let minS = min === '*' ? '*' : min;
+  return `${prefix}${monS !== '*' ? '*' : '*'}-${monS}-${domS} ${hrS}:${minS}:00`;
+}
+
+function copySnippet() {
+  const text = document.getElementById('exportOutput').textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.querySelector('.copy-snippet');
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = 'Copy', 1500);
+  });
+}
+
+// --- Copy expression ---
+function copyExpression() {
+  const expr = getExpression();
+  navigator.clipboard.writeText(expr).then(() => {
+    const btn = document.querySelector('.actions .btn-primary');
+    const orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    setTimeout(() => btn.textContent = orig, 1500);
+  });
+}
+
+// --- Save/Load ---
+function showSaveDialog() { document.getElementById('saveDialog').style.display = 'flex'; document.getElementById('saveName').focus(); }
+function hideSaveDialog() { document.getElementById('saveDialog').style.display = 'none'; }
+
+function saveExpression() {
+  const name = document.getElementById('saveName').value.trim();
+  if (!name) { alert('Please enter a name'); return; }
+  const desc = document.getElementById('saveDesc').value.trim();
+  const expr = getExpression();
+  const saved = JSON.parse(localStorage.getItem('cron_saved') || '[]');
+  saved.unshift({ name, desc, expr, ts: Date.now() });
+  localStorage.setItem('cron_saved', JSON.stringify(saved));
+  document.getElementById('saveName').value = '';
+  document.getElementById('saveDesc').value = '';
+  hideSaveDialog();
+  loadSaved();
+}
+
+function deleteSaved(index) {
+  const saved = JSON.parse(localStorage.getItem('cron_saved') || '[]');
+  saved.splice(index, 1);
+  localStorage.setItem('cron_saved', JSON.stringify(saved));
+  loadSaved();
+}
+
+function loadSaved() {
+  const saved = JSON.parse(localStorage.getItem('cron_saved') || '[]');
+  const el = document.getElementById('savedList');
+  if (!saved.length) { el.innerHTML = '<div class="empty-state">No saved expressions yet</div>'; return; }
+  el.innerHTML = saved.map((s, i) => `
+    <div class="saved-item">
+      <div class="meta">
+        <div class="name">${esc(s.name)}</div>
+        ${s.desc ? `<div class="desc">${esc(s.desc)}</div>` : ''}
+        <div class="expr" onclick="applyPreset('${esc(s.expr)}')">${esc(s.expr)}</div>
+      </div>
+      <div class="actions-group">
+        <button class="btn btn-sm" onclick="applyPreset('${esc(s.expr)}')">Use</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteSaved(${i})">Del</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// --- History ---
+let lastHistoryExpr = '';
+function addToHistory(expr) {
+  if (expr === lastHistoryExpr) return;
+  lastHistoryExpr = expr;
+  let history = JSON.parse(localStorage.getItem('cron_history') || '[]');
+  // Remove duplicate
+  history = history.filter(h => h.expr !== expr);
+  history.unshift({ expr, ts: Date.now() });
+  if (history.length > 15) history = history.slice(0, 15);
+  localStorage.setItem('cron_history', JSON.stringify(history));
+  loadHistory();
+}
+
+function loadHistory() {
+  const history = JSON.parse(localStorage.getItem('cron_history') || '[]');
+  const el = document.getElementById('historyList');
+  if (!history.length) { el.innerHTML = '<div class="empty-state">No history yet</div>'; return; }
+  el.innerHTML = history.map(h => {
+    const d = new Date(h.ts);
+    const time = d.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+    return `<div class="history-item">
+      <span class="expr" onclick="applyPreset('${esc(h.expr)}')">${esc(h.expr)}</span>
+      <span style="color:#9ca3af;font-size:0.72rem">${time}</span>
+    </div>`;
+  }).join('');
+}
+
+function clearHistory() {
+  localStorage.removeItem('cron_history');
+  loadHistory();
+}
+
+function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+
+// --- Init ---
+init();
+</script>
+</body>
+</html>

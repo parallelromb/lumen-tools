@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>A/B Headline Tester - Lumen Analytics</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #f8f9fc;
+    color: #1a1a2e;
+    min-height: 100vh;
+    padding: 1.5rem;
+  }
+  .back-link {
+    display: inline-flex; align-items: center; gap: 6px;
+    color: #6b7280; text-decoration: none; font-size: 0.85rem; font-weight: 500;
+    margin-bottom: 1.5rem; transition: color 0.2s;
+  }
+  .back-link:hover { color: #3b82f6; }
+  .header { text-align: center; margin-bottom: 2rem; }
+  .header h1 { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.35rem; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
+  .header p { color: #6b7280; font-size: 0.9rem; }
+
+  .glass {
+    background: rgba(255,255,255,0.72);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.6);
+    border-radius: 16px;
+  }
+  .container { max-width: 1100px; margin: 0 auto; }
+
+  /* Tabs */
+  .tabs { display: flex; gap: 4px; margin-bottom: 1.5rem; padding: 4px; border-radius: 12px; background: rgba(0,0,0,0.04); }
+  .tab {
+    flex: 1; padding: 0.6rem 1rem; border: none; background: transparent;
+    font-family: inherit; font-size: 0.85rem; font-weight: 500; color: #6b7280;
+    border-radius: 10px; cursor: pointer; transition: all 0.2s;
+  }
+  .tab.active { background: rgba(255,255,255,0.9); color: #1a1a2e; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+  .tab:hover:not(.active) { color: #1a1a2e; }
+
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* Forms */
+  label { display: block; font-size: 0.8rem; font-weight: 600; color: #374151; margin-bottom: 0.35rem; }
+  input[type="text"], textarea, select {
+    width: 100%; padding: 0.6rem 0.8rem; border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 10px; font-family: inherit; font-size: 0.875rem;
+    background: rgba(255,255,255,0.6); transition: border-color 0.2s;
+  }
+  input:focus, textarea:focus, select:focus { outline: none; border-color: #3b82f6; }
+  textarea { resize: vertical; min-height: 60px; }
+
+  .btn {
+    padding: 0.55rem 1.2rem; border: none; border-radius: 10px;
+    font-family: inherit; font-size: 0.85rem; font-weight: 600;
+    cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn-primary { background: #3b82f6; color: #fff; }
+  .btn-primary:hover { background: #2563eb; transform: translateY(-1px); }
+  .btn-secondary { background: rgba(0,0,0,0.06); color: #374151; }
+  .btn-secondary:hover { background: rgba(0,0,0,0.1); }
+  .btn-danger { background: rgba(239,68,68,0.1); color: #dc2626; }
+  .btn-danger:hover { background: rgba(239,68,68,0.2); }
+  .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.8rem; }
+  .btn-ghost { background: transparent; color: #6b7280; padding: 0.4rem 0.6rem; }
+  .btn-ghost:hover { background: rgba(0,0,0,0.04); color: #1a1a2e; }
+
+  .form-row { margin-bottom: 1rem; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media (max-width: 600px) { .form-grid { grid-template-columns: 1fr; } }
+
+  /* Variation inputs */
+  .variations-list { display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 0.5rem; }
+  .var-row { display: flex; gap: 0.5rem; align-items: center; }
+  .var-row input { flex: 1; }
+  .var-num {
+    width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center;
+    font-size: 0.7rem; font-weight: 700; color: #fff; flex-shrink: 0;
+  }
+  .var-colors { --c0: #3b82f6; --c1: #8b5cf6; --c2: #ec4899; --c3: #f59e0b; --c4: #10b981; --c5: #ef4444; }
+  .remove-var { background: none; border: none; color: #9ca3af; cursor: pointer; font-size: 1.1rem; padding: 4px; }
+  .remove-var:hover { color: #ef4444; }
+
+  /* Preview cards */
+  .preview-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin: 1.5rem 0; }
+  .preview-card {
+    padding: 1.5rem; border-radius: 14px; border: 2px solid transparent;
+    cursor: pointer; transition: all 0.25s; position: relative; overflow: hidden;
+  }
+  .preview-card:hover { transform: translateY(-2px); box-shadow: 0 8px 30px rgba(0,0,0,0.08); }
+  .preview-card.voted { border-color: #3b82f6; }
+  .preview-card .var-label {
+    font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.06em;
+    margin-bottom: 0.75rem; opacity: 0.7;
+  }
+  .preview-card .headline-text {
+    font-size: 1.35rem; font-weight: 700; line-height: 1.3; letter-spacing: -0.02em;
+    color: #1a1a2e; margin-bottom: 1rem;
+  }
+  .preview-card .vote-btn {
+    padding: 0.4rem 1rem; border-radius: 8px; border: 1px solid rgba(0,0,0,0.1);
+    background: rgba(255,255,255,0.8); font-family: inherit; font-size: 0.8rem;
+    font-weight: 600; cursor: pointer; transition: all 0.2s; color: #374151;
+  }
+  .preview-card .vote-btn:hover { background: #3b82f6; color: #fff; border-color: #3b82f6; }
+  .preview-card.voted .vote-btn { background: #3b82f6; color: #fff; border-color: #3b82f6; }
+  .vote-count { font-size: 0.75rem; color: #6b7280; margin-left: 0.5rem; }
+  .preview-card .badges { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 0.75rem; }
+  .badge {
+    font-size: 0.65rem; padding: 2px 8px; border-radius: 6px; font-weight: 600;
+  }
+  .badge-warn { background: rgba(245,158,11,0.12); color: #d97706; }
+  .badge-ok { background: rgba(16,185,129,0.12); color: #059669; }
+  .badge-winner { background: rgba(59,130,246,0.12); color: #2563eb; font-size: 0.7rem; padding: 3px 10px; }
+
+  /* Scoring */
+  .score-section { margin-top: 1.5rem; }
+  .score-card { padding: 1.25rem; border-radius: 12px; margin-bottom: 0.75rem; }
+  .score-card h4 { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.75rem; }
+  .score-row { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.5rem; }
+  .score-label { font-size: 0.8rem; width: 80px; color: #6b7280; font-weight: 500; }
+  .score-stars { display: flex; gap: 2px; }
+  .star {
+    width: 28px; height: 28px; border-radius: 6px; border: none;
+    background: rgba(0,0,0,0.04); cursor: pointer; font-size: 0.9rem;
+    display: flex; align-items: center; justify-content: center;
+    transition: all 0.15s; color: #d1d5db;
+  }
+  .star.filled { background: rgba(245,158,11,0.15); color: #f59e0b; }
+  .star:hover { background: rgba(245,158,11,0.1); }
+  .composite-score {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 1.1rem; font-weight: 700; color: #3b82f6;
+    padding: 0.3rem 0.8rem; border-radius: 8px; background: rgba(59,130,246,0.08);
+  }
+  .rank-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; border-radius: 50%; font-size: 0.75rem; font-weight: 700;
+    color: #fff;
+  }
+  .rank-1 { background: #f59e0b; }
+  .rank-2 { background: #9ca3af; }
+  .rank-3 { background: #cd7f32; }
+  .rank-other { background: #d1d5db; color: #6b7280; }
+
+  /* History */
+  .history-item {
+    padding: 1.25rem; border-radius: 14px; margin-bottom: 0.75rem;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .history-item:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(0,0,0,0.06); }
+  .history-meta { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem; }
+  .history-name { font-weight: 600; font-size: 0.95rem; }
+  .history-date { font-size: 0.75rem; color: #9ca3af; }
+  .history-context { font-size: 0.8rem; color: #6b7280; margin-bottom: 0.5rem; }
+  .history-winner { font-size: 0.85rem; font-weight: 600; color: #059669; }
+  .history-vars { font-size: 0.8rem; color: #9ca3af; }
+
+  /* Templates */
+  .template-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 0.75rem; }
+  .template-card {
+    padding: 1.25rem; border-radius: 12px; cursor: pointer; transition: all 0.2s;
+  }
+  .template-card:hover { transform: translateY(-2px); box-shadow: 0 6px 24px rgba(0,0,0,0.06); }
+  .template-formula { font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; color: #1a1a2e; }
+  .template-example { font-size: 0.8rem; color: #6b7280; font-style: italic; }
+  .template-cat { font-size: 0.65rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #3b82f6; margin-bottom: 0.35rem; }
+
+  /* Toast */
+  .toast {
+    position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(100px);
+    background: #1a1a2e; color: #fff; padding: 0.75rem 1.5rem; border-radius: 12px;
+    font-size: 0.85rem; font-weight: 500; z-index: 1000; transition: transform 0.3s ease;
+    box-shadow: 0 8px 30px rgba(0,0,0,0.2);
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  .empty-state { text-align: center; padding: 3rem; color: #9ca3af; }
+  .empty-state svg { margin-bottom: 1rem; opacity: 0.4; }
+  .empty-state p { font-size: 0.9rem; }
+
+  .actions-bar { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 1rem; }
+
+  /* Winner highlight */
+  .winner-glow {
+    box-shadow: 0 0 0 2px #3b82f6, 0 8px 30px rgba(59,130,246,0.15);
+  }
+
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.3); backdrop-filter: blur(4px);
+    z-index: 100; display: none; align-items: center; justify-content: center;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: #fff; border-radius: 20px; padding: 2rem; max-width: 600px; width: 90%;
+    max-height: 85vh; overflow-y: auto; box-shadow: 0 24px 80px rgba(0,0,0,0.15);
+  }
+  .modal h3 { font-size: 1.1rem; font-weight: 700; margin-bottom: 1.25rem; }
+
+  .test-header-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1rem; }
+  .context-tag { font-size: 0.75rem; padding: 3px 10px; border-radius: 8px; background: rgba(139,92,246,0.1); color: #7c3aed; font-weight: 600; }
+
+  .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); border: 0; }
+</style>
+</head>
+<body>
+<div class="container">
+  <a href="index.html" class="back-link">
+    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 8H1m0 0l6-6M1 8l6 6"/></svg>
+    Back to Analytics
+  </a>
+
+  <div class="header">
+    <h1>
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="8" height="16" rx="2"/><rect x="14" y="4" width="8" height="16" rx="2"/><path d="M6 8h0M18 8h0" stroke-width="3" stroke-linecap="round"/></svg>
+      A/B Headline Tester
+    </h1>
+    <p>Compare headlines, taglines, and copy variations. Vote, score, and find winners.</p>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="create" onclick="switchTab('create')">New Test</button>
+    <button class="tab" data-tab="active-test" onclick="switchTab('active-test')">Active Test</button>
+    <button class="tab" data-tab="history" onclick="switchTab('history')">History</button>
+    <button class="tab" data-tab="templates" onclick="switchTab('templates')">Templates</button>
+  </div>
+
+  <!-- CREATE PANEL -->
+  <div id="panel-create" class="panel active">
+    <div class="glass" style="padding:1.75rem">
+      <h3 style="font-size:1rem;font-weight:700;margin-bottom:1.25rem">Create a New Test</h3>
+      <div class="form-grid">
+        <div class="form-row">
+          <label for="test-name">Test Name</label>
+          <input type="text" id="test-name" placeholder="e.g. Smara Landing Hero">
+        </div>
+        <div class="form-row">
+          <label for="test-context">Context / Page</label>
+          <input type="text" id="test-context" placeholder="e.g. Landing page hero section">
+        </div>
+      </div>
+      <div class="form-row">
+        <label>Headline Variations (2-6)</label>
+        <div class="variations-list var-colors" id="var-list">
+          <div class="var-row">
+            <span class="var-num" style="background:var(--c0)">A</span>
+            <input type="text" placeholder="Variation A" class="var-input">
+            <button class="remove-var" onclick="removeVar(this)" title="Remove">&times;</button>
+          </div>
+          <div class="var-row">
+            <span class="var-num" style="background:var(--c1)">B</span>
+            <input type="text" placeholder="Variation B" class="var-input">
+            <button class="remove-var" onclick="removeVar(this)" title="Remove">&times;</button>
+          </div>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="addVariation()" id="add-var-btn">+ Add Variation</button>
+      </div>
+      <div style="display:flex;gap:0.5rem;margin-top:1.25rem">
+        <button class="btn btn-primary" onclick="createTest()">Create Test</button>
+        <button class="btn btn-secondary" onclick="loadFromTemplate()">Use Template</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ACTIVE TEST PANEL -->
+  <div id="panel-active-test" class="panel">
+    <div id="no-active" class="empty-state">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="2" y="4" width="8" height="16" rx="2"/><rect x="14" y="4" width="8" height="16" rx="2"/></svg>
+      <p>No active test. Create one or load from history.</p>
+    </div>
+    <div id="active-content" style="display:none">
+      <div class="test-header-bar">
+        <div>
+          <h2 id="active-name" style="font-size:1.2rem;font-weight:700"></h2>
+          <span class="context-tag" id="active-context"></span>
+        </div>
+        <div style="display:flex;gap:0.5rem">
+          <button class="btn btn-secondary btn-sm" onclick="copyWinner()">Copy Winner</button>
+          <button class="btn btn-secondary btn-sm" onclick="showExportModal()">Export</button>
+          <button class="btn btn-danger btn-sm" onclick="archiveTest()">Archive</button>
+        </div>
+      </div>
+
+      <div class="preview-grid" id="preview-grid"></div>
+
+      <div class="score-section">
+        <h3 style="font-size:1rem;font-weight:600;margin-bottom:1rem">Score Variations</h3>
+        <div id="score-cards"></div>
+      </div>
+
+      <div class="glass" style="padding:1.25rem;margin-top:1.5rem">
+        <h3 style="font-size:1rem;font-weight:600;margin-bottom:1rem">Rankings</h3>
+        <div id="rankings"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- HISTORY PANEL -->
+  <div id="panel-history" class="panel">
+    <div id="history-list"></div>
+    <div id="no-history" class="empty-state" style="display:none">
+      <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <p>No past tests yet.</p>
+    </div>
+  </div>
+
+  <!-- TEMPLATES PANEL -->
+  <div id="panel-templates" class="panel">
+    <p style="font-size:0.85rem;color:#6b7280;margin-bottom:1rem">Click a template to pre-fill the create form with the formula.</p>
+    <div class="template-grid" id="template-grid"></div>
+  </div>
+</div>
+
+<!-- Export Modal -->
+<div class="modal-overlay" id="export-modal">
+  <div class="modal">
+    <h3>Export Test Results</h3>
+    <div style="display:flex;gap:0.5rem;margin-bottom:1rem">
+      <button class="btn btn-primary btn-sm" onclick="exportJSON()">JSON</button>
+      <button class="btn btn-secondary btn-sm" onclick="exportMarkdown()">Markdown Report</button>
+    </div>
+    <textarea id="export-output" style="width:100%;min-height:200px;font-family:'SF Mono',Monaco,monospace;font-size:0.8rem" readonly></textarea>
+    <div style="display:flex;gap:0.5rem;margin-top:0.75rem">
+      <button class="btn btn-secondary btn-sm" onclick="copyExport()">Copy to Clipboard</button>
+      <button class="btn btn-ghost btn-sm" onclick="closeExportModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const LS_KEY = 'ab-headline-tester';
+const VAR_COLORS = ['#3b82f6','#8b5cf6','#ec4899','#f59e0b','#10b981','#ef4444'];
+const VAR_LETTERS = ['A','B','C','D','E','F'];
+const CRITERIA = ['Clarity','Emotion','Urgency','Uniqueness'];
+const GENERIC_WORDS = ['best','great','amazing','awesome','incredible','ultimate','powerful','innovative','revolutionary','solution','leverage','synergy','next-gen','cutting-edge'];
+
+const TEMPLATES = [
+  { cat:'Benefit-Pain', formula:'How to [benefit] without [pain]', example:'How to scale AI without burning cash' },
+  { cat:'Numbered', formula:'[Number] ways to [goal]', example:'7 ways to cut your AI costs in half' },
+  { cat:'Stop-Start', formula:'Stop [problem]. Start [solution].', example:'Stop guessing. Start scoping.' },
+  { cat:'Question', formula:'What if [surprising possibility]?', example:'What if your AI remembered everything?' },
+  { cat:'Social Proof', formula:'[Number] teams use [product] to [result]', example:'200 teams use Smara to ship faster' },
+  { cat:'Urgency', formula:'[Audience]: [urgent action] before [deadline]', example:'CTOs: Fix your AI memory before Q3' },
+  { cat:'Contrast', formula:'[Old way] is dead. Meet [new way].', example:'Context windows are dead. Meet persistent memory.' },
+  { cat:'Specific Result', formula:'Get [specific metric] in [timeframe]', example:'Get 10x faster deploys in one sprint' },
+  { cat:'Fear', formula:'The hidden cost of [common practice]', example:'The hidden cost of rebuilding context' },
+  { cat:'Identity', formula:'Built for [identity] who [action]', example:'Built for architects who ship solo' },
+  { cat:'Before-After', formula:'From [before state] to [after state]', example:'From 3-day estimates to 3-minute scopes' },
+  { cat:'Command', formula:'[Verb] your [thing]. [Verb] your [result].', example:'Remember everything. Rebuild nothing.' },
+];
+
+const SEED_TESTS = [
+  {
+    id: 'seed-smara', name: 'Smara Landing Hero', context: 'smara.dev landing page hero',
+    variations: [
+      'Your AI tools forget everything. Fix that.',
+      'Stop overpaying for AI memory.',
+      'Persistent memory for AI tools.',
+      'Remember everything. Rebuild nothing.'
+    ],
+    votes: [3,1,0,4], scores: {}, createdAt: '2026-04-28T10:00:00Z', archived: false
+  },
+  {
+    id: 'seed-scoper', name: 'Scoper Hero', context: 'Scoper landing page',
+    variations: [
+      'Stop guessing. Start scoping.',
+      'AI-powered project estimates your stakeholders trust.',
+      '9 agents. One accurate estimate.'
+    ],
+    votes: [5,2,3], scores: {}, createdAt: '2026-04-27T14:00:00Z', archived: false
+  },
+  {
+    id: 'seed-romb', name: 'parallelromb.dev Hero', context: 'Personal site hero',
+    variations: [
+      'What one architect builds after hours',
+      'AI products, family systems, and side projects',
+      'From enterprise to indie \u2014 one builder\'s lab'
+    ],
+    votes: [4,1,3], scores: {}, createdAt: '2026-04-26T09:00:00Z', archived: false
+  }
+];
+
+let state = loadState();
+
+function loadState() {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch(e) {}
+  const s = { tests: [...SEED_TESTS], activeTestId: null };
+  saveState(s);
+  return s;
+}
+function saveState(s) { s = s || state; localStorage.setItem(LS_KEY, JSON.stringify(s)); }
+
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === tab));
+  document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + tab));
+  if (tab === 'active-test') renderActiveTest();
+  if (tab === 'history') renderHistory();
+  if (tab === 'templates') renderTemplates();
+}
+
+// --- Variations input ---
+function addVariation() {
+  const list = document.getElementById('var-list');
+  const count = list.children.length;
+  if (count >= 6) return;
+  const idx = count;
+  const row = document.createElement('div');
+  row.className = 'var-row';
+  row.innerHTML = `<span class="var-num" style="background:${VAR_COLORS[idx]}">${VAR_LETTERS[idx]}</span>
+    <input type="text" placeholder="Variation ${VAR_LETTERS[idx]}" class="var-input">
+    <button class="remove-var" onclick="removeVar(this)" title="Remove">&times;</button>`;
+  list.appendChild(row);
+  if (list.children.length >= 6) document.getElementById('add-var-btn').style.display = 'none';
+}
+function removeVar(btn) {
+  const list = document.getElementById('var-list');
+  if (list.children.length <= 2) return toast('Minimum 2 variations');
+  btn.closest('.var-row').remove();
+  reindexVars();
+  document.getElementById('add-var-btn').style.display = '';
+}
+function reindexVars() {
+  document.querySelectorAll('#var-list .var-row').forEach((row, i) => {
+    row.querySelector('.var-num').textContent = VAR_LETTERS[i];
+    row.querySelector('.var-num').style.background = VAR_COLORS[i];
+    row.querySelector('input').placeholder = `Variation ${VAR_LETTERS[i]}`;
+  });
+}
+
+// --- Create ---
+function createTest() {
+  const name = document.getElementById('test-name').value.trim();
+  const context = document.getElementById('test-context').value.trim();
+  if (!name) return toast('Please enter a test name');
+  const inputs = document.querySelectorAll('#var-list .var-input');
+  const vars = [];
+  inputs.forEach(inp => { const v = inp.value.trim(); if (v) vars.push(v); });
+  if (vars.length < 2) return toast('Need at least 2 variations');
+
+  const test = {
+    id: 'test-' + Date.now(),
+    name, context, variations: vars,
+    votes: vars.map(() => 0),
+    scores: {},
+    createdAt: new Date().toISOString(),
+    archived: false
+  };
+  state.tests.unshift(test);
+  state.activeTestId = test.id;
+  saveState();
+  // Reset form
+  document.getElementById('test-name').value = '';
+  document.getElementById('test-context').value = '';
+  const list = document.getElementById('var-list');
+  list.innerHTML = `<div class="var-row"><span class="var-num" style="background:var(--c0)">A</span><input type="text" placeholder="Variation A" class="var-input"><button class="remove-var" onclick="removeVar(this)" title="Remove">&times;</button></div>
+    <div class="var-row"><span class="var-num" style="background:var(--c1)">B</span><input type="text" placeholder="Variation B" class="var-input"><button class="remove-var" onclick="removeVar(this)" title="Remove">&times;</button></div>`;
+  document.getElementById('add-var-btn').style.display = '';
+  switchTab('active-test');
+  toast('Test created');
+}
+
+// --- Active Test ---
+function getActiveTest() { return state.tests.find(t => t.id === state.activeTestId); }
+
+function renderActiveTest() {
+  const test = getActiveTest();
+  if (!test) {
+    document.getElementById('no-active').style.display = '';
+    document.getElementById('active-content').style.display = 'none';
+    return;
+  }
+  document.getElementById('no-active').style.display = 'none';
+  document.getElementById('active-content').style.display = '';
+  document.getElementById('active-name').textContent = test.name;
+  document.getElementById('active-context').textContent = test.context || 'No context';
+
+  // Rankings
+  const ranked = getRanked(test);
+  const winnerId = ranked.length ? ranked[0].idx : -1;
+
+  // Preview cards
+  const grid = document.getElementById('preview-grid');
+  grid.innerHTML = '';
+  test.variations.forEach((v, i) => {
+    const issues = checkBestPractices(v);
+    const isWinner = i === winnerId && (test.votes[i] > 0 || hasScores(test, i));
+    const card = document.createElement('div');
+    card.className = `preview-card glass ${isWinner ? 'winner-glow' : ''}`;
+    card.innerHTML = `
+      <div class="var-label" style="color:${VAR_COLORS[i]}">Variation ${VAR_LETTERS[i]} ${isWinner ? '<span class="badge badge-winner" style="margin-left:6px">Winner</span>' : ''}</div>
+      <div class="headline-text">${esc(v)}</div>
+      <div style="display:flex;align-items:center">
+        <button class="vote-btn ${test.votes[i] > 0 ? '' : ''}" onclick="vote(${i})">Vote</button>
+        <span class="vote-count">${test.votes[i]} vote${test.votes[i]!==1?'s':''}</span>
+      </div>
+      <div class="badges">
+        ${issues.map(is => `<span class="badge badge-warn">${esc(is)}</span>`).join('')}
+        ${issues.length === 0 ? '<span class="badge badge-ok">Passes checks</span>' : ''}
+      </div>`;
+    grid.appendChild(card);
+  });
+
+  // Score cards
+  const sc = document.getElementById('score-cards');
+  sc.innerHTML = '';
+  test.variations.forEach((v, i) => {
+    const card = document.createElement('div');
+    card.className = 'score-card glass';
+    const scores = test.scores[i] || {};
+    const composite = getComposite(scores);
+    const r = ranked.findIndex(r => r.idx === i);
+    const rankClass = r === 0 ? 'rank-1' : r === 1 ? 'rank-2' : r === 2 ? 'rank-3' : 'rank-other';
+    card.innerHTML = `
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <h4 style="color:${VAR_COLORS[i]}">${VAR_LETTERS[i]}: ${esc(v.length > 50 ? v.slice(0,50)+'...' : v)}</h4>
+        <div style="display:flex;align-items:center;gap:8px">
+          <span class="rank-badge ${rankClass}">#${r+1}</span>
+          <span class="composite-score">${composite.toFixed(1)}/5</span>
+        </div>
+      </div>
+      ${CRITERIA.map(c => `
+        <div class="score-row">
+          <span class="score-label">${c}</span>
+          <div class="score-stars">
+            ${[1,2,3,4,5].map(s => `<button class="star ${(scores[c]||0)>=s?'filled':''}" onclick="setScore(${i},'${c}',${s})">${(scores[c]||0)>=s?'\u2605':'\u2606'}</button>`).join('')}
+          </div>
+          <span style="font-size:0.8rem;color:#9ca3af;width:20px">${scores[c]||'-'}</span>
+        </div>`).join('')}`;
+    sc.appendChild(card);
+  });
+
+  // Rankings summary
+  const rDiv = document.getElementById('rankings');
+  rDiv.innerHTML = ranked.map((r, pos) => {
+    const rankClass = pos === 0 ? 'rank-1' : pos === 1 ? 'rank-2' : pos === 2 ? 'rank-3' : 'rank-other';
+    return `<div style="display:flex;align-items:center;gap:10px;padding:0.5rem 0;border-bottom:1px solid rgba(0,0,0,0.04)">
+      <span class="rank-badge ${rankClass}">#${pos+1}</span>
+      <span style="flex:1;font-size:0.9rem;font-weight:500">${esc(test.variations[r.idx])}</span>
+      <span style="font-size:0.8rem;color:#6b7280">${r.score.toFixed(1)} pts</span>
+      <span style="font-size:0.75rem;color:#9ca3af">${test.votes[r.idx]} votes</span>
+    </div>`;
+  }).join('');
+}
+
+function vote(idx) {
+  const test = getActiveTest();
+  if (!test) return;
+  test.votes[idx]++;
+  saveState();
+  renderActiveTest();
+}
+
+function setScore(varIdx, criterion, value) {
+  const test = getActiveTest();
+  if (!test) return;
+  if (!test.scores[varIdx]) test.scores[varIdx] = {};
+  test.scores[varIdx][criterion] = value;
+  saveState();
+  renderActiveTest();
+}
+
+function getComposite(scores) {
+  if (!scores || !Object.keys(scores).length) return 0;
+  const vals = CRITERIA.map(c => scores[c] || 0);
+  return vals.reduce((a,b) => a+b, 0) / CRITERIA.length;
+}
+
+function hasScores(test, idx) {
+  return test.scores[idx] && Object.keys(test.scores[idx]).length > 0;
+}
+
+function getRanked(test) {
+  return test.variations.map((v, i) => {
+    const composite = getComposite(test.scores[i] || {});
+    const voteScore = test.votes[i] * 0.5;
+    return { idx: i, score: composite + voteScore };
+  }).sort((a, b) => b.score - a.score);
+}
+
+// --- Best Practices ---
+function checkBestPractices(headline) {
+  const issues = [];
+  const words = headline.replace(/[^\w\s]/g, '').split(/\s+/).filter(Boolean);
+  if (words.length > 10) issues.push('Too long (>' + 10 + ' words)');
+  const hasVerb = /\b(get|stop|start|fix|build|ship|cut|save|grow|boost|join|try|make|find|create|learn|remember|use|discover|unlock|transform|scale|reduce|track|meet|see)\b/i.test(headline);
+  if (!hasVerb) issues.push('No action verb');
+  const hasBenefit = /\b(fast|save|free|easy|better|more|less|without|never|always|every|instant|simple|trust|accurate|persist|remember)\b/i.test(headline);
+  if (!hasBenefit && words.length > 3) issues.push('No clear benefit');
+  const lower = headline.toLowerCase();
+  const genericFound = GENERIC_WORDS.filter(w => lower.includes(w));
+  if (genericFound.length) issues.push('Generic: ' + genericFound.join(', '));
+  return issues;
+}
+
+// --- Copy Winner ---
+function copyWinner() {
+  const test = getActiveTest();
+  if (!test) return;
+  const ranked = getRanked(test);
+  if (!ranked.length) return;
+  const winner = test.variations[ranked[0].idx];
+  navigator.clipboard.writeText(winner).then(() => toast('Winner copied!')).catch(() => toast('Copy failed'));
+}
+
+// --- Archive ---
+function archiveTest() {
+  const test = getActiveTest();
+  if (!test) return;
+  test.archived = true;
+  state.activeTestId = null;
+  saveState();
+  renderActiveTest();
+  toast('Test archived');
+}
+
+// --- History ---
+function renderHistory() {
+  const list = document.getElementById('history-list');
+  const noHist = document.getElementById('no-history');
+  const tests = state.tests.filter(t => t.archived || t.id !== state.activeTestId);
+  if (!tests.length) { list.innerHTML = ''; noHist.style.display = ''; return; }
+  noHist.style.display = 'none';
+  list.innerHTML = tests.map(t => {
+    const ranked = getRanked(t);
+    const winner = ranked.length ? t.variations[ranked[0].idx] : 'No votes yet';
+    const d = new Date(t.createdAt);
+    return `<div class="history-item glass" onclick="loadTest('${t.id}')">
+      <div class="history-meta">
+        <span class="history-name">${esc(t.name)} ${t.archived ? '<span style="font-size:0.7rem;color:#9ca3af">(archived)</span>' : ''}</span>
+        <span class="history-date">${d.toLocaleDateString()}</span>
+      </div>
+      <div class="history-context">${esc(t.context)}</div>
+      <div class="history-winner">Winner: ${esc(winner)}</div>
+      <div class="history-vars">${t.variations.length} variations &middot; ${t.votes.reduce((a,b)=>a+b,0)} total votes</div>
+      <div style="margin-top:0.5rem;display:flex;gap:0.5rem">
+        <button class="btn btn-secondary btn-sm" onclick="event.stopPropagation();deleteTest('${t.id}')">Delete</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function loadTest(id) {
+  const test = state.tests.find(t => t.id === id);
+  if (!test) return;
+  state.activeTestId = id;
+  if (test.archived) test.archived = false;
+  saveState();
+  switchTab('active-test');
+  toast('Test loaded');
+}
+
+function deleteTest(id) {
+  if (!confirm('Delete this test permanently?')) return;
+  state.tests = state.tests.filter(t => t.id !== id);
+  if (state.activeTestId === id) state.activeTestId = null;
+  saveState();
+  renderHistory();
+  toast('Test deleted');
+}
+
+// --- Templates ---
+function renderTemplates() {
+  const grid = document.getElementById('template-grid');
+  grid.innerHTML = TEMPLATES.map((t, i) => `
+    <div class="template-card glass" onclick="applyTemplate(${i})">
+      <div class="template-cat">${esc(t.cat)}</div>
+      <div class="template-formula">${esc(t.formula)}</div>
+      <div class="template-example">"${esc(t.example)}"</div>
+    </div>`).join('');
+}
+
+function applyTemplate(idx) {
+  const t = TEMPLATES[idx];
+  switchTab('create');
+  const inputs = document.querySelectorAll('#var-list .var-input');
+  if (inputs[0]) inputs[0].value = t.formula;
+  if (inputs[1]) inputs[1].value = t.example;
+  toast('Template applied - customize the variations');
+}
+
+function loadFromTemplate() { switchTab('templates'); }
+
+// --- Export ---
+function showExportModal() { document.getElementById('export-modal').classList.add('show'); exportJSON(); }
+function closeExportModal() { document.getElementById('export-modal').classList.remove('show'); }
+
+function exportJSON() {
+  const test = getActiveTest();
+  if (!test) return;
+  const ranked = getRanked(test);
+  const output = {
+    name: test.name, context: test.context, createdAt: test.createdAt,
+    variations: test.variations.map((v, i) => ({
+      label: VAR_LETTERS[i], text: v, votes: test.votes[i],
+      scores: test.scores[i] || {}, composite: getComposite(test.scores[i] || {}),
+      rank: ranked.findIndex(r => r.idx === i) + 1,
+      issues: checkBestPractices(v)
+    })),
+    winner: test.variations[ranked[0].idx]
+  };
+  document.getElementById('export-output').value = JSON.stringify(output, null, 2);
+}
+
+function exportMarkdown() {
+  const test = getActiveTest();
+  if (!test) return;
+  const ranked = getRanked(test);
+  let md = `# A/B Headline Test: ${test.name}\n\n`;
+  md += `**Context:** ${test.context}\n**Created:** ${new Date(test.createdAt).toLocaleDateString()}\n**Total votes:** ${test.votes.reduce((a,b)=>a+b,0)}\n\n`;
+  md += `## Rankings\n\n`;
+  ranked.forEach((r, pos) => {
+    const v = test.variations[r.idx];
+    const scores = test.scores[r.idx] || {};
+    md += `### #${pos+1}: "${v}"\n`;
+    md += `- **Votes:** ${test.votes[r.idx]}\n`;
+    md += `- **Composite:** ${getComposite(scores).toFixed(1)}/5\n`;
+    CRITERIA.forEach(c => { if (scores[c]) md += `- ${c}: ${scores[c]}/5\n`; });
+    const issues = checkBestPractices(v);
+    if (issues.length) md += `- Issues: ${issues.join(', ')}\n`;
+    md += '\n';
+  });
+  md += `## Winner\n\n> ${test.variations[ranked[0].idx]}\n`;
+  document.getElementById('export-output').value = md;
+}
+
+function copyExport() {
+  const el = document.getElementById('export-output');
+  navigator.clipboard.writeText(el.value).then(() => toast('Copied!')).catch(() => { el.select(); document.execCommand('copy'); toast('Copied!'); });
+}
+
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+// Close modal on overlay click
+document.getElementById('export-modal').addEventListener('click', e => { if (e.target === e.currentTarget) closeExportModal(); });
+
+// Init: if no active test, set first non-archived
+if (!state.activeTestId) {
+  const first = state.tests.find(t => !t.archived);
+  if (first) { state.activeTestId = first.id; saveState(); }
+}
+
+renderTemplates();
+</script>
+</body>
+</html>

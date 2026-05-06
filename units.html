@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Developer Unit Converter — Lumen Analytics</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #f8f9fc;
+  color: #1a1a2e;
+  min-height: 100vh;
+  padding: 1.5rem;
+}
+.header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+.header h1 { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.25rem; }
+.header p { color: #6b7280; font-size: 0.9rem; }
+.back { position: absolute; top: 1.5rem; left: 1.5rem; color: #3b82f6; text-decoration: none; font-size: 0.875rem; font-weight: 500; }
+.back:hover { text-decoration: underline; }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(420px, 1fr));
+  gap: 1.25rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+@media (max-width: 480px) { .grid { grid-template-columns: 1fr; } }
+
+.card {
+  background: rgba(255,255,255,0.72);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.6);
+  border-radius: 16px;
+  padding: 1.25rem;
+}
+.card h2 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.card h2 .badge {
+  font-size: 0.65rem;
+  font-weight: 500;
+  background: rgba(59,130,246,0.1);
+  color: #3b82f6;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.row { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.5rem; flex-wrap: wrap; }
+.row label { font-size: 0.75rem; color: #6b7280; min-width: 36px; text-align: right; }
+.row input[type="text"], .row input[type="number"], .row select {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.8rem;
+  background: rgba(255,255,255,0.8);
+  outline: none;
+  transition: border-color 0.15s;
+}
+.row input:focus, .row select:focus { border-color: #3b82f6; }
+.config-row { display: flex; gap: 0.5rem; align-items: center; margin-bottom: 0.75rem; padding-bottom: 0.5rem; border-bottom: 1px solid rgba(0,0,0,0.05); }
+.config-row label { font-size: 0.7rem; color: #6b7280; }
+.config-row input { width: 60px; padding: 4px 6px; border: 1px solid #e5e7eb; border-radius: 6px; font-size: 0.75rem; font-family: inherit; }
+
+.copy-btn {
+  background: none;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 4px 8px;
+  cursor: pointer;
+  font-size: 0.7rem;
+  color: #6b7280;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.copy-btn:hover { border-color: #3b82f6; color: #3b82f6; }
+.copy-btn.copied { border-color: #22c55e; color: #22c55e; }
+
+.swatch {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  border: 2px solid #e5e7eb;
+  flex-shrink: 0;
+}
+
+.scale-output {
+  font-family: 'SF Mono', 'Fira Code', monospace;
+  font-size: 0.72rem;
+  background: rgba(0,0,0,0.03);
+  border-radius: 8px;
+  padding: 0.5rem;
+  margin-top: 0.5rem;
+  line-height: 1.6;
+  max-height: 180px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.box-model-viz {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+.box-layer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  font-size: 0.65rem;
+  color: #fff;
+  font-weight: 500;
+}
+.box-label {
+  position: absolute;
+  top: 2px;
+  left: 4px;
+  font-size: 0.55rem;
+  opacity: 0.8;
+}
+.box-val-top, .box-val-bottom, .box-val-left, .box-val-right {
+  position: absolute;
+  font-size: 0.6rem;
+}
+.box-val-top { top: 8px; left: 50%; transform: translateX(-50%); }
+.box-val-bottom { bottom: 8px; left: 50%; transform: translateX(-50%); }
+.box-val-left { left: 8px; top: 50%; transform: translateY(-50%); }
+.box-val-right { right: 8px; top: 50%; transform: translateY(-50%); }
+
+.history-panel {
+  background: rgba(255,255,255,0.72);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.6);
+  border-radius: 16px;
+  padding: 1.25rem;
+  max-width: 1400px;
+  margin: 1.25rem auto 0;
+}
+.history-panel h2 { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.5rem; }
+.history-list { list-style: none; }
+.history-list li {
+  font-size: 0.75rem;
+  color: #4b5563;
+  padding: 4px 0;
+  border-bottom: 1px solid rgba(0,0,0,0.04);
+  display: flex;
+  justify-content: space-between;
+}
+.history-list li .hl-time { color: #9ca3af; font-size: 0.7rem; }
+.history-list li:last-child { border-bottom: none; }
+
+.toggle-row { display: flex; gap: 0.5rem; margin-bottom: 0.5rem; }
+.toggle-row button {
+  padding: 3px 8px;
+  font-size: 0.7rem;
+  border: 1px solid #e5e7eb;
+  background: rgba(255,255,255,0.6);
+  border-radius: 6px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.toggle-row button.active { background: #3b82f6; color: #fff; border-color: #3b82f6; }
+
+.footer { text-align: center; margin-top: 2rem; color: #9ca3af; font-size: 0.75rem; }
+</style>
+</head>
+<body>
+<a href="index.html" class="back">&larr; Back to Analytics</a>
+<div class="header">
+  <h1>Developer Unit Converter</h1>
+  <p>Convert between all common development units instantly</p>
+</div>
+
+<div class="grid">
+
+  <!-- CSS Units -->
+  <div class="card" id="css-card">
+    <h2><svg width="16" height="16" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="12" height="12" rx="1"/><line x1="2" y1="6" x2="14" y2="6"/><line x1="6" y1="2" x2="6" y2="14"/></svg> CSS Units</h2>
+    <div class="config-row">
+      <label>Base font:</label><input type="number" id="css-base" value="16" min="1"> px
+      <label style="margin-left:0.5rem">Viewport W:</label><input type="number" id="css-vw" value="1920" min="1"> px
+      <label style="margin-left:0.5rem">H:</label><input type="number" id="css-vh" value="1080" min="1"> px
+    </div>
+    <div class="row"><label>px</label><input type="number" id="css-px" step="any"><button class="copy-btn" data-target="css-px">Copy</button></div>
+    <div class="row"><label>rem</label><input type="number" id="css-rem" step="any"><button class="copy-btn" data-target="css-rem">Copy</button></div>
+    <div class="row"><label>em</label><input type="number" id="css-em" step="any"><button class="copy-btn" data-target="css-em">Copy</button></div>
+    <div class="row"><label>%</label><input type="number" id="css-pct" step="any"><button class="copy-btn" data-target="css-pct">Copy</button></div>
+    <div class="row"><label>vw</label><input type="number" id="css-vw-val" step="any"><button class="copy-btn" data-target="css-vw-val">Copy</button></div>
+    <div class="row"><label>vh</label><input type="number" id="css-vh-val" step="any"><button class="copy-btn" data-target="css-vh-val">Copy</button></div>
+  </div>
+
+  <!-- Color Converter -->
+  <div class="card" id="color-card">
+    <h2><svg width="16" height="16" fill="none" stroke="#8b5cf6" stroke-width="2"><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2" fill="#8b5cf6"/></svg> Color Converter</h2>
+    <div class="row">
+      <label>HEX</label><input type="text" id="color-hex" placeholder="#3b82f6">
+      <div class="swatch" id="color-swatch"></div>
+      <button class="copy-btn" data-target="color-hex">Copy</button>
+    </div>
+    <div class="row"><label>RGB</label><input type="text" id="color-rgb" placeholder="rgb(59, 130, 246)"><button class="copy-btn" data-target="color-rgb">Copy</button></div>
+    <div class="row"><label>RGBA</label><input type="text" id="color-rgba" placeholder="rgba(59, 130, 246, 1)"><button class="copy-btn" data-target="color-rgba">Copy</button></div>
+    <div class="row"><label>HSL</label><input type="text" id="color-hsl" placeholder="hsl(217, 91%, 60%)"><button class="copy-btn" data-target="color-hsl">Copy</button></div>
+    <div class="row"><label>HSLA</label><input type="text" id="color-hsla" placeholder="hsla(217, 91%, 60%, 1)"><button class="copy-btn" data-target="color-hsla">Copy</button></div>
+  </div>
+
+  <!-- Time Units -->
+  <div class="card" id="time-card">
+    <h2><svg width="16" height="16" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><polyline points="8 4 8 8 10.5 9.5"/></svg> Time Units</h2>
+    <div class="row"><label>ms</label><input type="number" id="time-ms" step="any"><button class="copy-btn" data-target="time-ms">Copy</button></div>
+    <div class="row"><label>s</label><input type="number" id="time-s" step="any"><button class="copy-btn" data-target="time-s">Copy</button></div>
+    <div class="row"><label>min</label><input type="number" id="time-min" step="any"><button class="copy-btn" data-target="time-min">Copy</button></div>
+    <div class="row"><label>hr</label><input type="number" id="time-hr" step="any"><button class="copy-btn" data-target="time-hr">Copy</button></div>
+    <div class="row"><label>days</label><input type="number" id="time-days" step="any"><button class="copy-btn" data-target="time-days">Copy</button></div>
+  </div>
+
+  <!-- Data Size -->
+  <div class="card" id="data-card">
+    <h2><svg width="16" height="16" fill="none" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="12" height="6" rx="1"/><line x1="5" y1="9" x2="5.01" y2="9" stroke-width="3"/><line x1="8" y1="9" x2="8.01" y2="9" stroke-width="3"/></svg> Data Size</h2>
+    <div class="toggle-row">
+      <button id="data-1024" class="active" onclick="setDataBase(1024)">Base 1024 (KiB)</button>
+      <button id="data-1000" onclick="setDataBase(1000)">Base 1000 (KB)</button>
+    </div>
+    <div class="row"><label>B</label><input type="number" id="data-b" step="any"><button class="copy-btn" data-target="data-b">Copy</button></div>
+    <div class="row"><label>KB</label><input type="number" id="data-kb" step="any"><button class="copy-btn" data-target="data-kb">Copy</button></div>
+    <div class="row"><label>MB</label><input type="number" id="data-mb" step="any"><button class="copy-btn" data-target="data-mb">Copy</button></div>
+    <div class="row"><label>GB</label><input type="number" id="data-gb" step="any"><button class="copy-btn" data-target="data-gb">Copy</button></div>
+    <div class="row"><label>TB</label><input type="number" id="data-tb" step="any"><button class="copy-btn" data-target="data-tb">Copy</button></div>
+  </div>
+
+  <!-- Temperature -->
+  <div class="card" id="temp-card">
+    <h2><svg width="16" height="16" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 1v8.5"/><circle cx="8" cy="12.5" r="2.5"/><path d="M5.5 8V4a2.5 2.5 0 015 0v4"/></svg> Temperature</h2>
+    <div class="row"><label>&deg;C</label><input type="number" id="temp-c" step="any"><button class="copy-btn" data-target="temp-c">Copy</button></div>
+    <div class="row"><label>&deg;F</label><input type="number" id="temp-f" step="any"><button class="copy-btn" data-target="temp-f">Copy</button></div>
+    <div class="row"><label>K</label><input type="number" id="temp-k" step="any"><button class="copy-btn" data-target="temp-k">Copy</button></div>
+  </div>
+
+  <!-- Angle -->
+  <div class="card" id="angle-card">
+    <h2><svg width="16" height="16" fill="none" stroke="#6366f1" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 14h12"/><path d="M2 14L10 3"/><path d="M5 14a5 5 0 010-5"/></svg> Angle</h2>
+    <div class="row"><label>deg</label><input type="number" id="angle-deg" step="any"><button class="copy-btn" data-target="angle-deg">Copy</button></div>
+    <div class="row"><label>rad</label><input type="number" id="angle-rad" step="any"><button class="copy-btn" data-target="angle-rad">Copy</button></div>
+    <div class="row"><label>grad</label><input type="number" id="angle-grad" step="any"><button class="copy-btn" data-target="angle-grad">Copy</button></div>
+    <div class="row"><label>turn</label><input type="number" id="angle-turn" step="any"><button class="copy-btn" data-target="angle-turn">Copy</button></div>
+  </div>
+
+  <!-- Resolution -->
+  <div class="card" id="res-card">
+    <h2><svg width="16" height="16" fill="none" stroke="#0ea5e9" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="12" height="10" rx="1"/><line x1="2" y1="13" x2="14" y2="13"/></svg> Resolution</h2>
+    <div class="row"><label>DPI</label><input type="number" id="res-dpi" step="any"><button class="copy-btn" data-target="res-dpi">Copy</button></div>
+    <div class="row"><label>DPCM</label><input type="number" id="res-dpcm" step="any"><button class="copy-btn" data-target="res-dpcm">Copy</button></div>
+    <div class="row"><label>DPPX</label><input type="number" id="res-dppx" step="any"><button class="copy-btn" data-target="res-dppx">Copy</button></div>
+  </div>
+
+  <!-- Spacing Scale -->
+  <div class="card" id="spacing-card">
+    <h2><svg width="16" height="16" fill="none" stroke="#ec4899" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="8" x2="13" y2="8"/><line x1="3" y1="4" x2="13" y2="4"/><line x1="3" y1="12" x2="13" y2="12"/></svg> Spacing Scale Generator</h2>
+    <div class="config-row">
+      <label>Base:</label><input type="number" id="spacing-base" value="4" min="1"> px
+      <label style="margin-left:0.5rem">Unit:</label>
+      <select id="spacing-unit" style="padding:4px 6px;border:1px solid #e5e7eb;border-radius:6px;font-size:0.75rem;font-family:inherit;">
+        <option value="px">px</option><option value="rem">rem</option>
+      </select>
+    </div>
+    <div class="scale-output" id="spacing-output"></div>
+    <div style="margin-top:0.5rem;text-align:right;"><button class="copy-btn" onclick="copySpacing()">Copy CSS Variables</button></div>
+  </div>
+
+  <!-- Typography Scale -->
+  <div class="card" id="typo-card">
+    <h2><svg width="16" height="16" fill="none" stroke="#a855f7" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7V4h8v3"/><line x1="8" y1="4" x2="8" y2="14"/><line x1="6" y1="14" x2="10" y2="14"/></svg> Typography Scale</h2>
+    <div class="config-row">
+      <label>Base:</label><input type="number" id="typo-base" value="16" min="1"> px
+      <label style="margin-left:0.5rem">Ratio:</label>
+      <select id="typo-ratio" style="padding:4px 6px;border:1px solid #e5e7eb;border-radius:6px;font-size:0.75rem;font-family:inherit;">
+        <option value="1.125">Minor Second (1.125)</option>
+        <option value="1.2" selected>Minor Third (1.2)</option>
+        <option value="1.25">Major Third (1.25)</option>
+        <option value="1.333">Perfect Fourth (1.333)</option>
+        <option value="1.5">Perfect Fifth (1.5)</option>
+        <option value="1.618">Golden Ratio (1.618)</option>
+      </select>
+    </div>
+    <div class="scale-output" id="typo-output"></div>
+    <div style="margin-top:0.5rem;text-align:right;"><button class="copy-btn" onclick="copyTypo()">Copy CSS Variables</button></div>
+  </div>
+
+  <!-- Box Model Visualizer -->
+  <div class="card" id="box-card" style="grid-column: 1 / -1;">
+    <h2><svg width="16" height="16" fill="none" stroke="#f56534" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="1" width="14" height="14" rx="1"/><rect x="4" y="4" width="8" height="8" rx="1"/></svg> Box Model Visualizer</h2>
+    <div style="display:flex;gap:1.5rem;flex-wrap:wrap;">
+      <div style="flex:1;min-width:240px;">
+        <div class="row"><label>W</label><input type="number" id="box-w" value="200" step="1"><label>H</label><input type="number" id="box-h" value="100" step="1"></div>
+        <div class="row"><label>P-top</label><input type="number" id="box-pt" value="16" step="1"><label>P-right</label><input type="number" id="box-pr" value="16" step="1"></div>
+        <div class="row"><label>P-btm</label><input type="number" id="box-pb" value="16" step="1"><label>P-left</label><input type="number" id="box-pl" value="16" step="1"></div>
+        <div class="row"><label>B-top</label><input type="number" id="box-bt" value="1" step="1"><label>B-right</label><input type="number" id="box-br" value="1" step="1"></div>
+        <div class="row"><label>B-btm</label><input type="number" id="box-bb" value="1" step="1"><label>B-left</label><input type="number" id="box-bl" value="1" step="1"></div>
+        <div class="row"><label>M-top</label><input type="number" id="box-mt" value="8" step="1"><label>M-right</label><input type="number" id="box-mr" value="8" step="1"></div>
+        <div class="row"><label>M-btm</label><input type="number" id="box-mb" value="8" step="1"><label>M-left</label><input type="number" id="box-ml" value="8" step="1"></div>
+        <div class="row" style="margin-top:0.5rem;">
+          <span style="font-size:0.7rem;color:#6b7280;" id="box-total"></span>
+        </div>
+      </div>
+      <div class="box-model-viz" id="box-viz" style="flex:1;min-width:280px;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- History -->
+<div class="history-panel">
+  <h2>Conversion History <span style="font-size:0.7rem;font-weight:400;color:#9ca3af;">(last 10)</span></h2>
+  <ul class="history-list" id="history-list">
+    <li style="color:#9ca3af;font-size:0.75rem;">No conversions yet</li>
+  </ul>
+</div>
+
+<div class="footer">Lumen Analytics &middot; Developer Unit Converter &middot; Data stored in localStorage</div>
+
+<script>
+// --- Utility ---
+const $ = id => document.getElementById(id);
+const round = (v, d=6) => { const n = parseFloat(v); return isNaN(n) ? '' : parseFloat(n.toFixed(d)); };
+
+// --- History ---
+let history = JSON.parse(localStorage.getItem('unit-history') || '[]');
+function addHistory(text) {
+  history.unshift({ text, time: new Date().toLocaleTimeString() });
+  if (history.length > 10) history.pop();
+  localStorage.setItem('unit-history', JSON.stringify(history));
+  renderHistory();
+}
+function renderHistory() {
+  const ul = $('history-list');
+  if (!history.length) { ul.innerHTML = '<li style="color:#9ca3af;font-size:0.75rem;">No conversions yet</li>'; return; }
+  ul.innerHTML = history.map(h => `<li><span>${h.text}</span><span class="hl-time">${h.time}</span></li>`).join('');
+}
+renderHistory();
+
+// --- Copy ---
+document.querySelectorAll('.copy-btn[data-target]').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const el = $(btn.dataset.target);
+    if (!el || !el.value) return;
+    navigator.clipboard.writeText(el.value);
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1200);
+  });
+});
+
+// --- CSS Units ---
+const cssFields = ['css-px','css-rem','css-em','css-pct','css-vw-val','css-vh-val'];
+function cssFromPx(px) {
+  const base = parseFloat($('css-base').value) || 16;
+  const vw = parseFloat($('css-vw').value) || 1920;
+  const vh = parseFloat($('css-vh').value) || 1080;
+  $('css-px').value = round(px);
+  $('css-rem').value = round(px / base);
+  $('css-em').value = round(px / base);
+  $('css-pct').value = round((px / base) * 100);
+  $('css-vw-val').value = round((px / vw) * 100);
+  $('css-vh-val').value = round((px / vh) * 100);
+}
+function cssHandler(e) {
+  const id = e.target.id;
+  const v = parseFloat(e.target.value);
+  if (isNaN(v)) return;
+  const base = parseFloat($('css-base').value) || 16;
+  const vw = parseFloat($('css-vw').value) || 1920;
+  const vh = parseFloat($('css-vh').value) || 1080;
+  let px;
+  switch(id) {
+    case 'css-px': px = v; break;
+    case 'css-rem': case 'css-em': px = v * base; break;
+    case 'css-pct': px = (v / 100) * base; break;
+    case 'css-vw-val': px = (v / 100) * vw; break;
+    case 'css-vh-val': px = (v / 100) * vh; break;
+  }
+  cssFields.forEach(f => { if (f !== id) $(f).value = ''; });
+  cssFromPx(px);
+  addHistory(`CSS: ${v} ${id.replace('css-','').replace('-val','')} = ${round(px)} px`);
+}
+cssFields.forEach(f => $(f).addEventListener('input', cssHandler));
+['css-base','css-vw','css-vh'].forEach(f => $(f).addEventListener('input', () => {
+  const px = parseFloat($('css-px').value);
+  if (!isNaN(px)) cssFromPx(px);
+}));
+
+// --- Color ---
+function hexToRgb(hex) {
+  hex = hex.replace('#','');
+  if (hex.length === 3) hex = hex.split('').map(c=>c+c).join('');
+  if (hex.length === 8) {
+    return { r: parseInt(hex.slice(0,2),16), g: parseInt(hex.slice(2,4),16), b: parseInt(hex.slice(4,6),16), a: parseInt(hex.slice(6,8),16)/255 };
+  }
+  if (hex.length !== 6) return null;
+  return { r: parseInt(hex.slice(0,2),16), g: parseInt(hex.slice(2,4),16), b: parseInt(hex.slice(4,6),16), a: 1 };
+}
+function rgbToHsl(r,g,b) {
+  r/=255; g/=255; b/=255;
+  const mx=Math.max(r,g,b), mn=Math.min(r,g,b), l=(mx+mn)/2;
+  let h=0,s=0;
+  if(mx!==mn){ const d=mx-mn; s=l>0.5?d/(2-mx-mn):d/(mx+mn);
+    switch(mx){case r:h=((g-b)/d+(g<b?6:0))/6;break;case g:h=((b-r)/d+2)/6;break;case b:h=((r-g)/d+4)/6;break;}
+  }
+  return { h: Math.round(h*360), s: Math.round(s*100), l: Math.round(l*100) };
+}
+function hslToRgb(h,s,l) {
+  h/=360; s/=100; l/=100;
+  let r,g,b;
+  if(s===0){r=g=b=l;}else{
+    const hue2rgb=(p,q,t)=>{if(t<0)t+=1;if(t>1)t-=1;if(t<1/6)return p+(q-p)*6*t;if(t<1/2)return q;if(t<2/3)return p+(q-p)*(2/3-t)*6;return p;};
+    const q=l<0.5?l*(1+s):l+s-l*s, p=2*l-q;
+    r=hue2rgb(p,q,h+1/3); g=hue2rgb(p,q,h); b=hue2rgb(p,q,h-1/3);
+  }
+  return { r:Math.round(r*255), g:Math.round(g*255), b:Math.round(b*255) };
+}
+function updateColorFrom(source, rgba) {
+  if (!rgba) return;
+  const {r,g,b,a} = rgba;
+  const hsl = rgbToHsl(r,g,b);
+  const hex6 = '#' + [r,g,b].map(x=>x.toString(16).padStart(2,'0')).join('');
+  if (source !== 'hex') $('color-hex').value = a < 1 ? hex6 + Math.round(a*255).toString(16).padStart(2,'0') : hex6;
+  if (source !== 'rgb') $('color-rgb').value = `rgb(${r}, ${g}, ${b})`;
+  if (source !== 'rgba') $('color-rgba').value = `rgba(${r}, ${g}, ${b}, ${round(a,2)})`;
+  if (source !== 'hsl') $('color-hsl').value = `hsl(${hsl.h}, ${hsl.s}%, ${hsl.l}%)`;
+  if (source !== 'hsla') $('color-hsla').value = `hsla(${hsl.h}, ${hsl.s}%, ${hsl.l}%, ${round(a,2)})`;
+  $('color-swatch').style.background = `rgba(${r},${g},${b},${a})`;
+  addHistory(`Color: ${hex6} = rgb(${r},${g},${b})`);
+}
+$('color-hex').addEventListener('input', e => {
+  const v = e.target.value.trim();
+  const rgba = hexToRgb(v);
+  if (rgba) updateColorFrom('hex', rgba);
+});
+$('color-rgb').addEventListener('input', e => {
+  const m = e.target.value.match(/rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/);
+  if (m) updateColorFrom('rgb', {r:+m[1],g:+m[2],b:+m[3],a:1});
+});
+$('color-rgba').addEventListener('input', e => {
+  const m = e.target.value.match(/rgba\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*,\s*([\d.]+)\s*\)/);
+  if (m) updateColorFrom('rgba', {r:+m[1],g:+m[2],b:+m[3],a:+m[4]});
+});
+$('color-hsl').addEventListener('input', e => {
+  const m = e.target.value.match(/hsl\(\s*(\d+)\s*,\s*(\d+)%\s*,\s*(\d+)%\s*\)/);
+  if (m) { const rgb = hslToRgb(+m[1],+m[2],+m[3]); updateColorFrom('hsl', {...rgb, a:1}); }
+});
+$('color-hsla').addEventListener('input', e => {
+  const m = e.target.value.match(/hsla\(\s*(\d+)\s*,\s*(\d+)%\s*,\s*(\d+)%\s*,\s*([\d.]+)\s*\)/);
+  if (m) { const rgb = hslToRgb(+m[1],+m[2],+m[3]); updateColorFrom('hsla', {...rgb, a:+m[4]}); }
+});
+
+// --- Time ---
+const timeFactors = { 'time-ms':1, 'time-s':1000, 'time-min':60000, 'time-hr':3600000, 'time-days':86400000 };
+const timeFields = Object.keys(timeFactors);
+function timeHandler(e) {
+  const id = e.target.id, v = parseFloat(e.target.value);
+  if (isNaN(v)) return;
+  const ms = v * timeFactors[id];
+  timeFields.forEach(f => { if (f !== id) $(f).value = round(ms / timeFactors[f]); });
+  addHistory(`Time: ${v} ${id.replace('time-','')} = ${round(ms)} ms`);
+}
+timeFields.forEach(f => $(f).addEventListener('input', timeHandler));
+
+// --- Data Size ---
+let dataBase = 1024;
+function setDataBase(b) {
+  dataBase = b;
+  $('data-1024').classList.toggle('active', b===1024);
+  $('data-1000').classList.toggle('active', b===1000);
+  const bytes = parseFloat($('data-b').value);
+  if (!isNaN(bytes)) dataFromBytes(bytes, null);
+}
+const dataFields = ['data-b','data-kb','data-mb','data-gb','data-tb'];
+const dataPow = { 'data-b':0, 'data-kb':1, 'data-mb':2, 'data-gb':3, 'data-tb':4 };
+function dataFromBytes(bytes, sourceId) {
+  dataFields.forEach(f => {
+    if (f !== sourceId) $(f).value = round(bytes / Math.pow(dataBase, dataPow[f]));
+  });
+}
+function dataHandler(e) {
+  const id = e.target.id, v = parseFloat(e.target.value);
+  if (isNaN(v)) return;
+  const bytes = v * Math.pow(dataBase, dataPow[id]);
+  dataFromBytes(bytes, id);
+  addHistory(`Data: ${v} ${id.replace('data-','').toUpperCase()} = ${round(bytes)} B (base ${dataBase})`);
+}
+dataFields.forEach(f => $(f).addEventListener('input', dataHandler));
+
+// --- Temperature ---
+function tempHandler(e) {
+  const id = e.target.id, v = parseFloat(e.target.value);
+  if (isNaN(v)) return;
+  let c;
+  switch(id) {
+    case 'temp-c': c=v; break;
+    case 'temp-f': c=(v-32)*5/9; break;
+    case 'temp-k': c=v-273.15; break;
+  }
+  if (id!=='temp-c') $('temp-c').value = round(c, 2);
+  if (id!=='temp-f') $('temp-f').value = round(c*9/5+32, 2);
+  if (id!=='temp-k') $('temp-k').value = round(c+273.15, 2);
+  addHistory(`Temp: ${v} ${id.replace('temp-','')} = ${round(c,2)} C`);
+}
+['temp-c','temp-f','temp-k'].forEach(f => $(f).addEventListener('input', tempHandler));
+
+// --- Angle ---
+function angleHandler(e) {
+  const id = e.target.id, v = parseFloat(e.target.value);
+  if (isNaN(v)) return;
+  let deg;
+  switch(id) {
+    case 'angle-deg': deg=v; break;
+    case 'angle-rad': deg=v*(180/Math.PI); break;
+    case 'angle-grad': deg=v*0.9; break;
+    case 'angle-turn': deg=v*360; break;
+  }
+  if (id!=='angle-deg') $('angle-deg').value = round(deg);
+  if (id!=='angle-rad') $('angle-rad').value = round(deg*(Math.PI/180));
+  if (id!=='angle-grad') $('angle-grad').value = round(deg/0.9);
+  if (id!=='angle-turn') $('angle-turn').value = round(deg/360);
+  addHistory(`Angle: ${v} ${id.replace('angle-','')} = ${round(deg)} deg`);
+}
+['angle-deg','angle-rad','angle-grad','angle-turn'].forEach(f => $(f).addEventListener('input', angleHandler));
+
+// --- Resolution ---
+function resHandler(e) {
+  const id = e.target.id, v = parseFloat(e.target.value);
+  if (isNaN(v)) return;
+  let dpi;
+  switch(id) {
+    case 'res-dpi': dpi=v; break;
+    case 'res-dpcm': dpi=v*2.54; break;
+    case 'res-dppx': dpi=v*96; break;
+  }
+  if (id!=='res-dpi') $('res-dpi').value = round(dpi);
+  if (id!=='res-dpcm') $('res-dpcm').value = round(dpi/2.54);
+  if (id!=='res-dppx') $('res-dppx').value = round(dpi/96);
+  addHistory(`Res: ${v} ${id.replace('res-','').toUpperCase()} = ${round(dpi)} DPI`);
+}
+['res-dpi','res-dpcm','res-dppx'].forEach(f => $(f).addEventListener('input', resHandler));
+
+// --- Spacing Scale ---
+const spacingMultipliers = { xs: 0.5, sm: 1, md: 2, lg: 3, xl: 4, '2xl': 6, '3xl': 8 };
+function genSpacing() {
+  const base = parseFloat($('spacing-base').value) || 4;
+  const unit = $('spacing-unit').value;
+  const rootBase = 16;
+  let lines = [];
+  for (const [name, mult] of Object.entries(spacingMultipliers)) {
+    const px = base * mult;
+    const val = unit === 'rem' ? round(px / rootBase, 4) + 'rem' : round(px) + 'px';
+    lines.push(`--spacing-${name}: ${val};  /* ${round(px)}px */`);
+  }
+  $('spacing-output').textContent = lines.join('\n');
+}
+function copySpacing() {
+  navigator.clipboard.writeText($('spacing-output').textContent);
+  const btn = document.querySelector('#spacing-card .copy-btn');
+  btn.textContent = 'Copied!'; btn.classList.add('copied');
+  setTimeout(() => { btn.textContent = 'Copy CSS Variables'; btn.classList.remove('copied'); }, 1200);
+}
+$('spacing-base').addEventListener('input', genSpacing);
+$('spacing-unit').addEventListener('change', genSpacing);
+genSpacing();
+
+// --- Typography Scale ---
+function genTypo() {
+  const base = parseFloat($('typo-base').value) || 16;
+  const ratio = parseFloat($('typo-ratio').value) || 1.2;
+  const names = ['--font-xs','--font-sm','--font-base','--font-lg','--font-xl','--font-2xl','--font-3xl','--font-4xl'];
+  const offsets = [-2,-1,0,1,2,3,4,5];
+  const headingMap = { '--font-base': 'body', '--font-lg': 'h6', '--font-xl': 'h5', '--font-2xl': 'h4', '--font-3xl': 'h3', '--font-4xl': 'h2' };
+  let lines = [];
+  for (let i = 0; i < names.length; i++) {
+    const size = base * Math.pow(ratio, offsets[i]);
+    const label = headingMap[names[i]] || '';
+    lines.push(`${names[i]}: ${round(size,2)}px;  /* ${round(size/16,4)}rem${label ? ' — '+label : ''} */`);
+  }
+  $('typo-output').textContent = lines.join('\n');
+}
+function copyTypo() {
+  navigator.clipboard.writeText($('typo-output').textContent);
+  const btn = document.querySelector('#typo-card .copy-btn');
+  btn.textContent = 'Copied!'; btn.classList.add('copied');
+  setTimeout(() => { btn.textContent = 'Copy CSS Variables'; btn.classList.remove('copied'); }, 1200);
+}
+$('typo-base').addEventListener('input', genTypo);
+$('typo-ratio').addEventListener('change', genTypo);
+genTypo();
+
+// --- Box Model Visualizer ---
+function drawBox() {
+  const g = id => parseInt($(id).value) || 0;
+  const w=g('box-w'), h=g('box-h');
+  const pt=g('box-pt'), pr=g('box-pr'), pb=g('box-pb'), pl=g('box-pl');
+  const bt=g('box-bt'), br=g('box-br'), bb=g('box-bb'), bl=g('box-bl');
+  const mt=g('box-mt'), mr=g('box-mr'), mb=g('box-mb'), ml=g('box-ml');
+
+  const totalW = w + pl + pr + bl + br + ml + mr;
+  const totalH = h + pt + pb + bt + bb + mt + mb;
+  $('box-total').textContent = `Total: ${totalW} x ${totalH} px | Content: ${w} x ${h} px`;
+
+  // Scale to fit
+  const maxW = 320, maxH = 220;
+  const scale = Math.min(maxW / totalW, maxH / totalH, 1.5);
+  const s = v => Math.max(Math.round(v * scale), v > 0 ? 6 : 0);
+
+  const mW = s(ml)+s(mr), mH = s(mt)+s(mb);
+  const bW = s(bl)+s(br), bH = s(bt)+s(bb);
+  const pW = s(pl)+s(pr), pH = s(pt)+s(pb);
+  const cW = Math.max(s(w), 40), cH = Math.max(s(h), 24);
+
+  const viz = $('box-viz');
+  viz.innerHTML = `
+    <div class="box-layer" style="background:rgba(251,146,60,0.35);width:${cW+pW+bW+mW}px;height:${cH+pH+bH+mH}px;padding:${s(mt)}px ${s(mr)}px ${s(mb)}px ${s(ml)}px;border-radius:4px;">
+      <span class="box-label">margin</span>
+      <span class="box-val-top">${mt}</span><span class="box-val-bottom">${mb}</span>
+      <span class="box-val-left">${ml}</span><span class="box-val-right">${mr}</span>
+      <div class="box-layer" style="background:rgba(245,213,71,0.45);width:${cW+pW+bW}px;height:${cH+pH+bH}px;padding:${s(bt)}px ${s(br)}px ${s(bb)}px ${s(bl)}px;border-radius:3px;">
+        <span class="box-label">border</span>
+        <span class="box-val-top">${bt}</span><span class="box-val-bottom">${bb}</span>
+        <span class="box-val-left">${bl}</span><span class="box-val-right">${br}</span>
+        <div class="box-layer" style="background:rgba(134,205,140,0.45);width:${cW+pW}px;height:${cH+pH}px;padding:${s(pt)}px ${s(pr)}px ${s(pb)}px ${s(pl)}px;border-radius:2px;">
+          <span class="box-label">padding</span>
+          <span class="box-val-top">${pt}</span><span class="box-val-bottom">${pb}</span>
+          <span class="box-val-left">${pl}</span><span class="box-val-right">${pr}</span>
+          <div class="box-layer" style="background:rgba(147,197,253,0.55);width:${cW}px;height:${cH}px;border-radius:2px;font-size:0.65rem;color:#1e40af;">
+            ${w}&times;${h}
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+['box-w','box-h','box-pt','box-pr','box-pb','box-pl','box-bt','box-br','box-bb','box-bl','box-mt','box-mr','box-mb','box-ml'].forEach(f => $(f).addEventListener('input', drawBox));
+drawBox();
+
+// --- Persist last values ---
+function saveState() {
+  const state = {};
+  document.querySelectorAll('input[id]').forEach(el => { state[el.id] = el.value; });
+  state._dataBase = dataBase;
+  localStorage.setItem('unit-converter-state', JSON.stringify(state));
+}
+function loadState() {
+  const raw = localStorage.getItem('unit-converter-state');
+  if (!raw) return;
+  try {
+    const state = JSON.parse(raw);
+    Object.entries(state).forEach(([id, val]) => {
+      if (id === '_dataBase') { setDataBase(val); return; }
+      const el = $(id);
+      if (el) el.value = val;
+    });
+    genSpacing();
+    genTypo();
+    drawBox();
+  } catch(e) {}
+}
+loadState();
+document.addEventListener('input', () => { clearTimeout(window._saveTimer); window._saveTimer = setTimeout(saveState, 500); });
+</script>
+</body>
+</html>

@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IP Address & Network Tools</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #f8f9fc;
+  color: #1a1a2e;
+  min-height: 100vh;
+  padding: 1.5rem;
+}
+a { color: #3b82f6; text-decoration: none; }
+a:hover { text-decoration: underline; }
+.back { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; color: #6b7280; margin-bottom: 1rem; }
+.back:hover { color: #1a1a2e; text-decoration: none; }
+.header { text-align: center; margin-bottom: 1.5rem; }
+.header h1 { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; }
+.header p { color: #6b7280; font-size: 0.9rem; margin-top: 0.25rem; }
+
+.tabs {
+  display: flex; flex-wrap: wrap; gap: 0.35rem; justify-content: center;
+  margin-bottom: 1.5rem; max-width: 900px; margin-left: auto; margin-right: auto;
+}
+.tab-btn {
+  padding: 0.45rem 0.85rem; border: 1px solid rgba(0,0,0,0.08); border-radius: 8px;
+  background: rgba(255,255,255,0.6); cursor: pointer; font-size: 0.8rem;
+  font-family: inherit; font-weight: 500; color: #4b5563; transition: all 0.15s;
+}
+.tab-btn:hover { background: rgba(255,255,255,0.9); }
+.tab-btn.active { background: #1a1a2e; color: #fff; border-color: #1a1a2e; }
+
+.panel { display: none; max-width: 900px; margin: 0 auto; }
+.panel.active { display: block; }
+
+.card {
+  background: rgba(255,255,255,0.72);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.6);
+  border-radius: 16px; padding: 1.5rem; margin-bottom: 1rem;
+}
+.card h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem; }
+
+label { display: block; font-size: 0.8rem; font-weight: 500; color: #4b5563; margin-bottom: 0.3rem; }
+input[type="text"], input[type="number"], select {
+  width: 100%; padding: 0.55rem 0.75rem; border: 1px solid #e5e7eb; border-radius: 8px;
+  font-family: inherit; font-size: 0.875rem; background: #fff; outline: none;
+  transition: border-color 0.15s;
+}
+input:focus, select:focus { border-color: #3b82f6; }
+.row { display: flex; gap: 0.75rem; align-items: flex-end; flex-wrap: wrap; }
+.row > * { flex: 1; min-width: 140px; }
+
+button {
+  padding: 0.5rem 1rem; border: none; border-radius: 8px; cursor: pointer;
+  font-family: inherit; font-size: 0.8rem; font-weight: 500; transition: all 0.15s;
+}
+.btn-primary { background: #1a1a2e; color: #fff; }
+.btn-primary:hover { background: #2d2d4e; }
+.btn-copy {
+  background: rgba(59,130,246,0.1); color: #3b82f6; font-size: 0.75rem; padding: 0.3rem 0.6rem;
+}
+.btn-copy:hover { background: rgba(59,130,246,0.2); }
+.btn-sm { padding: 0.35rem 0.7rem; font-size: 0.75rem; }
+.btn-danger { background: rgba(239,68,68,0.1); color: #ef4444; }
+.btn-danger:hover { background: rgba(239,68,68,0.2); }
+
+.result-box {
+  background: #f8f9fc; border: 1px solid #e5e7eb; border-radius: 10px;
+  padding: 1rem; margin-top: 0.75rem; font-size: 0.85rem; line-height: 1.7;
+  position: relative; word-break: break-all;
+}
+.result-box .copy-corner {
+  position: absolute; top: 0.5rem; right: 0.5rem;
+}
+.result-row { display: flex; justify-content: space-between; padding: 0.2rem 0; border-bottom: 1px solid #f0f0f0; }
+.result-row:last-child { border-bottom: none; }
+.result-label { color: #6b7280; font-weight: 500; }
+.result-value { font-weight: 600; font-family: 'SF Mono', 'Fira Code', monospace; font-size: 0.825rem; }
+
+.history-list { max-height: 300px; overflow-y: auto; }
+.history-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0.5rem 0; border-bottom: 1px solid #f0f0f0; font-size: 0.8rem;
+}
+.history-item:last-child { border-bottom: none; }
+.history-query { font-weight: 600; font-family: monospace; }
+.history-time { color: #9ca3af; font-size: 0.7rem; }
+.history-actions { display: flex; gap: 0.3rem; }
+
+.ref-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+.ref-table th { text-align: left; padding: 0.5rem; color: #6b7280; font-weight: 500; border-bottom: 2px solid #e5e7eb; }
+.ref-table td { padding: 0.5rem; border-bottom: 1px solid #f0f0f0; font-family: monospace; font-size: 0.8rem; }
+.ref-table tr:last-child td { border-bottom: none; }
+
+.empty-state { text-align: center; padding: 2rem; color: #9ca3af; font-size: 0.85rem; }
+.toast {
+  position: fixed; bottom: 1.5rem; right: 1.5rem; background: #1a1a2e; color: #fff;
+  padding: 0.6rem 1.2rem; border-radius: 8px; font-size: 0.8rem; opacity: 0;
+  transform: translateY(10px); transition: all 0.3s; z-index: 999; pointer-events: none;
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+.spinner { display: inline-block; width: 16px; height: 16px; border: 2px solid #e5e7eb; border-top-color: #3b82f6; border-radius: 50%; animation: spin 0.6s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.mono { font-family: 'SF Mono', 'Fira Code', monospace; }
+.mt { margin-top: 0.75rem; }
+.mb { margin-bottom: 0.75rem; }
+</style>
+</head>
+<body>
+
+<a href="index.html" class="back">&larr; Back to Analytics</a>
+<div class="header">
+  <h1>IP Address & Network Tools</h1>
+  <p>Lookup, calculate, and convert IP addresses and networks</p>
+</div>
+
+<div class="tabs">
+  <button class="tab-btn active" data-tab="myip">My IP</button>
+  <button class="tab-btn" data-tab="lookup">IP Lookup</button>
+  <button class="tab-btn" data-tab="subnet">Subnet Calc</button>
+  <button class="tab-btn" data-tab="convert">IPv4/IPv6</button>
+  <button class="tab-btn" data-tab="range">IP Range</button>
+  <button class="tab-btn" data-tab="binary">Binary</button>
+  <button class="tab-btn" data-tab="private">Private Ranges</button>
+  <button class="tab-btn" data-tab="dns">DNS Lookup</button>
+  <button class="tab-btn" data-tab="history">History</button>
+</div>
+
+<!-- My IP -->
+<div class="panel active" id="panel-myip">
+  <div class="card">
+    <h3>Your Public IP Address</h3>
+    <div id="myip-result">
+      <div style="text-align:center;padding:2rem"><span class="spinner"></span> Fetching...</div>
+    </div>
+  </div>
+</div>
+
+<!-- IP Lookup -->
+<div class="panel" id="panel-lookup">
+  <div class="card">
+    <h3>IP Address Information Lookup</h3>
+    <div class="row">
+      <div style="flex:3"><label>IP Address</label><input type="text" id="lookup-ip" placeholder="8.8.8.8"></div>
+      <div style="flex:0 0 auto"><label>&nbsp;</label><button class="btn-primary" onclick="lookupIP()">Lookup</button></div>
+    </div>
+    <div id="lookup-result"></div>
+  </div>
+</div>
+
+<!-- Subnet Calculator -->
+<div class="panel" id="panel-subnet">
+  <div class="card">
+    <h3>Subnet Calculator</h3>
+    <div class="row">
+      <div style="flex:2"><label>IP Address</label><input type="text" id="subnet-ip" placeholder="192.168.1.0"></div>
+      <div style="flex:1"><label>CIDR / Mask</label><input type="text" id="subnet-cidr" placeholder="/24 or 255.255.255.0"></div>
+      <div style="flex:0 0 auto"><label>&nbsp;</label><button class="btn-primary" onclick="calcSubnet()">Calculate</button></div>
+    </div>
+    <div id="subnet-result"></div>
+  </div>
+</div>
+
+<!-- IPv4/IPv6 Converter -->
+<div class="panel" id="panel-convert">
+  <div class="card">
+    <h3>IPv4 to IPv6 Converter</h3>
+    <div class="row">
+      <div style="flex:3"><label>IPv4 Address</label><input type="text" id="convert-ip" placeholder="192.168.1.1"></div>
+      <div style="flex:0 0 auto"><label>&nbsp;</label><button class="btn-primary" onclick="convertIPv4to6()">Convert</button></div>
+    </div>
+    <div id="convert-result"></div>
+  </div>
+</div>
+
+<!-- IP Range Calculator -->
+<div class="panel" id="panel-range">
+  <div class="card">
+    <h3>IP Range Calculator</h3>
+    <div class="row">
+      <div><label>Start IP</label><input type="text" id="range-start" placeholder="192.168.1.1"></div>
+      <div><label>End IP</label><input type="text" id="range-end" placeholder="192.168.1.10"></div>
+      <div style="flex:0 0 auto"><label>&nbsp;</label><button class="btn-primary" onclick="calcRange()">Calculate</button></div>
+    </div>
+    <div id="range-result"></div>
+  </div>
+</div>
+
+<!-- Binary/Decimal Converter -->
+<div class="panel" id="panel-binary">
+  <div class="card">
+    <h3>IP Binary / Decimal Converter</h3>
+    <div class="row">
+      <div style="flex:3"><label>IPv4 Address (decimal or binary)</label><input type="text" id="binary-ip" placeholder="192.168.1.1 or 11000000.10101000.00000001.00000001"></div>
+      <div style="flex:0 0 auto"><label>&nbsp;</label><button class="btn-primary" onclick="convertBinary()">Convert</button></div>
+    </div>
+    <div id="binary-result"></div>
+  </div>
+</div>
+
+<!-- Private Ranges Reference -->
+<div class="panel" id="panel-private">
+  <div class="card">
+    <h3>Common Private & Reserved IP Ranges</h3>
+    <table class="ref-table">
+      <thead><tr><th>Range</th><th>CIDR</th><th>Subnet Mask</th><th>Addresses</th><th>Description</th></tr></thead>
+      <tbody>
+        <tr><td>10.0.0.0 - 10.255.255.255</td><td>10.0.0.0/8</td><td>255.0.0.0</td><td>16,777,216</td><td>Class A private</td></tr>
+        <tr><td>172.16.0.0 - 172.31.255.255</td><td>172.16.0.0/12</td><td>255.240.0.0</td><td>1,048,576</td><td>Class B private</td></tr>
+        <tr><td>192.168.0.0 - 192.168.255.255</td><td>192.168.0.0/16</td><td>255.255.0.0</td><td>65,536</td><td>Class C private</td></tr>
+        <tr><td>127.0.0.0 - 127.255.255.255</td><td>127.0.0.0/8</td><td>255.0.0.0</td><td>16,777,216</td><td>Loopback (localhost)</td></tr>
+        <tr><td>169.254.0.0 - 169.254.255.255</td><td>169.254.0.0/16</td><td>255.255.0.0</td><td>65,536</td><td>Link-local (APIPA)</td></tr>
+        <tr><td>0.0.0.0</td><td>-</td><td>-</td><td>1</td><td>Default route / unspecified</td></tr>
+        <tr><td>255.255.255.255</td><td>-</td><td>-</td><td>1</td><td>Broadcast</td></tr>
+        <tr><td>::1</td><td>::1/128</td><td>-</td><td>1</td><td>IPv6 loopback</td></tr>
+        <tr><td>fe80::/10</td><td>fe80::/10</td><td>-</td><td>~1.2x10^18</td><td>IPv6 link-local</td></tr>
+        <tr><td>fc00::/7</td><td>fc00::/7</td><td>-</td><td>~5.9x10^28</td><td>IPv6 unique local (ULA)</td></tr>
+      </tbody>
+    </table>
+    <div style="margin-top:0.75rem;text-align:right">
+      <button class="btn-copy" onclick="copyText(document.querySelector('.ref-table').innerText)">Copy table</button>
+    </div>
+  </div>
+</div>
+
+<!-- DNS Lookup -->
+<div class="panel" id="panel-dns">
+  <div class="card">
+    <h3>DNS Lookup (A Record)</h3>
+    <div class="row">
+      <div style="flex:3"><label>Domain Name</label><input type="text" id="dns-domain" placeholder="example.com"></div>
+      <div style="flex:0 0 auto"><label>&nbsp;</label><button class="btn-primary" onclick="dnsLookup()">Lookup</button></div>
+    </div>
+    <div id="dns-result"></div>
+  </div>
+</div>
+
+<!-- History -->
+<div class="panel" id="panel-history">
+  <div class="card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.75rem">
+      <h3 style="margin-bottom:0">Lookup History</h3>
+      <button class="btn-sm btn-danger" onclick="clearHistory()">Clear All</button>
+    </div>
+    <div id="history-list" class="history-list">
+      <div class="empty-state">No lookups yet</div>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ===== Utility =====
+function parseIP(s) {
+  const p = s.trim().split('.').map(Number);
+  if (p.length !== 4 || p.some(o => isNaN(o) || o < 0 || o > 255)) return null;
+  return p;
+}
+function ipToInt(p) { return ((p[0]<<24)|(p[1]<<16)|(p[2]<<8)|p[3])>>>0; }
+function intToIP(n) { return [(n>>>24)&255,(n>>>16)&255,(n>>>8)&255,n&255].join('.'); }
+function ipToBin(p) { return p.map(o=>o.toString(2).padStart(8,'0')).join('.'); }
+function binToIP(b) { return b.split('.').map(s=>parseInt(s,2)); }
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 1800);
+}
+function copyText(text) {
+  navigator.clipboard.writeText(text).then(() => showToast('Copied!'));
+}
+function copyBtn(text) {
+  return `<button class="btn-copy" onclick="copyText(\`${text.replace(/`/g,'\\`').replace(/\\/g,'\\\\')}\`)">Copy</button>`;
+}
+function copyBtnSafe(id) {
+  return `<button class="btn-copy" onclick="copyText(document.getElementById('${id}').innerText)">Copy all</button>`;
+}
+
+// ===== History =====
+function getHistory() { return JSON.parse(localStorage.getItem('ip-tools-history') || '[]'); }
+function saveHistory(h) { localStorage.setItem('ip-tools-history', JSON.stringify(h)); renderHistory(); }
+function addHistory(type, query, summary) {
+  const h = getHistory();
+  h.unshift({ type, query, summary, time: Date.now() });
+  if (h.length > 200) h.length = 200;
+  saveHistory(h);
+}
+function clearHistory() { saveHistory([]); }
+function renderHistory() {
+  const h = getHistory();
+  const el = document.getElementById('history-list');
+  if (!h.length) { el.innerHTML = '<div class="empty-state">No lookups yet</div>'; return; }
+  el.innerHTML = h.map((item, i) => `
+    <div class="history-item">
+      <div>
+        <span style="background:rgba(59,130,246,0.1);color:#3b82f6;padding:0.15rem 0.45rem;border-radius:4px;font-size:0.7rem;font-weight:600;margin-right:0.4rem">${item.type}</span>
+        <span class="history-query">${esc(item.query)}</span>
+        <span style="color:#9ca3af;margin-left:0.5rem">${esc(item.summary||'')}</span>
+      </div>
+      <div class="history-actions">
+        <span class="history-time">${new Date(item.time).toLocaleString()}</span>
+        <button class="btn-copy btn-sm" onclick="copyText('${esc(item.query)}')">Copy</button>
+      </div>
+    </div>
+  `).join('');
+}
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+// ===== Tab switching =====
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('panel-' + btn.dataset.tab).classList.add('active');
+  });
+});
+
+// ===== My IP =====
+async function fetchMyIP() {
+  const el = document.getElementById('myip-result');
+  try {
+    const r = await fetch('https://api.ipify.org?format=json');
+    const d = await r.json();
+    const ip = d.ip;
+    // Now get location info
+    const r2 = await fetch(`http://ip-api.com/json/${ip}`);
+    const d2 = await r2.json();
+    const rows = [
+      ['IP Address', ip],
+      ['Country', `${d2.country || '-'} (${d2.countryCode || ''})`],
+      ['Region', d2.regionName || '-'],
+      ['City', d2.city || '-'],
+      ['ISP', d2.isp || '-'],
+      ['Organization', d2.org || '-'],
+      ['Timezone', d2.timezone || '-'],
+      ['Coordinates', d2.lat && d2.lon ? `${d2.lat}, ${d2.lon}` : '-'],
+    ];
+    el.innerHTML = `<div class="result-box" id="myip-data">
+      <div class="copy-corner"><button class="btn-copy" onclick="copyText(document.getElementById('myip-data').innerText)">Copy</button></div>
+      ${rows.map(([l,v]) => `<div class="result-row"><span class="result-label">${l}</span><span class="result-value">${v}</span></div>`).join('')}
+    </div>`;
+    addHistory('My IP', ip, `${d2.city}, ${d2.country}`);
+  } catch(e) {
+    el.innerHTML = `<div class="result-box" style="color:#ef4444">Failed to fetch IP: ${esc(e.message)}</div>`;
+  }
+}
+fetchMyIP();
+
+// ===== IP Lookup =====
+async function lookupIP() {
+  const ip = document.getElementById('lookup-ip').value.trim();
+  if (!ip) return;
+  const el = document.getElementById('lookup-result');
+  el.innerHTML = '<div style="padding:1rem;text-align:center"><span class="spinner"></span></div>';
+  try {
+    const r = await fetch(`http://ip-api.com/json/${ip}?fields=status,message,country,countryCode,region,regionName,city,zip,lat,lon,timezone,isp,org,as,query`);
+    const d = await r.json();
+    if (d.status === 'fail') throw new Error(d.message);
+    const rows = [
+      ['IP', d.query],
+      ['Country', `${d.country} (${d.countryCode})`],
+      ['Region', d.regionName],
+      ['City', d.city],
+      ['ZIP', d.zip || '-'],
+      ['ISP', d.isp],
+      ['Organization', d.org],
+      ['AS', d.as],
+      ['Timezone', d.timezone],
+      ['Coordinates', `${d.lat}, ${d.lon}`],
+    ];
+    el.innerHTML = `<div class="result-box" id="lookup-data">
+      <div class="copy-corner"><button class="btn-copy" onclick="copyText(document.getElementById('lookup-data').innerText)">Copy</button></div>
+      ${rows.map(([l,v]) => `<div class="result-row"><span class="result-label">${l}</span><span class="result-value">${v}</span></div>`).join('')}
+    </div>`;
+    addHistory('Lookup', ip, `${d.city}, ${d.country}`);
+  } catch(e) {
+    el.innerHTML = `<div class="result-box" style="color:#ef4444">Error: ${esc(e.message)}</div>`;
+  }
+}
+document.getElementById('lookup-ip').addEventListener('keydown', e => { if (e.key === 'Enter') lookupIP(); });
+
+// ===== Subnet Calculator =====
+function calcSubnet() {
+  const ipStr = document.getElementById('subnet-ip').value.trim();
+  const cidrStr = document.getElementById('subnet-cidr').value.trim();
+  const ip = parseIP(ipStr);
+  if (!ip) { document.getElementById('subnet-result').innerHTML = '<div class="result-box" style="color:#ef4444">Invalid IP address</div>'; return; }
+
+  let bits;
+  const cleanCidr = cidrStr.replace(/^\//, '');
+  if (/^\d+$/.test(cleanCidr) && Number(cleanCidr) >= 0 && Number(cleanCidr) <= 32) {
+    bits = Number(cleanCidr);
+  } else {
+    const mask = parseIP(cidrStr);
+    if (!mask) { document.getElementById('subnet-result').innerHTML = '<div class="result-box" style="color:#ef4444">Invalid CIDR or subnet mask</div>'; return; }
+    const m = ipToInt(mask);
+    bits = 0; let t = m;
+    while (t & 0x80000000) { bits++; t <<= 1; }
+  }
+
+  const maskInt = bits === 0 ? 0 : (0xFFFFFFFF << (32 - bits)) >>> 0;
+  const wildcardInt = (~maskInt) >>> 0;
+  const networkInt = (ipToInt(ip) & maskInt) >>> 0;
+  const broadcastInt = (networkInt | wildcardInt) >>> 0;
+  const totalHosts = Math.pow(2, 32 - bits);
+  const usableHosts = totalHosts > 2 ? totalHosts - 2 : totalHosts;
+  const firstHost = totalHosts > 2 ? networkInt + 1 : networkInt;
+  const lastHost = totalHosts > 2 ? broadcastInt - 1 : broadcastInt;
+
+  const rows = [
+    ['Network Address', intToIP(networkInt) + '/' + bits],
+    ['Subnet Mask', intToIP(maskInt)],
+    ['Wildcard Mask', intToIP(wildcardInt)],
+    ['Broadcast Address', intToIP(broadcastInt)],
+    ['First Usable Host', intToIP(firstHost)],
+    ['Last Usable Host', intToIP(lastHost)],
+    ['Total Addresses', totalHosts.toLocaleString()],
+    ['Usable Hosts', usableHosts.toLocaleString()],
+    ['Binary Mask', ipToBin(intToIP(maskInt).split('.').map(Number))],
+  ];
+
+  const el = document.getElementById('subnet-result');
+  el.innerHTML = `<div class="result-box" id="subnet-data">
+    <div class="copy-corner"><button class="btn-copy" onclick="copyText(document.getElementById('subnet-data').innerText)">Copy</button></div>
+    ${rows.map(([l,v]) => `<div class="result-row"><span class="result-label">${l}</span><span class="result-value">${v}</span></div>`).join('')}
+  </div>`;
+  addHistory('Subnet', `${ipStr}/${bits}`, `${usableHosts} usable hosts`);
+}
+document.getElementById('subnet-ip').addEventListener('keydown', e => { if (e.key === 'Enter') calcSubnet(); });
+document.getElementById('subnet-cidr').addEventListener('keydown', e => { if (e.key === 'Enter') calcSubnet(); });
+
+// ===== IPv4 to IPv6 =====
+function convertIPv4to6() {
+  const ipStr = document.getElementById('convert-ip').value.trim();
+  const ip = parseIP(ipStr);
+  if (!ip) { document.getElementById('convert-result').innerHTML = '<div class="result-box" style="color:#ef4444">Invalid IPv4 address</div>'; return; }
+
+  const hex1 = ((ip[0] << 8) | ip[1]).toString(16);
+  const hex2 = ((ip[2] << 8) | ip[3]).toString(16);
+  const mapped = `::ffff:${hex1}:${hex2}`;
+  const mappedFull = `0000:0000:0000:0000:0000:ffff:${ip[0].toString(16).padStart(2,'0')}${ip[1].toString(16).padStart(2,'0')}:${ip[2].toString(16).padStart(2,'0')}${ip[3].toString(16).padStart(2,'0')}`;
+  const dotted = `::ffff:${ipStr}`;
+  const sixTo4 = `2002:${ip[0].toString(16).padStart(2,'0')}${ip[1].toString(16).padStart(2,'0')}:${ip[2].toString(16).padStart(2,'0')}${ip[3].toString(16).padStart(2,'0')}::`;
+
+  const rows = [
+    ['IPv4', ipStr],
+    ['IPv4-Mapped IPv6', mapped],
+    ['IPv4-Mapped (full)', mappedFull],
+    ['IPv4-Compatible (dotted)', dotted],
+    ['6to4 Address', sixTo4],
+  ];
+
+  const el = document.getElementById('convert-result');
+  el.innerHTML = `<div class="result-box" id="convert-data">
+    <div class="copy-corner"><button class="btn-copy" onclick="copyText(document.getElementById('convert-data').innerText)">Copy</button></div>
+    ${rows.map(([l,v]) => `<div class="result-row"><span class="result-label">${l}</span><span class="result-value">${v}</span></div>`).join('')}
+  </div>`;
+  addHistory('IPv4→IPv6', ipStr, mapped);
+}
+document.getElementById('convert-ip').addEventListener('keydown', e => { if (e.key === 'Enter') convertIPv4to6(); });
+
+// ===== IP Range Calculator =====
+function calcRange() {
+  const startStr = document.getElementById('range-start').value.trim();
+  const endStr = document.getElementById('range-end').value.trim();
+  const startIP = parseIP(startStr);
+  const endIP = parseIP(endStr);
+  if (!startIP || !endIP) { document.getElementById('range-result').innerHTML = '<div class="result-box" style="color:#ef4444">Invalid IP address(es)</div>'; return; }
+
+  const s = ipToInt(startIP), e = ipToInt(endIP);
+  if (s > e) { document.getElementById('range-result').innerHTML = '<div class="result-box" style="color:#ef4444">Start IP must be less than or equal to End IP</div>'; return; }
+
+  const count = e - s + 1;
+
+  // Find minimal CIDR blocks
+  let cidrBlocks = [];
+  let current = s;
+  while (current <= e) {
+    let maxBits = 32;
+    while (maxBits > 0) {
+      const mask = (0xFFFFFFFF << (32 - (maxBits - 1))) >>> 0;
+      if ((current & mask) !== current) break;
+      const blockEnd = (current | (~mask >>> 0)) >>> 0;
+      if (blockEnd > e) break;
+      maxBits--;
+    }
+    const blockMask = maxBits === 32 ? 0xFFFFFFFF : (0xFFFFFFFF << (32 - maxBits)) >>> 0;
+    const blockEnd = (current | (~blockMask >>> 0)) >>> 0;
+    cidrBlocks.push(intToIP(current) + '/' + maxBits);
+    current = blockEnd + 1;
+    if (current === 0) break; // overflow
+  }
+
+  let ipList = '';
+  if (count <= 256) {
+    const ips = [];
+    for (let i = s; i <= e; i++) ips.push(intToIP(i));
+    ipList = `<div style="margin-top:0.5rem"><label>All IPs in range (${count})</label>
+      <div style="max-height:200px;overflow-y:auto;background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:0.5rem;font-family:monospace;font-size:0.78rem;line-height:1.6">${ips.join('<br>')}</div>
+      <button class="btn-copy mt" onclick="copyText('${ips.join('\\n')}')">Copy all IPs</button>
+    </div>`;
+  } else {
+    ipList = `<div style="margin-top:0.5rem;color:#6b7280;font-size:0.8rem">Range has ${count.toLocaleString()} IPs (too many to list, max 256)</div>`;
+  }
+
+  const el = document.getElementById('range-result');
+  el.innerHTML = `<div class="result-box" id="range-data">
+    <div class="copy-corner"><button class="btn-copy" onclick="copyText(document.getElementById('range-data').innerText)">Copy</button></div>
+    <div class="result-row"><span class="result-label">Start</span><span class="result-value">${startStr}</span></div>
+    <div class="result-row"><span class="result-label">End</span><span class="result-value">${endStr}</span></div>
+    <div class="result-row"><span class="result-label">Total IPs</span><span class="result-value">${count.toLocaleString()}</span></div>
+    <div class="result-row"><span class="result-label">CIDR Blocks</span><span class="result-value">${cidrBlocks.join(', ')}</span></div>
+    ${ipList}
+  </div>`;
+  addHistory('Range', `${startStr} - ${endStr}`, `${count} IPs`);
+}
+document.getElementById('range-start').addEventListener('keydown', e => { if (e.key === 'Enter') calcRange(); });
+document.getElementById('range-end').addEventListener('keydown', e => { if (e.key === 'Enter') calcRange(); });
+
+// ===== Binary/Decimal Converter =====
+function convertBinary() {
+  const input = document.getElementById('binary-ip').value.trim();
+  const el = document.getElementById('binary-result');
+
+  // Detect if binary (contains only 0, 1, .)
+  if (/^[01.]+$/.test(input) && input.split('.').length === 4) {
+    // Binary to decimal
+    const parts = input.split('.');
+    if (parts.some(p => p.length !== 8)) { el.innerHTML = '<div class="result-box" style="color:#ef4444">Each octet must be 8 bits</div>'; return; }
+    const dec = parts.map(p => parseInt(p, 2));
+    if (dec.some(d => isNaN(d) || d < 0 || d > 255)) { el.innerHTML = '<div class="result-box" style="color:#ef4444">Invalid binary IP</div>'; return; }
+    const decStr = dec.join('.');
+    el.innerHTML = `<div class="result-box" id="binary-data">
+      <div class="copy-corner"><button class="btn-copy" onclick="copyText(document.getElementById('binary-data').innerText)">Copy</button></div>
+      <div class="result-row"><span class="result-label">Binary</span><span class="result-value mono">${input}</span></div>
+      <div class="result-row"><span class="result-label">Decimal</span><span class="result-value mono">${decStr}</span></div>
+      <div class="result-row"><span class="result-label">Hex</span><span class="result-value mono">${dec.map(d=>'0x'+d.toString(16).padStart(2,'0')).join('.')}</span></div>
+      <div class="result-row"><span class="result-label">Integer</span><span class="result-value mono">${ipToInt(dec)}</span></div>
+    </div>`;
+    addHistory('Binary', input, decStr);
+  } else {
+    // Decimal to binary
+    const ip = parseIP(input);
+    if (!ip) { el.innerHTML = '<div class="result-box" style="color:#ef4444">Invalid IP address</div>'; return; }
+    const binStr = ipToBin(ip);
+    el.innerHTML = `<div class="result-box" id="binary-data">
+      <div class="copy-corner"><button class="btn-copy" onclick="copyText(document.getElementById('binary-data').innerText)">Copy</button></div>
+      <div class="result-row"><span class="result-label">Decimal</span><span class="result-value mono">${input}</span></div>
+      <div class="result-row"><span class="result-label">Binary</span><span class="result-value mono">${binStr}</span></div>
+      <div class="result-row"><span class="result-label">Hex</span><span class="result-value mono">${ip.map(d=>'0x'+d.toString(16).padStart(2,'0')).join('.')}</span></div>
+      <div class="result-row"><span class="result-label">Integer</span><span class="result-value mono">${ipToInt(ip)}</span></div>
+    </div>`;
+    addHistory('Binary', input, binStr);
+  }
+}
+document.getElementById('binary-ip').addEventListener('keydown', e => { if (e.key === 'Enter') convertBinary(); });
+
+// ===== DNS Lookup =====
+async function dnsLookup() {
+  const domain = document.getElementById('dns-domain').value.trim();
+  if (!domain) return;
+  const el = document.getElementById('dns-result');
+  el.innerHTML = '<div style="padding:1rem;text-align:center"><span class="spinner"></span></div>';
+  try {
+    const r = await fetch(`https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(domain)}&type=A`, { headers: { 'Accept': 'application/dns-json' } });
+    const d = await r.json();
+    if (!d.Answer || d.Answer.length === 0) {
+      el.innerHTML = '<div class="result-box" style="color:#f59e0b">No A records found for this domain</div>';
+      addHistory('DNS', domain, 'No records');
+      return;
+    }
+    const records = d.Answer.filter(a => a.type === 1);
+    const rows = records.map(a => `<div class="result-row">
+      <span class="result-label">${a.name}</span>
+      <span class="result-value">${a.data} <span style="color:#9ca3af;font-weight:400;font-size:0.75rem">TTL: ${a.TTL}s</span>
+        <button class="btn-copy" style="margin-left:0.5rem" onclick="copyText('${a.data}')">Copy</button>
+        <button class="btn-copy" style="margin-left:0.25rem" onclick="document.getElementById('lookup-ip').value='${a.data}';document.querySelectorAll('.tab-btn')[1].click();lookupIP()">Lookup</button>
+      </span>
+    </div>`).join('');
+
+    // Also try AAAA
+    const r6 = await fetch(`https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(domain)}&type=AAAA`, { headers: { 'Accept': 'application/dns-json' } });
+    const d6 = await r6.json();
+    let aaaa = '';
+    if (d6.Answer && d6.Answer.length) {
+      const recs6 = d6.Answer.filter(a => a.type === 28);
+      if (recs6.length) {
+        aaaa = `<div style="margin-top:0.5rem;border-top:1px solid #e5e7eb;padding-top:0.5rem">
+          <span class="result-label" style="display:block;margin-bottom:0.3rem">AAAA Records (IPv6)</span>
+          ${recs6.map(a => `<div class="result-row"><span class="result-label">${a.name}</span><span class="result-value">${a.data} <span style="color:#9ca3af;font-weight:400;font-size:0.75rem">TTL: ${a.TTL}s</span> <button class="btn-copy" style="margin-left:0.5rem" onclick="copyText('${a.data}')">Copy</button></span></div>`).join('')}
+        </div>`;
+      }
+    }
+
+    el.innerHTML = `<div class="result-box" id="dns-data">
+      <div class="copy-corner"><button class="btn-copy" onclick="copyText(document.getElementById('dns-data').innerText)">Copy all</button></div>
+      <span class="result-label" style="display:block;margin-bottom:0.3rem">A Records (IPv4)</span>
+      ${rows}
+      ${aaaa}
+    </div>`;
+    addHistory('DNS', domain, records.map(a=>a.data).join(', '));
+  } catch(e) {
+    el.innerHTML = `<div class="result-box" style="color:#ef4444">DNS lookup failed: ${esc(e.message)}</div>`;
+  }
+}
+document.getElementById('dns-domain').addEventListener('keydown', e => { if (e.key === 'Enter') dnsLookup(); });
+
+// Init history
+renderHistory();
+</script>
+</body>
+</html>

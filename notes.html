@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Quick Notes | Lumen Analytics</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #f8f9fc;
+  --glass: rgba(255,255,255,0.72);
+  --glass-border: rgba(255,255,255,0.6);
+  --glass-hover: rgba(255,255,255,0.85);
+  --text: #1a1a2e;
+  --text-secondary: #6b7280;
+  --text-muted: #9ca3af;
+  --accent: #3b82f6;
+  --accent-light: rgba(59,130,246,0.1);
+  --danger: #ef4444;
+  --sidebar-w: 320px;
+  --label-red: #ef4444;
+  --label-orange: #f59e0b;
+  --label-green: #10b981;
+  --label-blue: #3b82f6;
+  --label-purple: #8b5cf6;
+  --label-pink: #ec4899;
+}
+html, body { height: 100%; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  display: flex;
+  overflow: hidden;
+  height: 100vh;
+}
+
+/* Sidebar */
+.sidebar {
+  width: var(--sidebar-w);
+  min-width: var(--sidebar-w);
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-right: 1px solid var(--glass-border);
+  overflow: hidden;
+}
+.sidebar-header {
+  padding: 20px 16px 12px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-shrink: 0;
+}
+.sidebar-header svg { flex-shrink: 0; }
+.sidebar-header h1 {
+  font-size: 1.1rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.sidebar-actions {
+  padding: 0 12px 12px;
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.sidebar-actions button {
+  flex: 1;
+  padding: 8px 12px;
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 10px;
+  background: var(--glass);
+  backdrop-filter: blur(10px);
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+.sidebar-actions button:hover { background: var(--glass-hover); }
+.sidebar-actions .btn-new { background: var(--accent); color: #fff; border-color: transparent; }
+.sidebar-actions .btn-new:hover { background: #2563eb; }
+
+.search-box {
+  padding: 0 12px 12px;
+  flex-shrink: 0;
+}
+.search-box input {
+  width: 100%;
+  padding: 9px 12px 9px 34px;
+  border: 1px solid rgba(0,0,0,0.06);
+  border-radius: 10px;
+  background: rgba(255,255,255,0.5);
+  font-family: inherit;
+  font-size: 0.85rem;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s;
+}
+.search-box input:focus { border-color: var(--accent); }
+.search-box { position: relative; }
+.search-box svg {
+  position: absolute;
+  left: 22px;
+  top: 10px;
+  color: var(--text-muted);
+}
+
+.note-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 8px 8px;
+}
+.note-list::-webkit-scrollbar { width: 4px; }
+.note-list::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 4px; }
+
+.note-item {
+  padding: 12px;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.15s;
+  margin-bottom: 2px;
+  position: relative;
+}
+.note-item:hover { background: rgba(0,0,0,0.03); }
+.note-item.active { background: var(--accent-light); }
+.note-item-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding-right: 20px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.note-item-preview {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+}
+.note-item-meta {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.pin-icon {
+  position: absolute;
+  right: 12px;
+  top: 12px;
+  font-size: 0.7rem;
+  color: var(--label-orange);
+}
+.color-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  display: inline-block;
+}
+
+/* Editor */
+.editor-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+.editor-toolbar {
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+  border-bottom: 1px solid rgba(0,0,0,0.04);
+  flex-wrap: wrap;
+}
+.editor-toolbar button, .editor-toolbar select {
+  padding: 6px 12px;
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 8px;
+  background: var(--glass);
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--text);
+  cursor: pointer;
+  transition: all 0.15s;
+  backdrop-filter: blur(10px);
+}
+.editor-toolbar button:hover { background: var(--glass-hover); }
+.editor-toolbar button.active { background: var(--accent); color: #fff; border-color: transparent; }
+.editor-toolbar .spacer { flex: 1; }
+.editor-toolbar .btn-danger { color: var(--danger); }
+.editor-toolbar .btn-danger:hover { background: rgba(239,68,68,0.08); }
+
+.color-picker {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  padding: 0 4px;
+}
+.color-swatch {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.15s;
+}
+.color-swatch:hover { transform: scale(1.15); }
+.color-swatch.active { border-color: var(--text); box-shadow: 0 0 0 2px rgba(0,0,0,0.1); }
+
+.title-input {
+  padding: 20px 24px 0;
+  flex-shrink: 0;
+}
+.title-input input {
+  width: 100%;
+  border: none;
+  outline: none;
+  font-family: inherit;
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text);
+  background: transparent;
+  letter-spacing: -0.02em;
+}
+.title-input input::placeholder { color: var(--text-muted); }
+
+.editor-content {
+  flex: 1;
+  padding: 16px 24px 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.editor-content textarea {
+  flex: 1;
+  width: 100%;
+  border: none;
+  outline: none;
+  resize: none;
+  font-family: 'Inter', sans-serif;
+  font-size: 0.92rem;
+  line-height: 1.75;
+  color: var(--text);
+  background: transparent;
+}
+.editor-content textarea.mono {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  line-height: 1.7;
+}
+.editor-content textarea::placeholder { color: var(--text-muted); }
+
+/* Markdown preview */
+.md-preview {
+  flex: 1;
+  overflow-y: auto;
+  font-size: 0.92rem;
+  line-height: 1.8;
+  padding-bottom: 20px;
+}
+.md-preview::-webkit-scrollbar { width: 4px; }
+.md-preview::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.1); border-radius: 4px; }
+.md-preview h1 { font-size: 1.6rem; font-weight: 700; margin: 0.8em 0 0.4em; letter-spacing: -0.02em; }
+.md-preview h2 { font-size: 1.3rem; font-weight: 600; margin: 0.7em 0 0.3em; }
+.md-preview h3 { font-size: 1.1rem; font-weight: 600; margin: 0.6em 0 0.3em; }
+.md-preview p { margin: 0.5em 0; }
+.md-preview strong { font-weight: 600; }
+.md-preview em { font-style: italic; }
+.md-preview code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85em;
+  background: rgba(0,0,0,0.05);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.md-preview pre {
+  background: rgba(0,0,0,0.04);
+  border-radius: 10px;
+  padding: 16px;
+  overflow-x: auto;
+  margin: 0.8em 0;
+}
+.md-preview pre code { background: none; padding: 0; font-size: 0.82rem; }
+.md-preview ul, .md-preview ol { padding-left: 1.5em; margin: 0.5em 0; }
+.md-preview li { margin: 0.25em 0; }
+.md-preview a { color: var(--accent); text-decoration: none; }
+.md-preview a:hover { text-decoration: underline; }
+.md-preview blockquote {
+  border-left: 3px solid var(--accent);
+  padding-left: 14px;
+  color: var(--text-secondary);
+  margin: 0.6em 0;
+}
+.md-preview hr { border: none; border-top: 1px solid rgba(0,0,0,0.08); margin: 1.2em 0; }
+
+/* Footer */
+.editor-footer {
+  padding: 10px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  border-top: 1px solid rgba(0,0,0,0.04);
+  flex-shrink: 0;
+}
+.editor-footer .save-indicator {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.editor-footer .save-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--label-green);
+}
+.editor-footer .save-dot.saving { background: var(--label-orange); }
+
+/* Empty state */
+.empty-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-muted);
+  gap: 12px;
+}
+.empty-state svg { opacity: 0.3; }
+.empty-state p { font-size: 0.9rem; }
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  padding: 12px 20px;
+  background: var(--text);
+  color: #fff;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.3s;
+  pointer-events: none;
+  z-index: 100;
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+
+/* Confirm dialog */
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.3);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+.confirm-overlay.show { opacity: 1; pointer-events: auto; }
+.confirm-box {
+  background: #fff;
+  border-radius: 16px;
+  padding: 28px;
+  max-width: 380px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+}
+.confirm-box h3 { font-size: 1.05rem; margin-bottom: 8px; }
+.confirm-box p { font-size: 0.88rem; color: var(--text-secondary); margin-bottom: 20px; line-height: 1.5; }
+.confirm-box .btns { display: flex; gap: 8px; justify-content: flex-end; }
+.confirm-box button {
+  padding: 8px 18px;
+  border: 1px solid rgba(0,0,0,0.08);
+  border-radius: 10px;
+  background: var(--glass);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+.confirm-box .btn-del { background: var(--danger); color: #fff; border-color: transparent; }
+
+/* Keyboard hint */
+.kbd {
+  display: inline-block;
+  padding: 1px 5px;
+  font-size: 0.7rem;
+  font-family: 'JetBrains Mono', monospace;
+  background: rgba(0,0,0,0.06);
+  border-radius: 4px;
+  color: var(--text-muted);
+}
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="sidebar-header">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+      <polyline points="14 2 14 8 20 8"/>
+      <line x1="16" y1="13" x2="8" y2="13"/>
+      <line x1="16" y1="17" x2="8" y2="17"/>
+      <polyline points="10 9 9 9 8 9"/>
+      <circle cx="17" cy="3" r="2.5" fill="#f59e0b" stroke="#f59e0b" stroke-width="1"/>
+      <line x1="17" y1="2" x2="17" y2="4" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/>
+      <line x1="16" y1="3" x2="18" y2="3" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>
+    <h1>Quick Notes</h1>
+  </div>
+  <div class="sidebar-actions">
+    <button class="btn-new" onclick="createNote()" title="Ctrl/Cmd+N">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="7" y1="1" x2="7" y2="13"/><line x1="1" y1="7" x2="13" y2="7"/></svg>
+      New
+    </button>
+    <button onclick="location.href='index.html'" title="Back to Analytics">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 7 7 1 13 7"/><line x1="7" y1="1" x2="7" y2="13"/></svg>
+      Home
+    </button>
+  </div>
+  <div class="search-box">
+    <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="5"/><line x1="10" y1="10" x2="13" y2="13"/></svg>
+    <input type="text" id="searchInput" placeholder="Search notes... (Ctrl+F)" oninput="renderList()">
+  </div>
+  <div class="note-list" id="noteList"></div>
+</div>
+
+<div class="editor-panel" id="editorPanel">
+  <div class="empty-state" id="emptyState">
+    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+      <polyline points="14 2 14 8 20 8"/>
+      <line x1="16" y1="13" x2="8" y2="13"/>
+      <line x1="16" y1="17" x2="8" y2="17"/>
+    </svg>
+    <p>Select a note or press <span class="kbd">Ctrl+N</span> to create one</p>
+  </div>
+
+  <div id="editorContent" style="display:none; flex:1; display:flex; flex-direction:column; height:100%;">
+    <div class="editor-toolbar" id="toolbar">
+      <button id="btnPin" onclick="togglePin()" title="Pin note">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2L8.5 5.5 4 7l-2 2 5 5 2-2 1.5-4.5L14 4"/><line x1="1" y1="13" x2="5" y2="9"/></svg>
+        Pin
+      </button>
+      <div class="color-picker" id="colorPicker">
+        <div class="color-swatch" style="background:transparent;border:1px dashed rgba(0,0,0,0.15)" data-color="" onclick="setColor('')" title="No color"></div>
+        <div class="color-swatch" style="background:var(--label-red)" data-color="red" onclick="setColor('red')"></div>
+        <div class="color-swatch" style="background:var(--label-orange)" data-color="orange" onclick="setColor('orange')"></div>
+        <div class="color-swatch" style="background:var(--label-green)" data-color="green" onclick="setColor('green')"></div>
+        <div class="color-swatch" style="background:var(--label-blue)" data-color="blue" onclick="setColor('blue')"></div>
+        <div class="color-swatch" style="background:var(--label-purple)" data-color="purple" onclick="setColor('purple')"></div>
+        <div class="color-swatch" style="background:var(--label-pink)" data-color="pink" onclick="setColor('pink')"></div>
+      </div>
+      <div class="spacer"></div>
+      <button id="btnCode" onclick="toggleCode()" title="Code mode">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 13 1 7 4 1"/><polyline points="10 1 13 7 10 13"/></svg>
+        Code
+      </button>
+      <button id="btnPreview" onclick="togglePreview()" title="Ctrl+P">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 7s2.5-5 6-5 6 5 6 5-2.5 5-6 5-6-5-6-5z"/><circle cx="7" cy="7" r="2"/></svg>
+        Preview
+      </button>
+      <button onclick="copyAll()" title="Copy all">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="9" height="9" rx="1"/><path d="M1 10V2a1 1 0 011-1h8"/></svg>
+        Copy
+      </button>
+      <button onclick="downloadMd()" title="Download as .md">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h8"/><path d="M7 1v8"/><polyline points="3 6 7 9 11 6"/></svg>
+        .md
+      </button>
+      <button onclick="duplicateNote()" title="Duplicate">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1" y="4" width="8" height="9" rx="1"/><path d="M5 4V2a1 1 0 011-1h6a1 1 0 011 1v8a1 1 0 01-1 1h-2"/></svg>
+        Dup
+      </button>
+      <button class="btn-danger" onclick="confirmDelete()" title="Delete">
+        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="1 4 3 4 13 4"/><path d="M4 4V2a1 1 0 011-1h4a1 1 0 011 1v2"/><path d="M3 4l1 9a1 1 0 001 1h4a1 1 0 001-1l1-9"/></svg>
+        Del
+      </button>
+    </div>
+    <div class="title-input">
+      <input type="text" id="titleInput" placeholder="Untitled note..." oninput="onTitleChange()">
+    </div>
+    <div class="editor-content">
+      <textarea id="noteTextarea" placeholder="Start writing..." oninput="onContentChange()"></textarea>
+      <div class="md-preview" id="mdPreview" style="display:none"></div>
+    </div>
+    <div class="editor-footer">
+      <div class="save-indicator">
+        <div class="save-dot" id="saveDot"></div>
+        <span id="saveStatus">Saved</span>
+      </div>
+      <span id="wordCount">0 words, 0 chars</span>
+      <div class="spacer" style="flex:1"></div>
+      <span id="lastModified"></span>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="confirm-overlay" id="confirmOverlay">
+  <div class="confirm-box">
+    <h3>Delete note?</h3>
+    <p>This action cannot be undone. The note will be permanently removed.</p>
+    <div class="btns">
+      <button onclick="hideConfirm()">Cancel</button>
+      <button class="btn-del" onclick="deleteNote()">Delete</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'lumen-quick-notes';
+const COLORS = { red: '#ef4444', orange: '#f59e0b', green: '#10b981', blue: '#3b82f6', purple: '#8b5cf6', pink: '#ec4899' };
+let notes = [];
+let activeId = null;
+let saveTimer = null;
+let previewMode = false;
+let codeMode = false;
+
+// Default notes
+const DEFAULT_NOTES = [
+  {
+    id: genId(), title: 'Meeting Notes Template', pinned: true, color: 'blue',
+    content: `# Meeting Notes\n\n**Date:** ${new Date().toISOString().split('T')[0]}\n**Attendees:** \n**Project:** \n\n## Agenda\n- [ ] Item 1\n- [ ] Item 2\n- [ ] Item 3\n\n## Discussion\n\n\n## Action Items\n| Owner | Task | Due |\n|-------|------|-----|\n|       |      |     |\n\n## Decisions\n- \n\n## Next Steps\n- `,
+    created: Date.now() - 5000, modified: Date.now() - 5000
+  },
+  {
+    id: genId(), title: 'Smara API endpoints cheat sheet', pinned: false, color: 'green',
+    content: `# Smara API Endpoints\n\n## Auth\n\`\`\`\nPOST /api/auth/login\nPOST /api/auth/register\nPOST /api/auth/refresh\n\`\`\`\n\n## Memories\n\`\`\`\nGET    /api/memories           # List all\nPOST   /api/memories           # Create\nGET    /api/memories/:id       # Get one\nPUT    /api/memories/:id       # Update\nDELETE /api/memories/:id       # Delete\nPOST   /api/memories/search    # Semantic search\n\`\`\`\n\n## Teams (v1.2)\n\`\`\`\nGET    /api/teams\nPOST   /api/teams\nPOST   /api/teams/:id/members\nDELETE /api/teams/:id/members/:uid\n\`\`\`\n\n## Health\n\`\`\`\nGET /health\nGET /api/status\n\`\`\`\n\n**Base URL:** https://smara.up.railway.app\n**Docs:** https://smara.up.railway.app/docs`,
+    created: Date.now() - 4000, modified: Date.now() - 4000
+  },
+  {
+    id: genId(), title: 'CIBC Architecture Decisions', pinned: false, color: 'purple',
+    content: `# CIBC Architecture Decisions\n\n## ADR-001: Microservices over Monolith\n**Status:** Accepted\n**Context:** Need to scale teams independently\n**Decision:** Microservices with API gateway\n**Consequences:** More operational complexity, better team autonomy\n\n## ADR-002: Event-Driven Architecture\n**Status:** Accepted\n**Context:** Need async processing for transactions\n**Decision:** Kafka for event streaming\n**Consequences:** Eventual consistency, better decoupling\n\n## ADR-003: API Gateway Pattern\n**Status:** Under review\n**Context:** Multiple client types (web, mobile, internal)\n**Decision:** Kong API Gateway\n**Consequences:** Single entry point, centralized auth\n\n---\n\n## Open Questions\n- [ ] Redis vs Memcached for session caching?\n- [ ] GraphQL federation vs REST composition?\n- [ ] Vault vs AWS Secrets Manager?`,
+    created: Date.now() - 3000, modified: Date.now() - 3000
+  },
+  {
+    id: genId(), title: 'Quick Links', pinned: true, color: 'orange',
+    content: `# Quick Links\n\n## Dashboards\n- [Lumen Dashboard](https://lumen.parallelromb.dev)\n- [Railway](https://railway.app/dashboard)\n- [Cloudflare](https://dash.cloudflare.com)\n- [Vercel](https://vercel.com/dashboard)\n\n## Dev Tools\n- [GitHub](https://github.com)\n- [Linear](https://linear.app)\n- [Figma](https://figma.com)\n\n## APIs & Docs\n- [Smara API Docs](https://smara.up.railway.app/docs)\n- [Anthropic Docs](https://docs.anthropic.com)\n- [OpenAI Platform](https://platform.openai.com)\n\n## Monitoring\n- [Uptime Robot](https://uptimerobot.com)\n- [Sentry](https://sentry.io)\n\n## Learning\n- [Hacker News](https://news.ycombinator.com)\n- [Dev.to](https://dev.to)\n- [ArXiv](https://arxiv.org)`,
+    created: Date.now() - 2000, modified: Date.now() - 2000
+  },
+  {
+    id: genId(), title: 'Ideas dump', pinned: false, color: '',
+    content: `# Ideas Dump\n\nRandom thoughts, half-baked ideas, shower epiphanies.\n\n---\n\n## Product Ideas\n- CLI tool that generates changelogs from git commits + AI\n- Browser extension that summarizes long GitHub PRs\n- Slack bot that creates standup summaries from channel activity\n\n## Blog Posts to Write\n- "Why I built my own analytics dashboard"\n- "Local-first apps in 2026: what worked, what didn't"\n- "From side project to SaaS: the Smara story"\n\n## Tech to Explore\n- Bun runtime for Smara v2?\n- Deno KV as localStorage alternative\n- WebContainers for in-browser dev environments\n- WASM-based SQLite for client-side queries\n\n## Random\n- That book recommendation from the podcast\n- Recipe for the dal makhani\n- Gift idea: custom star map for anniversary`,
+    created: Date.now() - 1000, modified: Date.now() - 1000
+  }
+];
+
+function genId() { return 'n_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36); }
+
+function load() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (raw) {
+    try { notes = JSON.parse(raw); } catch { notes = []; }
+  }
+  if (!notes.length) {
+    notes = DEFAULT_NOTES;
+    save();
+  }
+}
+
+function save() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(notes));
+}
+
+function getNote(id) { return notes.find(n => n.id === id); }
+
+function sortedNotes() {
+  const q = document.getElementById('searchInput').value.toLowerCase().trim();
+  let filtered = notes;
+  if (q) {
+    filtered = notes.filter(n =>
+      n.title.toLowerCase().includes(q) || n.content.toLowerCase().includes(q)
+    );
+  }
+  return filtered.sort((a, b) => {
+    if (a.pinned !== b.pinned) return a.pinned ? -1 : 1;
+    return b.modified - a.modified;
+  });
+}
+
+function renderList() {
+  const list = document.getElementById('noteList');
+  const sorted = sortedNotes();
+  list.innerHTML = sorted.map(n => {
+    const preview = n.content.replace(/[#*`\[\]]/g, '').split('\n').filter(l => l.trim()).slice(0, 2).join(' ').slice(0, 80);
+    const time = timeAgo(n.modified);
+    const colorHtml = n.color ? `<span class="color-dot" style="background:${COLORS[n.color]}"></span>` : '';
+    return `<div class="note-item ${n.id === activeId ? 'active' : ''}" onclick="selectNote('${n.id}')">
+      <div class="note-item-title">${colorHtml}${esc(n.title || 'Untitled')}</div>
+      <div class="note-item-preview">${esc(preview) || 'Empty note'}</div>
+      <div class="note-item-meta">${time}</div>
+      ${n.pinned ? '<div class="pin-icon">&#128204;</div>' : ''}
+    </div>`;
+  }).join('');
+}
+
+function selectNote(id) {
+  activeId = id;
+  const note = getNote(id);
+  if (!note) return;
+
+  document.getElementById('emptyState').style.display = 'none';
+  const ec = document.getElementById('editorContent');
+  ec.style.display = 'flex';
+
+  document.getElementById('titleInput').value = note.title;
+  document.getElementById('noteTextarea').value = note.content;
+
+  previewMode = false;
+  document.getElementById('noteTextarea').style.display = '';
+  document.getElementById('mdPreview').style.display = 'none';
+  document.getElementById('btnPreview').classList.remove('active');
+
+  codeMode = note.codeMode || false;
+  document.getElementById('noteTextarea').classList.toggle('mono', codeMode);
+  document.getElementById('btnCode').classList.toggle('active', codeMode);
+
+  document.getElementById('btnPin').classList.toggle('active', note.pinned);
+  updateColorPicker(note.color || '');
+  updateFooter(note);
+  renderList();
+}
+
+function createNote() {
+  const note = {
+    id: genId(),
+    title: '',
+    content: '',
+    pinned: false,
+    color: '',
+    codeMode: false,
+    created: Date.now(),
+    modified: Date.now()
+  };
+  notes.unshift(note);
+  save();
+  selectNote(note.id);
+  document.getElementById('titleInput').focus();
+}
+
+function onTitleChange() {
+  const note = getNote(activeId);
+  if (!note) return;
+  note.title = document.getElementById('titleInput').value;
+  note.modified = Date.now();
+  debounceSave();
+}
+
+function onContentChange() {
+  const note = getNote(activeId);
+  if (!note) return;
+  note.content = document.getElementById('noteTextarea').value;
+  note.modified = Date.now();
+  debounceSave();
+  updateFooter(note);
+}
+
+function debounceSave() {
+  document.getElementById('saveDot').classList.add('saving');
+  document.getElementById('saveStatus').textContent = 'Saving...';
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    save();
+    renderList();
+    document.getElementById('saveDot').classList.remove('saving');
+    document.getElementById('saveStatus').textContent = 'Saved';
+  }, 500);
+}
+
+function togglePin() {
+  const note = getNote(activeId);
+  if (!note) return;
+  note.pinned = !note.pinned;
+  note.modified = Date.now();
+  save();
+  document.getElementById('btnPin').classList.toggle('active', note.pinned);
+  renderList();
+}
+
+function setColor(c) {
+  const note = getNote(activeId);
+  if (!note) return;
+  note.color = c;
+  note.modified = Date.now();
+  save();
+  updateColorPicker(c);
+  renderList();
+}
+
+function updateColorPicker(c) {
+  document.querySelectorAll('.color-swatch').forEach(s => {
+    s.classList.toggle('active', s.dataset.color === c);
+  });
+}
+
+function toggleCode() {
+  const note = getNote(activeId);
+  if (!note) return;
+  codeMode = !codeMode;
+  note.codeMode = codeMode;
+  save();
+  document.getElementById('noteTextarea').classList.toggle('mono', codeMode);
+  document.getElementById('btnCode').classList.toggle('active', codeMode);
+}
+
+function togglePreview() {
+  previewMode = !previewMode;
+  const ta = document.getElementById('noteTextarea');
+  const prev = document.getElementById('mdPreview');
+  document.getElementById('btnPreview').classList.toggle('active', previewMode);
+  if (previewMode) {
+    prev.innerHTML = renderMarkdown(ta.value);
+    ta.style.display = 'none';
+    prev.style.display = '';
+  } else {
+    ta.style.display = '';
+    prev.style.display = 'none';
+  }
+}
+
+function renderMarkdown(md) {
+  let html = esc(md);
+  // Code blocks
+  html = html.replace(/```(\w*)\n([\s\S]*?)```/g, (_, lang, code) => `<pre><code>${code.trim()}</code></pre>`);
+  // Inline code
+  html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+  // Headers
+  html = html.replace(/^### (.+)$/gm, '<h3>$1</h3>');
+  html = html.replace(/^## (.+)$/gm, '<h2>$1</h2>');
+  html = html.replace(/^# (.+)$/gm, '<h1>$1</h1>');
+  // Bold + Italic
+  html = html.replace(/\*\*\*(.+?)\*\*\*/g, '<strong><em>$1</em></strong>');
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+  // Links
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank">$1</a>');
+  // Blockquote
+  html = html.replace(/^&gt; (.+)$/gm, '<blockquote>$1</blockquote>');
+  // HR
+  html = html.replace(/^---$/gm, '<hr>');
+  // Unordered list
+  html = html.replace(/^- \[x\] (.+)$/gm, '<li style="list-style:none"><input type="checkbox" checked disabled> $1</li>');
+  html = html.replace(/^- \[ \] (.+)$/gm, '<li style="list-style:none"><input type="checkbox" disabled> $1</li>');
+  html = html.replace(/^- (.+)$/gm, '<li>$1</li>');
+  // Wrap consecutive <li> in <ul>
+  html = html.replace(/((?:<li[^>]*>.*<\/li>\n?)+)/g, '<ul>$1</ul>');
+  // Paragraphs
+  html = html.replace(/\n\n/g, '</p><p>');
+  html = html.replace(/\n/g, '<br>');
+  html = '<p>' + html + '</p>';
+  // Clean up empty paragraphs around block elements
+  html = html.replace(/<p><(h[1-3]|pre|ul|ol|hr|blockquote)/g, '<$1');
+  html = html.replace(/<\/(h[1-3]|pre|ul|ol|hr|blockquote)><\/p>/g, '</$1>');
+  html = html.replace(/<p><\/p>/g, '');
+  return html;
+}
+
+function copyAll() {
+  const note = getNote(activeId);
+  if (!note) return;
+  navigator.clipboard.writeText(note.content).then(() => showToast('Copied to clipboard'));
+}
+
+function downloadMd() {
+  const note = getNote(activeId);
+  if (!note) return;
+  const blob = new Blob([note.content], { type: 'text/markdown' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (note.title || 'untitled').replace(/[^a-z0-9]/gi, '-').toLowerCase() + '.md';
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showToast('Downloaded as .md');
+}
+
+function duplicateNote() {
+  const note = getNote(activeId);
+  if (!note) return;
+  const dup = { ...note, id: genId(), title: note.title + ' (copy)', pinned: false, created: Date.now(), modified: Date.now() };
+  notes.unshift(dup);
+  save();
+  selectNote(dup.id);
+  showToast('Note duplicated');
+}
+
+function confirmDelete() {
+  document.getElementById('confirmOverlay').classList.add('show');
+}
+function hideConfirm() {
+  document.getElementById('confirmOverlay').classList.remove('show');
+}
+function deleteNote() {
+  notes = notes.filter(n => n.id !== activeId);
+  save();
+  activeId = null;
+  hideConfirm();
+  document.getElementById('editorContent').style.display = 'none';
+  document.getElementById('emptyState').style.display = 'flex';
+  renderList();
+  showToast('Note deleted');
+}
+
+function updateFooter(note) {
+  const text = note.content;
+  const words = text.trim() ? text.trim().split(/\s+/).length : 0;
+  const chars = text.length;
+  document.getElementById('wordCount').textContent = `${words} word${words !== 1 ? 's' : ''}, ${chars} char${chars !== 1 ? 's' : ''}`;
+  document.getElementById('lastModified').textContent = 'Modified ' + timeAgo(note.modified);
+}
+
+function timeAgo(ts) {
+  const diff = Date.now() - ts;
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return mins + 'm ago';
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return hrs + 'h ago';
+  const days = Math.floor(hrs / 24);
+  if (days < 7) return days + 'd ago';
+  return new Date(ts).toLocaleDateString();
+}
+
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', e => {
+  const mod = e.metaKey || e.ctrlKey;
+  if (mod && e.key === 'n') { e.preventDefault(); createNote(); }
+  if (mod && e.key === 'f') {
+    e.preventDefault();
+    const si = document.getElementById('searchInput');
+    si.focus();
+    si.select();
+  }
+  if (mod && e.key === 's') {
+    e.preventDefault();
+    if (activeId) {
+      save();
+      showToast('Saved');
+    }
+  }
+  if (mod && e.key === 'p') {
+    e.preventDefault();
+    if (activeId) togglePreview();
+  }
+});
+
+// Init
+load();
+renderList();
+if (notes.length) selectNote(sortedNotes()[0].id);
+</script>
+</body>
+</html>

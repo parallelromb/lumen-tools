@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Color Palette Generator & Design Tool</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:#f8f9fc;color:#1a1a2e;min-height:100vh;padding:1.5rem 1.5rem 4rem}
+.glass{background:rgba(255,255,255,0.72);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.6);border-radius:16px}
+button{font-family:inherit;cursor:pointer;border:none;background:none;font-size:0.8125rem}
+input,select{font-family:inherit;font-size:0.875rem}
+h1{font-size:1.75rem;font-weight:700;letter-spacing:-0.02em;text-align:center;margin-bottom:0.25rem}
+.subtitle{text-align:center;color:#6b7280;font-size:0.875rem;margin-bottom:1.5rem}
+.back{display:inline-flex;align-items:center;gap:6px;color:#6b7280;text-decoration:none;font-size:0.8125rem;margin-bottom:1rem}
+.back:hover{color:#1a1a2e}
+
+/* Toolbar */
+.toolbar{display:flex;flex-wrap:wrap;gap:0.75rem;align-items:center;justify-content:center;margin-bottom:1.5rem}
+.btn{padding:0.5rem 1rem;border-radius:10px;font-weight:500;transition:all 0.15s}
+.btn-primary{background:#3b82f6;color:#fff}
+.btn-primary:hover{background:#2563eb}
+.btn-secondary{background:rgba(0,0,0,0.05);color:#374151}
+.btn-secondary:hover{background:rgba(0,0,0,0.1)}
+.btn-sm{padding:0.35rem 0.65rem;font-size:0.75rem;border-radius:8px}
+select.mode-select{padding:0.5rem 0.75rem;border-radius:10px;border:1px solid rgba(0,0,0,0.1);background:rgba(255,255,255,0.8);font-weight:500}
+
+/* Palette strip */
+.palette-strip{display:flex;gap:0;border-radius:16px;overflow:hidden;min-height:200px;margin-bottom:1.5rem;box-shadow:0 4px 24px rgba(0,0,0,0.08)}
+.swatch{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;padding:1rem 0.5rem;position:relative;cursor:grab;transition:flex 0.2s;min-width:0}
+.swatch:active{cursor:grabbing}
+.swatch.dragging{opacity:0.5}
+.swatch.drag-over{flex:1.3}
+.swatch .lock-btn{position:absolute;top:10px;right:10px;width:28px;height:28px;border-radius:50%;background:rgba(255,255,255,0.3);display:flex;align-items:center;justify-content:center;font-size:0.75rem;transition:background 0.15s}
+.swatch .lock-btn:hover{background:rgba(255,255,255,0.5)}
+.swatch.locked .lock-btn{background:rgba(255,255,255,0.7)}
+.swatch-info{background:rgba(255,255,255,0.85);backdrop-filter:blur(10px);border-radius:10px;padding:0.5rem 0.6rem;font-size:0.7rem;text-align:center;width:calc(100% - 1rem);margin-top:auto}
+.swatch-info .hex{font-weight:700;font-size:0.85rem;margin-bottom:2px;cursor:pointer}
+.swatch-info .vals{color:#555;line-height:1.4}
+.swatch-info .copy-row{display:flex;gap:4px;justify-content:center;margin-top:4px;flex-wrap:wrap}
+.swatch-info .copy-btn{padding:2px 6px;border-radius:4px;background:rgba(0,0,0,0.06);font-size:0.65rem;font-weight:500}
+.swatch-info .copy-btn:hover{background:rgba(0,0,0,0.12)}
+.color-input{position:absolute;top:0;left:0;width:100%;height:60%;opacity:0;cursor:pointer}
+.swatch .pick-label{position:absolute;top:10px;left:10px;font-size:0.6rem;background:rgba(255,255,255,0.3);padding:2px 6px;border-radius:4px;pointer-events:none;opacity:0;transition:opacity 0.15s}
+.swatch:hover .pick-label{opacity:1}
+
+/* Tabs */
+.tabs{display:flex;gap:0.5rem;flex-wrap:wrap;margin-bottom:1.25rem;justify-content:center}
+.tab{padding:0.45rem 0.9rem;border-radius:10px;font-weight:500;font-size:0.8125rem;color:#6b7280;transition:all 0.15s}
+.tab:hover{background:rgba(0,0,0,0.04)}
+.tab.active{background:#3b82f6;color:#fff}
+
+/* Sections */
+.section{display:none;animation:fadeIn 0.2s}
+.section.active{display:block}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+
+/* Contrast checker */
+.contrast-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;max-width:600px;margin:0 auto}
+.contrast-pick{padding:1rem;border-radius:12px;text-align:center;cursor:pointer;transition:box-shadow 0.15s}
+.contrast-pick.selected{box-shadow:0 0 0 3px #3b82f6}
+.contrast-result{padding:1.5rem;border-radius:12px;text-align:center;margin-top:1rem;max-width:600px;margin-left:auto;margin-right:auto}
+.contrast-ratio{font-size:2rem;font-weight:700}
+.contrast-badges{display:flex;gap:0.75rem;justify-content:center;margin-top:0.75rem;flex-wrap:wrap}
+.badge{padding:0.35rem 0.75rem;border-radius:8px;font-weight:600;font-size:0.8rem}
+.badge.pass{background:rgba(34,197,94,0.15);color:#16a34a}
+.badge.fail{background:rgba(239,68,68,0.15);color:#dc2626}
+
+/* Preview mockup */
+.preview-frame{max-width:500px;margin:0 auto;border-radius:16px;overflow:hidden;box-shadow:0 4px 24px rgba(0,0,0,0.1)}
+.preview-header{padding:1rem 1.25rem;display:flex;align-items:center;gap:0.75rem}
+.preview-dots{display:flex;gap:5px}
+.preview-dots span{width:10px;height:10px;border-radius:50%}
+.preview-body{padding:1.5rem}
+.preview-card{border-radius:12px;padding:1.25rem;margin-bottom:1rem}
+.preview-btn{padding:0.6rem 1.25rem;border-radius:8px;font-weight:600;font-size:0.875rem;display:inline-block}
+.preview-text{font-size:0.875rem;line-height:1.6;margin-top:0.75rem}
+
+/* Saved palettes */
+.saved-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem}
+.saved-item{padding:1rem;border-radius:12px;border:1px solid rgba(0,0,0,0.06)}
+.saved-item .saved-colors{display:flex;height:40px;border-radius:8px;overflow:hidden;margin-bottom:0.5rem}
+.saved-item .saved-colors div{flex:1}
+.saved-item .saved-name{font-weight:600;font-size:0.875rem}
+.saved-item .saved-actions{display:flex;gap:0.5rem;margin-top:0.5rem}
+.save-form{display:flex;gap:0.5rem;max-width:400px;margin:0 auto 1.25rem}
+.save-form input{flex:1;padding:0.5rem 0.75rem;border-radius:10px;border:1px solid rgba(0,0,0,0.1)}
+
+/* Export */
+.export-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:1rem}
+.export-block{padding:1rem;border-radius:12px;border:1px solid rgba(0,0,0,0.06)}
+.export-block h3{font-size:0.875rem;margin-bottom:0.5rem}
+.export-block pre{background:rgba(0,0,0,0.04);padding:0.75rem;border-radius:8px;font-size:0.7rem;overflow-x:auto;white-space:pre;line-height:1.5;max-height:200px;overflow-y:auto}
+
+/* Gradient */
+.gradient-preview{height:120px;border-radius:12px;margin-bottom:1rem;box-shadow:0 4px 16px rgba(0,0,0,0.08)}
+.gradient-controls{display:flex;flex-wrap:wrap;gap:0.75rem;align-items:center;justify-content:center;margin-bottom:1rem}
+.gradient-code{background:rgba(0,0,0,0.04);padding:0.75rem;border-radius:10px;font-size:0.8rem;text-align:center;cursor:pointer}
+
+/* Presets */
+.preset-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:0.75rem}
+.preset-item{padding:0.75rem;border-radius:12px;cursor:pointer;transition:transform 0.15s,box-shadow 0.15s;border:1px solid rgba(0,0,0,0.06)}
+.preset-item:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(0,0,0,0.08)}
+.preset-item .preset-colors{display:flex;height:32px;border-radius:6px;overflow:hidden;margin-bottom:0.4rem}
+.preset-item .preset-colors div{flex:1}
+.preset-item .preset-name{font-size:0.8rem;font-weight:600}
+
+/* Toast */
+.toast{position:fixed;bottom:2rem;left:50%;transform:translateX(-50%) translateY(80px);background:#1a1a2e;color:#fff;padding:0.6rem 1.25rem;border-radius:10px;font-size:0.8rem;font-weight:500;transition:transform 0.25s;z-index:999;pointer-events:none}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+/* Shortcut hint */
+.shortcut-hint{text-align:center;color:#9ca3af;font-size:0.75rem;margin-top:0.5rem}
+</style>
+</head>
+<body>
+
+<a href="index.html" class="back">&larr; Back to Analytics</a>
+<h1>Color Palette Generator</h1>
+<p class="subtitle">Generate, customize, and export beautiful color palettes</p>
+
+<div class="toolbar">
+  <button class="btn btn-primary" id="generateBtn" onclick="generate()">Generate Palette</button>
+  <select class="mode-select" id="harmonyMode" onchange="generate()">
+    <option value="random">Random</option>
+    <option value="complementary">Complementary</option>
+    <option value="analogous">Analogous</option>
+    <option value="triadic">Triadic</option>
+    <option value="split">Split-Complementary</option>
+    <option value="mono">Monochromatic</option>
+  </select>
+</div>
+<p class="shortcut-hint">Press <kbd>Space</kbd> to generate a new palette</p>
+
+<div class="palette-strip" id="paletteStrip"></div>
+
+<div class="tabs">
+  <button class="tab active" data-tab="contrast">Contrast</button>
+  <button class="tab" data-tab="preview">Preview</button>
+  <button class="tab" data-tab="gradient">Gradient</button>
+  <button class="tab" data-tab="saved">Saved</button>
+  <button class="tab" data-tab="export">Export</button>
+  <button class="tab" data-tab="presets">Presets</button>
+</div>
+
+<div class="section active glass" id="sec-contrast" style="padding:1.5rem;margin-bottom:1.5rem">
+  <h3 style="text-align:center;margin-bottom:1rem;font-size:0.95rem">Contrast Checker</h3>
+  <p style="text-align:center;color:#6b7280;font-size:0.8rem;margin-bottom:1rem">Click two colors from the palette to check contrast</p>
+  <div class="contrast-grid" id="contrastGrid"></div>
+  <div class="contrast-result glass" id="contrastResult" style="display:none"></div>
+</div>
+
+<div class="section glass" id="sec-preview" style="padding:1.5rem;margin-bottom:1.5rem">
+  <h3 style="text-align:center;margin-bottom:1rem;font-size:0.95rem">UI Preview</h3>
+  <div class="preview-frame" id="previewFrame"></div>
+</div>
+
+<div class="section glass" id="sec-gradient" style="padding:1.5rem;margin-bottom:1.5rem">
+  <h3 style="text-align:center;margin-bottom:1rem;font-size:0.95rem">Gradient Generator</h3>
+  <div class="gradient-controls" id="gradientControls">
+    <label style="font-size:0.8rem;font-weight:500">Direction:</label>
+    <select class="mode-select" id="gradientDir" onchange="updateGradient()" style="font-size:0.8rem;padding:0.4rem 0.6rem">
+      <option value="to right">Horizontal</option>
+      <option value="to bottom">Vertical</option>
+      <option value="to bottom right">Diagonal</option>
+      <option value="135deg">135 deg</option>
+      <option value="circle">Radial</option>
+    </select>
+    <span style="font-size:0.75rem;color:#6b7280">Toggle colors:</span>
+    <div id="gradientToggles" style="display:flex;gap:4px"></div>
+  </div>
+  <div class="gradient-preview" id="gradientPreview"></div>
+  <div class="gradient-code" id="gradientCode" onclick="copyText(this.textContent)">Click to copy CSS</div>
+</div>
+
+<div class="section glass" id="sec-saved" style="padding:1.5rem;margin-bottom:1.5rem">
+  <h3 style="text-align:center;margin-bottom:1rem;font-size:0.95rem">Saved Palettes</h3>
+  <div class="save-form">
+    <input type="text" id="saveName" placeholder="Palette name..." onkeydown="if(event.key==='Enter')savePalette()">
+    <button class="btn btn-primary" onclick="savePalette()">Save Current</button>
+  </div>
+  <div class="saved-grid" id="savedGrid"></div>
+</div>
+
+<div class="section glass" id="sec-export" style="padding:1.5rem;margin-bottom:1.5rem">
+  <h3 style="text-align:center;margin-bottom:1rem;font-size:0.95rem">Export</h3>
+  <div class="export-grid" id="exportGrid"></div>
+</div>
+
+<div class="section glass" id="sec-presets" style="padding:1.5rem;margin-bottom:1.5rem">
+  <h3 style="text-align:center;margin-bottom:1rem;font-size:0.95rem">Pre-loaded Palettes</h3>
+  <div class="preset-grid" id="presetGrid"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// --- State ---
+let colors = [];
+let locked = [false,false,false,false,false];
+let contrastSel = [null,null];
+let gradientActive = [true,true,true,true,true];
+let dragIdx = null;
+
+// --- Presets ---
+const PRESETS = [
+  {name:'Ocean Breeze',   colors:['#0077b6','#00b4d8','#90e0ef','#caf0f8','#03045e']},
+  {name:'Sunset Glow',    colors:['#ff6b35','#f7c59f','#efefd0','#004e89','#1a659e']},
+  {name:'Forest',         colors:['#2d6a4f','#40916c','#52b788','#74c69d','#b7e4c7']},
+  {name:'Midnight',       colors:['#0d1b2a','#1b263b','#415a77','#778da9','#e0e1dd']},
+  {name:'Pastel Dream',   colors:['#ffadad','#ffd6a5','#fdffb6','#caffbf','#a0c4ff']},
+  {name:'Corporate Blue', colors:['#03045e','#023e8a','#0077b6','#0096c7','#48cae4']},
+  {name:'Warm Earth',     colors:['#582f0e','#7f4f24','#936639','#a68a64','#c2c5aa']},
+  {name:'Neon Pop',       colors:['#ff006e','#8338ec','#3a86ff','#06d6a0','#ffbe0b']},
+  {name:'Vintage',        colors:['#606c38','#283618','#fefae0','#dda15e','#bc6c25']},
+  {name:'Arctic',         colors:['#caf0f8','#ade8f4','#90e0ef','#48cae4','#0096c7']},
+];
+
+// --- Utility ---
+function hslToHex(h,s,l){
+  s/=100;l/=100;
+  const a=s*Math.min(l,1-l);
+  const f=n=>{const k=(n+h/30)%12;const c=l-a*Math.max(Math.min(k-3,9-k,1),-1);return Math.round(255*c).toString(16).padStart(2,'0')};
+  return '#'+f(0)+f(8)+f(4);
+}
+function hexToRgb(hex){
+  const r=parseInt(hex.slice(1,3),16),g=parseInt(hex.slice(3,5),16),b=parseInt(hex.slice(5,7),16);
+  return {r,g,b};
+}
+function hexToHsl(hex){
+  let{r,g,b}=hexToRgb(hex);
+  r/=255;g/=255;b/=255;
+  const max=Math.max(r,g,b),min=Math.min(r,g,b);
+  let h,s,l=(max+min)/2;
+  if(max===min){h=s=0}else{
+    const d=max-min;s=l>0.5?d/(2-max-min):d/(max+min);
+    switch(max){case r:h=((g-b)/d+(g<b?6:0))/6;break;case g:h=((b-r)/d+2)/6;break;case b:h=((r-g)/d+4)/6;break}
+  }
+  return{h:Math.round(h*360),s:Math.round(s*100),l:Math.round(l*100)};
+}
+function randHue(){return Math.floor(Math.random()*360)}
+function randSL(){return{s:50+Math.random()*40,l:35+Math.random()*35}}
+
+function relativeLuminance(hex){
+  let{r,g,b}=hexToRgb(hex);
+  [r,g,b]=[r,g,b].map(c=>{c/=255;return c<=0.03928?c/12.92:Math.pow((c+0.055)/1.055,2.4)});
+  return 0.2126*r+0.7152*g+0.0722*b;
+}
+function contrastRatio(c1,c2){
+  const l1=relativeLuminance(c1),l2=relativeLuminance(c2);
+  const lighter=Math.max(l1,l2),darker=Math.min(l1,l2);
+  return(lighter+0.05)/(darker+0.05);
+}
+function textColor(hex){return relativeLuminance(hex)>0.4?'#1a1a2e':'#ffffff'}
+
+function toast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),1500);
+}
+function copyText(t){navigator.clipboard.writeText(t).then(()=>toast('Copied!'))}
+
+// --- Generation ---
+function generateColors(mode){
+  const base=randHue();
+  const {s,l}=randSL();
+  switch(mode){
+    case 'complementary':return [0,180,30,210,60].map((off,i)=>hslToHex((base+off)%360,s+(i%2)*10,l+(i-2)*5));
+    case 'analogous':return [-30,-15,0,15,30].map(off=>hslToHex((base+off+360)%360,s+Math.random()*10,l+Math.random()*10-5));
+    case 'triadic':return [0,120,240,60,300].map((off,i)=>hslToHex((base+off)%360,s,l+(i-2)*6));
+    case 'split':return [0,150,210,30,330].map((off,i)=>hslToHex((base+off)%360,s,l+(i-2)*5));
+    case 'mono':return [0,0,0,0,0].map((_,i)=>hslToHex(base,s-i*5,25+i*12));
+    default:return Array.from({length:5},()=>hslToHex(randHue(),50+Math.random()*40,35+Math.random()*35));
+  }
+}
+
+function generate(){
+  const mode=document.getElementById('harmonyMode').value;
+  const newColors=generateColors(mode);
+  for(let i=0;i<5;i++){if(!locked[i])colors[i]=newColors[i]}
+  render();
+}
+
+// --- Render palette ---
+function render(){
+  const strip=document.getElementById('paletteStrip');
+  strip.innerHTML='';
+  colors.forEach((c,i)=>{
+    const {r,g,b}=hexToRgb(c);
+    const {h,s,l}=hexToHsl(c);
+    const tc=textColor(c);
+    const div=document.createElement('div');
+    div.className='swatch'+(locked[i]?' locked':'');
+    div.style.background=c;
+    div.draggable=true;
+    div.dataset.idx=i;
+    div.innerHTML=`
+      <span class="pick-label" style="color:${tc}">click to pick</span>
+      <input type="color" class="color-input" value="${c}" onchange="colors[${i}]=this.value;render()">
+      <button class="lock-btn" onclick="event.stopPropagation();locked[${i}]=!locked[${i}];render()" title="${locked[i]?'Unlock':'Lock'}">${locked[i]?'&#128274;':'&#128275;'}</button>
+      <div class="swatch-info">
+        <div class="hex" onclick="event.stopPropagation();copyText('${c}')" title="Click to copy">${c.toUpperCase()}</div>
+        <div class="vals">rgb(${r},${g},${b})<br>hsl(${h},${s}%,${l}%)</div>
+        <div class="copy-row">
+          <button class="copy-btn" onclick="event.stopPropagation();copyText('${c}')">HEX</button>
+          <button class="copy-btn" onclick="event.stopPropagation();copyText('rgb(${r},${g},${b})')">RGB</button>
+          <button class="copy-btn" onclick="event.stopPropagation();copyText('hsl(${h},${s}%,${l}%)')">HSL</button>
+        </div>
+      </div>`;
+    // Drag events
+    div.addEventListener('dragstart',e=>{dragIdx=i;div.classList.add('dragging')});
+    div.addEventListener('dragend',()=>{div.classList.remove('dragging');dragIdx=null;document.querySelectorAll('.swatch').forEach(s=>s.classList.remove('drag-over'))});
+    div.addEventListener('dragover',e=>{e.preventDefault();div.classList.add('drag-over')});
+    div.addEventListener('dragleave',()=>div.classList.remove('drag-over'));
+    div.addEventListener('drop',e=>{e.preventDefault();div.classList.remove('drag-over');if(dragIdx!==null&&dragIdx!==i){const tmp=colors[dragIdx];colors[dragIdx]=colors[i];colors[i]=tmp;const tl=locked[dragIdx];locked[dragIdx]=locked[i];locked[i]=tl;render()}});
+    strip.appendChild(div);
+  });
+  renderContrast();
+  renderPreview();
+  renderGradient();
+  renderExport();
+}
+
+// --- Tabs ---
+document.querySelectorAll('.tab').forEach(tab=>{
+  tab.addEventListener('click',()=>{
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('sec-'+tab.dataset.tab).classList.add('active');
+  });
+});
+
+// --- Contrast ---
+function renderContrast(){
+  const grid=document.getElementById('contrastGrid');
+  grid.innerHTML='';
+  colors.forEach((c,i)=>{
+    const d=document.createElement('div');
+    d.className='contrast-pick glass'+(contrastSel.includes(i)?' selected':'');
+    d.style.background=c;d.style.color=textColor(c);
+    d.innerHTML=`<strong>${c.toUpperCase()}</strong>`;
+    d.onclick=()=>{
+      if(contrastSel[0]===null)contrastSel[0]=i;
+      else if(contrastSel[1]===null&&contrastSel[0]!==i)contrastSel[1]=i;
+      else{contrastSel=[i,null]}
+      renderContrast();
+    };
+    grid.appendChild(d);
+  });
+  const res=document.getElementById('contrastResult');
+  if(contrastSel[0]!==null&&contrastSel[1]!==null){
+    const c1=colors[contrastSel[0]],c2=colors[contrastSel[1]];
+    const ratio=contrastRatio(c1,c2);
+    const aaLarge=ratio>=3;const aa=ratio>=4.5;const aaaLarge=ratio>=4.5;const aaa=ratio>=7;
+    res.style.display='block';
+    res.style.background=`linear-gradient(135deg,${c1},${c2})`;
+    res.style.color=textColor(c1);
+    res.innerHTML=`
+      <div class="contrast-ratio">${ratio.toFixed(2)}:1</div>
+      <div style="margin-top:0.5rem;font-size:0.8rem">${c1.toUpperCase()} vs ${c2.toUpperCase()}</div>
+      <div class="contrast-badges">
+        <span class="badge ${aa?'pass':'fail'}">AA Normal: ${aa?'PASS':'FAIL'}</span>
+        <span class="badge ${aaLarge?'pass':'fail'}">AA Large: ${aaLarge?'PASS':'FAIL'}</span>
+        <span class="badge ${aaa?'pass':'fail'}">AAA Normal: ${aaa?'PASS':'FAIL'}</span>
+        <span class="badge ${aaaLarge?'pass':'fail'}">AAA Large: ${aaaLarge?'PASS':'FAIL'}</span>
+      </div>
+      <div style="margin-top:1rem;display:flex;gap:1rem;justify-content:center;flex-wrap:wrap">
+        <div style="padding:0.5rem 1rem;background:${c1};color:${c2};border-radius:8px;font-weight:600">Sample Text</div>
+        <div style="padding:0.5rem 1rem;background:${c2};color:${c1};border-radius:8px;font-weight:600">Sample Text</div>
+      </div>`;
+  } else {
+    res.style.display='none';
+  }
+}
+
+// --- Preview ---
+function renderPreview(){
+  const f=document.getElementById('previewFrame');
+  const [bg,primary,secondary,accent,text]=colors;
+  f.innerHTML=`
+    <div class="preview-header" style="background:${primary}">
+      <div class="preview-dots"><span style="background:${accent}"></span><span style="background:${secondary}"></span><span style="background:${bg}"></span></div>
+      <span style="color:${textColor(primary)};font-weight:600;font-size:0.85rem">App Preview</span>
+    </div>
+    <div class="preview-body" style="background:${bg}">
+      <div class="preview-card" style="background:${secondary};color:${textColor(secondary)}">
+        <strong>Card Component</strong>
+        <p class="preview-text">This card uses the secondary color as its background with auto-contrasting text.</p>
+      </div>
+      <div style="display:flex;gap:0.75rem;flex-wrap:wrap">
+        <span class="preview-btn" style="background:${primary};color:${textColor(primary)}">Primary Button</span>
+        <span class="preview-btn" style="background:${accent};color:${textColor(accent)}">Accent Button</span>
+        <span class="preview-btn" style="background:transparent;border:2px solid ${text};color:${text}">Outline</span>
+      </div>
+      <p class="preview-text" style="color:${text}">Body text using the fifth palette color. The layout demonstrates how all five colors work together in a real interface.</p>
+    </div>`;
+}
+
+// --- Gradient ---
+function renderGradient(){
+  const toggles=document.getElementById('gradientToggles');
+  toggles.innerHTML='';
+  colors.forEach((c,i)=>{
+    const b=document.createElement('button');
+    b.className='btn btn-sm';
+    b.style.background=c;b.style.color=textColor(c);
+    b.style.opacity=gradientActive[i]?1:0.3;
+    b.textContent=i+1;
+    b.onclick=()=>{gradientActive[i]=!gradientActive[i];renderGradient()};
+    toggles.appendChild(b);
+  });
+  updateGradient();
+}
+function updateGradient(){
+  const dir=document.getElementById('gradientDir').value;
+  const active=colors.filter((_,i)=>gradientActive[i]);
+  if(active.length<2){
+    document.getElementById('gradientPreview').style.background='#ddd';
+    document.getElementById('gradientCode').textContent='Select at least 2 colors';
+    return;
+  }
+  const type=dir==='circle'?'radial-gradient':'linear-gradient';
+  const direction=dir==='circle'?'circle':dir;
+  const css=`${type}(${direction}, ${active.join(', ')})`;
+  document.getElementById('gradientPreview').style.background=css;
+  document.getElementById('gradientCode').textContent=`background: ${css};`;
+}
+
+// --- Saved ---
+function getSaved(){return JSON.parse(localStorage.getItem('color-palettes-saved')||'[]')}
+function setSaved(arr){localStorage.setItem('color-palettes-saved',JSON.stringify(arr))}
+function savePalette(){
+  const name=document.getElementById('saveName').value.trim()||('Palette '+new Date().toLocaleString());
+  const saved=getSaved();
+  saved.unshift({name,colors:[...colors],date:Date.now()});
+  setSaved(saved);
+  document.getElementById('saveName').value='';
+  renderSaved();
+  toast('Palette saved!');
+}
+function renderSaved(){
+  const grid=document.getElementById('savedGrid');
+  const saved=getSaved();
+  if(!saved.length){grid.innerHTML='<p style="color:#9ca3af;text-align:center;grid-column:1/-1;font-size:0.85rem">No saved palettes yet</p>';return}
+  grid.innerHTML='';
+  saved.forEach((p,i)=>{
+    const d=document.createElement('div');
+    d.className='saved-item';
+    d.innerHTML=`
+      <div class="saved-colors">${p.colors.map(c=>`<div style="background:${c}"></div>`).join('')}</div>
+      <div class="saved-name">${p.name}</div>
+      <div class="saved-actions">
+        <button class="btn btn-sm btn-secondary" onclick="colors=[...getSaved()[${i}].colors];locked=[false,false,false,false,false];render();toast('Loaded!')">Load</button>
+        <button class="btn btn-sm btn-secondary" onclick="let s=getSaved();s.splice(${i},1);setSaved(s);renderSaved();toast('Deleted')">Delete</button>
+      </div>`;
+    grid.appendChild(d);
+  });
+}
+
+// --- Export ---
+function renderExport(){
+  const cssVars=`:root {\n${colors.map((c,i)=>`  --color-${i+1}: ${c};`).join('\n')}\n}`;
+  const tailwind=`module.exports = {\n  theme: {\n    extend: {\n      colors: {\n        palette: {\n${colors.map((c,i)=>`          '${i+1}': '${c}',`).join('\n')}\n        }\n      }\n    }\n  }\n}`;
+  const json=JSON.stringify(colors.map((c,i)=>{const{r,g,b}=hexToRgb(c);const{h,s,l}=hexToHsl(c);return{hex:c,rgb:{r,g,b},hsl:{h,s,l}}}),null,2);
+  const svgRects=colors.map((c,i)=>`  <rect x="${i*60}" y="0" width="60" height="60" fill="${c}"/>`).join('\n');
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="300" height="60">\n${svgRects}\n</svg>`;
+  document.getElementById('exportGrid').innerHTML=`
+    <div class="export-block"><h3>CSS Variables</h3><pre>${esc(cssVars)}</pre><button class="btn btn-sm btn-secondary" style="margin-top:0.5rem" onclick="copyText(\`${cssVars.replace(/`/g,'\\`')}\`)">Copy</button></div>
+    <div class="export-block"><h3>Tailwind Config</h3><pre>${esc(tailwind)}</pre><button class="btn btn-sm btn-secondary" style="margin-top:0.5rem" onclick="copyText(\`${tailwind.replace(/`/g,'\\`')}\`)">Copy</button></div>
+    <div class="export-block"><h3>JSON</h3><pre>${esc(json)}</pre><button class="btn btn-sm btn-secondary" style="margin-top:0.5rem" onclick="copyText(JSON.stringify(${JSON.stringify(colors).replace(/"/g,'&quot;')}.map((c,i)=>({hex:c})),null,2))">Copy</button></div>
+    <div class="export-block"><h3>SVG Swatches</h3><pre>${esc(svg)}</pre><button class="btn btn-sm btn-secondary" style="margin-top:0.5rem" onclick="copyText(\`${svg.replace(/`/g,'\\`')}\`)">Copy</button></div>`;
+}
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+// --- Presets ---
+function renderPresets(){
+  const grid=document.getElementById('presetGrid');
+  grid.innerHTML='';
+  PRESETS.forEach(p=>{
+    const d=document.createElement('div');
+    d.className='preset-item';
+    d.innerHTML=`<div class="preset-colors">${p.colors.map(c=>`<div style="background:${c}"></div>`).join('')}</div><div class="preset-name">${p.name}</div>`;
+    d.onclick=()=>{colors=[...p.colors];locked=[false,false,false,false,false];render();toast('Loaded: '+p.name)};
+    grid.appendChild(d);
+  });
+}
+
+// --- Keyboard ---
+document.addEventListener('keydown',e=>{
+  if(e.code==='Space'&&e.target.tagName!=='INPUT'&&e.target.tagName!=='TEXTAREA'){
+    e.preventDefault();generate();
+  }
+});
+
+// --- Init ---
+const lastColors=localStorage.getItem('color-palettes-current');
+if(lastColors){try{colors=JSON.parse(lastColors)}catch(e){}}
+if(!colors.length)colors=generateColors('random');
+render();
+renderSaved();
+renderPresets();
+
+// Persist current
+const origRender=render;
+render=function(){origRender();localStorage.setItem('color-palettes-current',JSON.stringify(colors))};
+</script>
+</body>
+</html>

@@ -1,0 +1,566 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Unix Permissions Calculator (chmod)</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #f8f9fc;
+  color: #1a1a2e;
+  min-height: 100vh;
+  padding: 1.5rem;
+}
+.back { display: inline-flex; align-items: center; gap: 6px; color: #6b7280; text-decoration: none; font-size: 0.85rem; font-weight: 500; margin-bottom: 1rem; }
+.back:hover { color: #3b82f6; }
+h1 { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; text-align: center; margin-bottom: 0.25rem; }
+.subtitle { text-align: center; color: #6b7280; font-size: 0.9rem; margin-bottom: 1.5rem; }
+.container { max-width: 900px; margin: 0 auto; }
+.glass {
+  background: rgba(255,255,255,0.72);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.6);
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 1rem;
+}
+.section-title { font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #9ca3af; margin-bottom: 0.75rem; }
+
+/* Permission Grid */
+.perm-grid { width: 100%; border-collapse: separate; border-spacing: 0; }
+.perm-grid th { font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: #6b7280; padding: 0.5rem; text-align: center; }
+.perm-grid th:first-child { text-align: left; }
+.perm-grid td { padding: 0.5rem; text-align: center; }
+.perm-grid td:first-child { font-weight: 600; font-size: 0.9rem; }
+.perm-grid tr:not(:last-child) td { border-bottom: 1px solid rgba(0,0,0,0.05); }
+.perm-grid .octal-cell { font-family: 'JetBrains Mono', monospace; font-weight: 600; font-size: 1rem; color: #3b82f6; min-width: 32px; }
+
+/* Checkbox toggle */
+.toggle { position: relative; width: 44px; height: 26px; display: inline-block; }
+.toggle input { opacity: 0; width: 0; height: 0; }
+.toggle .slider {
+  position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0;
+  background: #e5e7eb; border-radius: 13px; transition: 0.2s;
+}
+.toggle .slider::before {
+  content: ''; position: absolute; height: 20px; width: 20px; left: 3px; bottom: 3px;
+  background: #fff; border-radius: 50%; transition: 0.2s; box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+.toggle input:checked + .slider { background: #3b82f6; }
+.toggle input:checked + .slider::before { transform: translateX(18px); }
+
+/* Outputs */
+.output-row { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
+.output-box { flex: 1; min-width: 140px; }
+.output-box label { display: block; font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: #9ca3af; margin-bottom: 0.35rem; }
+.output-box input, .output-box .display {
+  width: 100%; padding: 0.6rem 0.75rem; border: 1px solid #e5e7eb; border-radius: 10px;
+  font-family: 'JetBrains Mono', monospace; font-size: 1.1rem; font-weight: 600;
+  background: #fff; color: #1a1a2e; outline: none; transition: border-color 0.2s;
+}
+.output-box input:focus { border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+.output-box .display { background: #f9fafb; cursor: default; }
+
+/* File / Dir toggle */
+.toggle-row { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+.toggle-row label { font-size: 0.85rem; font-weight: 500; cursor: pointer; display: flex; align-items: center; gap: 0.4rem; }
+.toggle-row input[type="checkbox"] { accent-color: #3b82f6; width: 16px; height: 16px; }
+
+/* Command */
+.cmd-box {
+  display: flex; align-items: center; gap: 0.5rem; background: #1e293b; border-radius: 10px;
+  padding: 0.75rem 1rem; font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: #e2e8f0;
+}
+.cmd-box .cmd-text { flex: 1; word-break: break-all; }
+.cmd-box .cmd-prefix { color: #22c55e; }
+.copy-btn {
+  background: rgba(255,255,255,0.1); border: none; color: #94a3b8; padding: 0.35rem 0.6rem;
+  border-radius: 6px; cursor: pointer; font-size: 0.8rem; font-family: 'Inter', sans-serif; transition: 0.2s; white-space: nowrap;
+}
+.copy-btn:hover { background: rgba(255,255,255,0.2); color: #fff; }
+.copy-btn.copied { color: #22c55e; }
+
+/* ls output */
+.ls-box {
+  font-family: 'JetBrains Mono', monospace; font-size: 1rem; background: #1e293b;
+  color: #e2e8f0; padding: 0.75rem 1rem; border-radius: 10px;
+}
+.ls-r { color: #fbbf24; }
+.ls-w { color: #ef4444; }
+.ls-x { color: #22c55e; }
+.ls-s { color: #a78bfa; }
+.ls-d { color: #60a5fa; }
+
+/* Special perms */
+.special-grid { display: flex; gap: 1rem; flex-wrap: wrap; }
+.special-item { display: flex; align-items: center; gap: 0.5rem; }
+.special-item span { font-size: 0.85rem; font-weight: 500; }
+
+/* Presets */
+.presets-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 0.5rem; }
+.preset-btn {
+  display: flex; align-items: center; gap: 0.5rem; padding: 0.6rem 0.75rem; border: 1px solid #e5e7eb;
+  border-radius: 10px; background: #fff; cursor: pointer; transition: 0.2s; text-align: left;
+}
+.preset-btn:hover { border-color: #3b82f6; background: rgba(59,130,246,0.04); }
+.preset-btn .preset-num { font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 0.95rem; color: #3b82f6; min-width: 36px; }
+.preset-btn .preset-desc { font-size: 0.78rem; color: #6b7280; line-height: 1.3; }
+
+/* Explanation */
+.explain-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 0.75rem; }
+.explain-card { padding: 0.75rem; background: #f9fafb; border-radius: 10px; }
+.explain-card h4 { font-size: 0.85rem; font-weight: 600; margin-bottom: 0.25rem; }
+.explain-card p { font-size: 0.78rem; color: #6b7280; line-height: 1.4; }
+
+/* History */
+.history-list { list-style: none; }
+.history-item {
+  display: flex; align-items: center; gap: 0.75rem; padding: 0.5rem 0; border-bottom: 1px solid rgba(0,0,0,0.04);
+  cursor: pointer; transition: 0.15s;
+}
+.history-item:hover { background: rgba(59,130,246,0.04); border-radius: 8px; padding-left: 0.5rem; }
+.history-item .h-num { font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #3b82f6; min-width: 40px; }
+.history-item .h-sym { font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: #6b7280; }
+.history-item .h-time { margin-left: auto; font-size: 0.75rem; color: #9ca3af; }
+.history-empty { color: #9ca3af; font-size: 0.85rem; font-style: italic; }
+.clear-btn { background: none; border: 1px solid #e5e7eb; color: #6b7280; padding: 0.3rem 0.6rem; border-radius: 6px; cursor: pointer; font-size: 0.75rem; }
+.clear-btn:hover { border-color: #ef4444; color: #ef4444; }
+
+.flex-between { display: flex; justify-content: space-between; align-items: center; }
+
+@media (max-width: 640px) {
+  body { padding: 1rem; }
+  .presets-grid { grid-template-columns: 1fr; }
+  .output-row { flex-direction: column; }
+}
+</style>
+</head>
+<body>
+
+<div class="container">
+  <a href="index.html" class="back">
+    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="10 14 4 8 10 2"/></svg>
+    Back to Analytics
+  </a>
+  <h1>Unix Permissions Calculator</h1>
+  <p class="subtitle">Interactive chmod calculator with visual grid, presets, and command generator</p>
+
+  <!-- Permission Grid -->
+  <div class="glass">
+    <div class="section-title">Permission Matrix</div>
+    <table class="perm-grid">
+      <thead>
+        <tr><th></th><th>Read (4)</th><th>Write (2)</th><th>Execute (1)</th><th>Octal</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Owner</td>
+          <td><label class="toggle"><input type="checkbox" data-who="u" data-perm="r" checked><span class="slider"></span></label></td>
+          <td><label class="toggle"><input type="checkbox" data-who="u" data-perm="w" checked><span class="slider"></span></label></td>
+          <td><label class="toggle"><input type="checkbox" data-who="u" data-perm="x" checked><span class="slider"></span></label></td>
+          <td class="octal-cell" id="octal-u">7</td>
+        </tr>
+        <tr>
+          <td>Group</td>
+          <td><label class="toggle"><input type="checkbox" data-who="g" data-perm="r" checked><span class="slider"></span></label></td>
+          <td><label class="toggle"><input type="checkbox" data-who="g" data-perm="w"><span class="slider"></span></label></td>
+          <td><label class="toggle"><input type="checkbox" data-who="g" data-perm="x" checked><span class="slider"></span></label></td>
+          <td class="octal-cell" id="octal-g">5</td>
+        </tr>
+        <tr>
+          <td>Others</td>
+          <td><label class="toggle"><input type="checkbox" data-who="o" data-perm="r" checked><span class="slider"></span></label></td>
+          <td><label class="toggle"><input type="checkbox" data-who="o" data-perm="w"><span class="slider"></span></label></td>
+          <td><label class="toggle"><input type="checkbox" data-who="o" data-perm="x" checked><span class="slider"></span></label></td>
+          <td class="octal-cell" id="octal-o">5</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Special Permissions -->
+  <div class="glass">
+    <div class="section-title">Special Permissions</div>
+    <div class="special-grid">
+      <div class="special-item">
+        <label class="toggle"><input type="checkbox" id="setuid"><span class="slider"></span></label>
+        <span>Setuid (4)</span>
+      </div>
+      <div class="special-item">
+        <label class="toggle"><input type="checkbox" id="setgid"><span class="slider"></span></label>
+        <span>Setgid (2)</span>
+      </div>
+      <div class="special-item">
+        <label class="toggle"><input type="checkbox" id="sticky"><span class="slider"></span></label>
+        <span>Sticky Bit (1)</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Output displays -->
+  <div class="glass">
+    <div class="section-title">Permissions Value</div>
+    <div class="output-row">
+      <div class="output-box">
+        <label>Numeric (Octal)</label>
+        <input type="text" id="numericInput" value="755" maxlength="4" spellcheck="false">
+      </div>
+      <div class="output-box">
+        <label>Symbolic</label>
+        <input type="text" id="symbolicInput" value="rwxr-xr-x" maxlength="9" spellcheck="false">
+      </div>
+      <div class="output-box">
+        <label>4-Digit Mode</label>
+        <div class="display" id="fourDigit">0755</div>
+      </div>
+    </div>
+
+    <div class="toggle-row" style="margin-bottom: 0.75rem;">
+      <label><input type="checkbox" id="isDirToggle"> Directory</label>
+      <label><input type="checkbox" id="recursiveToggle"> Recursive (-R)</label>
+      <div class="output-box" style="flex: 0; min-width: auto;">
+        <input type="text" id="filenameInput" value="filename" placeholder="filename" style="width: 160px; font-size: 0.85rem; padding: 0.4rem 0.6rem;">
+      </div>
+    </div>
+
+    <!-- Command -->
+    <div class="section-title" style="margin-top: 0.5rem;">Command</div>
+    <div class="cmd-box">
+      <span class="cmd-prefix">$</span>
+      <span class="cmd-text" id="cmdText">chmod 755 filename</span>
+      <button class="copy-btn" id="copyCmd" onclick="copyCommand()">Copy</button>
+    </div>
+
+    <!-- ls -la preview -->
+    <div class="section-title" style="margin-top: 1rem;">ls -la Preview</div>
+    <div class="ls-box" id="lsPreview">-rwxr-xr-x</div>
+  </div>
+
+  <!-- Presets -->
+  <div class="glass">
+    <div class="section-title">Common Presets</div>
+    <div class="presets-grid" id="presetsGrid"></div>
+  </div>
+
+  <!-- Explanation -->
+  <div class="glass">
+    <div class="section-title">Permission Reference</div>
+    <div class="explain-grid">
+      <div class="explain-card">
+        <h4>Read (r = 4)</h4>
+        <p>Files: view contents. Directories: list files inside.</p>
+      </div>
+      <div class="explain-card">
+        <h4>Write (w = 2)</h4>
+        <p>Files: modify contents. Directories: add or remove files.</p>
+      </div>
+      <div class="explain-card">
+        <h4>Execute (x = 1)</h4>
+        <p>Files: run as program. Directories: cd into and access files.</p>
+      </div>
+      <div class="explain-card">
+        <h4>Setuid (4xxx)</h4>
+        <p>Execute file as the owner (e.g., passwd). Shows as "s" in owner execute.</p>
+      </div>
+      <div class="explain-card">
+        <h4>Setgid (2xxx)</h4>
+        <p>Execute as group / new files inherit group. Shows as "s" in group execute.</p>
+      </div>
+      <div class="explain-card">
+        <h4>Sticky Bit (1xxx)</h4>
+        <p>Only owner can delete files in directory (e.g., /tmp). Shows as "t" in others execute.</p>
+      </div>
+      <div class="explain-card">
+        <h4>Common Files</h4>
+        <p>644 for regular files, 755 for executables and scripts, 600 for private configs.</p>
+      </div>
+      <div class="explain-card">
+        <h4>Common Directories</h4>
+        <p>755 for shared dirs, 700 for private dirs, 1777 for /tmp (sticky).</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- History -->
+  <div class="glass">
+    <div class="flex-between" style="margin-bottom: 0.75rem;">
+      <div class="section-title" style="margin-bottom: 0;">History (last 10)</div>
+      <button class="clear-btn" onclick="clearHistory()">Clear</button>
+    </div>
+    <ul class="history-list" id="historyList">
+      <li class="history-empty">No calculations yet</li>
+    </ul>
+  </div>
+</div>
+
+<script>
+const PRESETS = [
+  { mode: '755', desc: 'Typical directory / executable' },
+  { mode: '644', desc: 'Typical file (owner rw, others r)' },
+  { mode: '700', desc: 'Private directory' },
+  { mode: '600', desc: 'Private file (SSH keys, configs)' },
+  { mode: '777', desc: 'Full access (use cautiously)' },
+  { mode: '400', desc: 'Read-only for owner' },
+  { mode: '444', desc: 'Read-only for all' },
+  { mode: '666', desc: 'Read/write for all, no execute' },
+  { mode: '750', desc: 'Owner full, group rx, others none' },
+  { mode: '640', desc: 'Owner rw, group r, others none' },
+  { mode: '775', desc: 'Shared directory (group writable)' },
+  { mode: '664', desc: 'Shared file (group writable)' },
+  { mode: '1777', desc: 'Sticky bit (/tmp style)' },
+  { mode: '4755', desc: 'Setuid executable (like passwd)' },
+  { mode: '2755', desc: 'Setgid directory' },
+];
+
+// State
+let perms = { u: { r: true, w: true, x: true }, g: { r: true, w: false, x: true }, o: { r: true, w: false, x: true } };
+let special = { setuid: false, setgid: false, sticky: false };
+let history = JSON.parse(localStorage.getItem('chmod-history') || '[]');
+
+// DOM refs
+const checkboxes = document.querySelectorAll('.perm-grid input[type="checkbox"]');
+const numericInput = document.getElementById('numericInput');
+const symbolicInput = document.getElementById('symbolicInput');
+const fourDigit = document.getElementById('fourDigit');
+const cmdText = document.getElementById('cmdText');
+const lsPreview = document.getElementById('lsPreview');
+const isDirToggle = document.getElementById('isDirToggle');
+const recursiveToggle = document.getElementById('recursiveToggle');
+const filenameInput = document.getElementById('filenameInput');
+const setuidCb = document.getElementById('setuid');
+const setgidCb = document.getElementById('setgid');
+const stickyCb = document.getElementById('sticky');
+
+function octalForWho(who) {
+  return (perms[who].r ? 4 : 0) + (perms[who].w ? 2 : 0) + (perms[who].x ? 1 : 0);
+}
+
+function specialOctal() {
+  return (special.setuid ? 4 : 0) + (special.setgid ? 2 : 0) + (special.sticky ? 1 : 0);
+}
+
+function symbolicStr() {
+  let s = '';
+  for (const who of ['u', 'g', 'o']) {
+    s += perms[who].r ? 'r' : '-';
+    s += perms[who].w ? 'w' : '-';
+    if (who === 'u' && special.setuid) s += perms[who].x ? 's' : 'S';
+    else if (who === 'g' && special.setgid) s += perms[who].x ? 's' : 'S';
+    else if (who === 'o' && special.sticky) s += perms[who].x ? 't' : 'T';
+    else s += perms[who].x ? 'x' : '-';
+  }
+  return s;
+}
+
+function numericStr() {
+  const sp = specialOctal();
+  const base = '' + octalForWho('u') + octalForWho('g') + octalForWho('o');
+  return sp > 0 ? sp + base : base;
+}
+
+function fourDigitStr() {
+  return specialOctal() + '' + octalForWho('u') + octalForWho('g') + octalForWho('o');
+}
+
+function lsString() {
+  const isDir = isDirToggle.checked;
+  const sym = symbolicStr();
+  const prefix = isDir ? 'd' : '-';
+  return prefix + sym;
+}
+
+function colorLs(str) {
+  return str.split('').map((c, i) => {
+    if (i === 0 && c === 'd') return `<span class="ls-d">${c}</span>`;
+    if (c === 'r') return `<span class="ls-r">${c}</span>`;
+    if (c === 'w') return `<span class="ls-w">${c}</span>`;
+    if (c === 'x' || c === 's' || c === 'S' || c === 't' || c === 'T') return `<span class="${c === 'x' ? 'ls-x' : 'ls-s'}">${c}</span>`;
+    return c;
+  }).join('');
+}
+
+function updateDisplay(source) {
+  // Update octal per-row
+  document.getElementById('octal-u').textContent = octalForWho('u');
+  document.getElementById('octal-g').textContent = octalForWho('g');
+  document.getElementById('octal-o').textContent = octalForWho('o');
+
+  if (source !== 'numeric') numericInput.value = numericStr();
+  if (source !== 'symbolic') symbolicInput.value = symbolicStr();
+  fourDigit.textContent = fourDigitStr();
+
+  // Sync checkboxes
+  if (source !== 'checkbox') {
+    checkboxes.forEach(cb => {
+      cb.checked = perms[cb.dataset.who][cb.dataset.perm];
+    });
+    setuidCb.checked = special.setuid;
+    setgidCb.checked = special.setgid;
+    stickyCb.checked = special.sticky;
+  }
+
+  // Command
+  const rec = recursiveToggle.checked ? '-R ' : '';
+  const fname = filenameInput.value.trim() || 'filename';
+  cmdText.textContent = `chmod ${rec}${numericStr()} ${fname}`;
+
+  // ls preview
+  lsPreview.innerHTML = colorLs(lsString());
+}
+
+function addToHistory() {
+  const entry = { numeric: numericStr(), symbolic: symbolicStr(), ls: lsString(), time: Date.now() };
+  // Avoid duplicate consecutive
+  if (history.length > 0 && history[0].numeric === entry.numeric && history[0].ls === entry.ls) return;
+  history.unshift(entry);
+  if (history.length > 10) history.pop();
+  localStorage.setItem('chmod-history', JSON.stringify(history));
+  renderHistory();
+}
+
+function renderHistory() {
+  const list = document.getElementById('historyList');
+  if (history.length === 0) {
+    list.innerHTML = '<li class="history-empty">No calculations yet</li>';
+    return;
+  }
+  list.innerHTML = history.map((h, i) => {
+    const d = new Date(h.time);
+    const time = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    return `<li class="history-item" onclick="loadFromHistory(${i})">
+      <span class="h-num">${h.numeric}</span>
+      <span class="h-sym">${h.symbolic}</span>
+      <span class="h-time">${time}</span>
+    </li>`;
+  }).join('');
+}
+
+function loadFromHistory(idx) {
+  const h = history[idx];
+  parseNumeric(h.numeric);
+  updateDisplay('numeric');
+}
+
+function clearHistory() {
+  history = [];
+  localStorage.setItem('chmod-history', '[]');
+  renderHistory();
+}
+
+// Parse numeric input
+function parseNumeric(val) {
+  val = val.replace(/[^0-7]/g, '');
+  let sp = 0, u = 0, g = 0, o = 0;
+  if (val.length === 4) {
+    sp = parseInt(val[0]); u = parseInt(val[1]); g = parseInt(val[2]); o = parseInt(val[3]);
+  } else if (val.length === 3) {
+    u = parseInt(val[0]); g = parseInt(val[1]); o = parseInt(val[2]);
+    sp = 0;
+  } else return false;
+
+  perms.u = { r: !!(u & 4), w: !!(u & 2), x: !!(u & 1) };
+  perms.g = { r: !!(g & 4), w: !!(g & 2), x: !!(g & 1) };
+  perms.o = { r: !!(o & 4), w: !!(o & 2), x: !!(o & 1) };
+  special = { setuid: !!(sp & 4), setgid: !!(sp & 2), sticky: !!(sp & 1) };
+  return true;
+}
+
+// Parse symbolic input
+function parseSymbolic(val) {
+  val = val.replace(/\s/g, '');
+  if (val.length !== 9) return false;
+  const map = { r: 'r', w: 'w', x: 'x', s: 'x', S: false, t: 'x', T: false, '-': false };
+  // Validate
+  const valid = /^[r-][w-][xsS-][r-][w-][xsS-][r-][w-][xtT-]$/.test(val);
+  if (!valid) return false;
+
+  perms.u.r = val[0] === 'r';
+  perms.u.w = val[1] === 'w';
+  perms.u.x = val[2] === 'x' || val[2] === 's';
+  perms.g.r = val[3] === 'r';
+  perms.g.w = val[4] === 'w';
+  perms.g.x = val[5] === 'x' || val[5] === 's';
+  perms.o.r = val[6] === 'r';
+  perms.o.w = val[7] === 'w';
+  perms.o.x = val[8] === 'x' || val[8] === 't';
+
+  special.setuid = val[2] === 's' || val[2] === 'S';
+  special.setgid = val[5] === 's' || val[5] === 'S';
+  special.sticky = val[8] === 't' || val[8] === 'T';
+  return true;
+}
+
+// Event listeners
+checkboxes.forEach(cb => {
+  cb.addEventListener('change', () => {
+    perms[cb.dataset.who][cb.dataset.perm] = cb.checked;
+    updateDisplay('checkbox');
+    addToHistory();
+  });
+});
+
+[setuidCb, setgidCb, stickyCb].forEach(cb => {
+  cb.addEventListener('change', () => {
+    special.setuid = setuidCb.checked;
+    special.setgid = setgidCb.checked;
+    special.sticky = stickyCb.checked;
+    updateDisplay('checkbox');
+    addToHistory();
+  });
+});
+
+numericInput.addEventListener('input', () => {
+  if (parseNumeric(numericInput.value)) {
+    updateDisplay('numeric');
+    addToHistory();
+  }
+});
+
+symbolicInput.addEventListener('input', () => {
+  if (parseSymbolic(symbolicInput.value)) {
+    updateDisplay('symbolic');
+    addToHistory();
+  }
+});
+
+isDirToggle.addEventListener('change', () => updateDisplay());
+recursiveToggle.addEventListener('change', () => updateDisplay());
+filenameInput.addEventListener('input', () => updateDisplay());
+
+function copyCommand() {
+  const text = cmdText.textContent;
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.getElementById('copyCmd');
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1500);
+  });
+}
+
+// Render presets
+(function renderPresets() {
+  const grid = document.getElementById('presetsGrid');
+  grid.innerHTML = PRESETS.map(p => `
+    <button class="preset-btn" onclick="applyPreset('${p.mode}')">
+      <span class="preset-num">${p.mode}</span>
+      <span class="preset-desc">${p.desc}</span>
+    </button>
+  `).join('');
+})();
+
+function applyPreset(mode) {
+  parseNumeric(mode);
+  updateDisplay('numeric');
+  addToHistory();
+}
+
+// Init
+renderHistory();
+updateDisplay();
+</script>
+</body>
+</html>

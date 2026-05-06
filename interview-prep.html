@@ -1,0 +1,882 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Interview Prep — Flashcards</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+  :root {
+    --bg: #f8f9fc;
+    --glass: rgba(255,255,255,0.72);
+    --glass-border: rgba(255,255,255,0.45);
+    --glass-shadow: 0 8px 32px rgba(0,0,0,0.06);
+    --text: #1a1a2e;
+    --text-secondary: #6b7280;
+    --accent: #5b5fc7;
+    --accent-light: #e8e9ff;
+    --green: #10b981;
+    --red: #ef4444;
+    --orange: #f59e0b;
+    --radius: 20px;
+    --radius-sm: 12px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Top bar */
+  .topbar {
+    position: sticky; top: 0; z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 16px 32px;
+    background: rgba(248,249,252,0.82);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--glass-border);
+  }
+  .topbar h1 { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
+  .topbar h1 span { color: var(--accent); }
+  .topbar-stats {
+    display: flex; gap: 20px; font-size: 13px; color: var(--text-secondary);
+  }
+  .topbar-stats strong { color: var(--text); font-weight: 600; }
+
+  /* Layout */
+  .app { max-width: 960px; margin: 0 auto; padding: 24px 20px 80px; }
+
+  /* Category tabs */
+  .tabs {
+    display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px;
+  }
+  .tab {
+    padding: 8px 16px; border-radius: 99px; font-size: 13px; font-weight: 500;
+    background: var(--glass); border: 1px solid var(--glass-border);
+    backdrop-filter: blur(12px); cursor: pointer; transition: all 0.2s;
+    user-select: none;
+  }
+  .tab:hover { background: var(--accent-light); }
+  .tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .tab .badge {
+    display: inline-block; margin-left: 6px; font-size: 11px;
+    background: rgba(0,0,0,0.08); padding: 1px 7px; border-radius: 99px;
+  }
+  .tab.active .badge { background: rgba(255,255,255,0.25); }
+
+  /* Progress bars */
+  .progress-section {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px; margin-bottom: 28px;
+  }
+  .progress-card {
+    background: var(--glass); border: 1px solid var(--glass-border);
+    backdrop-filter: blur(12px); border-radius: var(--radius-sm);
+    padding: 14px 16px;
+  }
+  .progress-card .label { font-size: 12px; color: var(--text-secondary); margin-bottom: 6px; }
+  .progress-bar-bg {
+    height: 6px; background: rgba(0,0,0,0.06); border-radius: 3px; overflow: hidden;
+  }
+  .progress-bar-fill {
+    height: 100%; border-radius: 3px; background: var(--accent);
+    transition: width 0.4s ease;
+  }
+  .progress-card .pct { font-size: 20px; font-weight: 700; margin-bottom: 2px; }
+
+  /* Controls row */
+  .controls {
+    display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 24px; align-items: center;
+  }
+  .btn {
+    padding: 9px 18px; border-radius: 99px; font-size: 13px; font-weight: 500;
+    border: 1px solid var(--glass-border); background: var(--glass);
+    backdrop-filter: blur(12px); cursor: pointer; transition: all 0.2s;
+    font-family: inherit;
+  }
+  .btn:hover { background: var(--accent-light); }
+  .btn.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
+  .btn.primary:hover { background: #4a4eb5; }
+  .btn.danger { color: var(--red); }
+  .btn.danger:hover { background: #fef2f2; }
+  .btn.small { padding: 6px 12px; font-size: 12px; }
+
+  /* Card area */
+  .card-container {
+    perspective: 1200px;
+    width: 100%; max-width: 640px; margin: 0 auto 28px;
+    min-height: 360px;
+  }
+  .flashcard {
+    width: 100%; min-height: 360px; position: relative;
+    transform-style: preserve-3d; transition: transform 0.55s cubic-bezier(0.4,0,0.2,1);
+    cursor: pointer;
+  }
+  .flashcard.flipped { transform: rotateY(180deg); }
+  .card-face {
+    position: absolute; top: 0; left: 0; width: 100%; min-height: 360px;
+    backface-visibility: hidden; -webkit-backface-visibility: hidden;
+    background: var(--glass); border: 1px solid var(--glass-border);
+    backdrop-filter: blur(16px); border-radius: var(--radius);
+    box-shadow: var(--glass-shadow);
+    padding: 36px 32px; display: flex; flex-direction: column; justify-content: center;
+  }
+  .card-back { transform: rotateY(180deg); }
+  .card-category {
+    position: absolute; top: 16px; left: 20px;
+    font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.6px;
+    color: var(--accent); background: var(--accent-light); padding: 3px 10px;
+    border-radius: 99px;
+  }
+  .card-number {
+    position: absolute; top: 16px; right: 20px;
+    font-size: 12px; color: var(--text-secondary);
+  }
+  .card-question {
+    font-size: 22px; font-weight: 600; line-height: 1.4;
+    text-align: center; letter-spacing: -0.3px;
+  }
+  .card-hint {
+    font-size: 13px; color: var(--text-secondary); text-align: center; margin-top: 16px;
+  }
+  .card-answer { font-size: 15px; line-height: 1.7; }
+  .card-answer ul { padding-left: 20px; }
+  .card-answer li { margin-bottom: 10px; }
+  .card-answer li strong { color: var(--accent); }
+
+  /* Difficulty stars */
+  .stars {
+    display: flex; gap: 4px; justify-content: center; margin-top: 16px;
+    position: absolute; bottom: 16px; left: 50%; transform: translateX(-50%);
+  }
+  .star {
+    font-size: 18px; cursor: pointer; color: #d1d5db; transition: color 0.15s;
+    user-select: none;
+  }
+  .star.filled { color: var(--orange); }
+
+  /* Action buttons */
+  .actions {
+    display: flex; gap: 12px; justify-content: center; margin-bottom: 32px;
+  }
+  .action-btn {
+    padding: 12px 28px; border-radius: 99px; font-size: 14px; font-weight: 600;
+    border: none; cursor: pointer; font-family: inherit; transition: all 0.2s;
+  }
+  .action-btn.got-it { background: #d1fae5; color: #065f46; }
+  .action-btn.got-it:hover { background: #a7f3d0; }
+  .action-btn.need-practice { background: #fee2e2; color: #991b1b; }
+  .action-btn.need-practice:hover { background: #fecaca; }
+  .action-btn.skip { background: var(--glass); color: var(--text-secondary); border: 1px solid var(--glass-border); }
+
+  /* Navigation arrows */
+  .nav-arrows {
+    display: flex; gap: 12px; justify-content: center; margin-bottom: 24px;
+  }
+  .nav-arrow {
+    width: 44px; height: 44px; border-radius: 50%; display: flex; align-items: center;
+    justify-content: center; background: var(--glass); border: 1px solid var(--glass-border);
+    backdrop-filter: blur(12px); cursor: pointer; font-size: 18px; transition: all 0.2s;
+  }
+  .nav-arrow:hover { background: var(--accent-light); }
+
+  /* Practice session banner */
+  .session-banner {
+    background: linear-gradient(135deg, var(--accent), #7c3aed);
+    color: #fff; border-radius: var(--radius-sm); padding: 16px 20px;
+    margin-bottom: 20px; display: none; align-items: center; justify-content: space-between;
+  }
+  .session-banner.active { display: flex; }
+  .session-timer { font-size: 28px; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .session-progress { font-size: 14px; opacity: 0.85; }
+
+  /* Add card modal */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.3);
+    backdrop-filter: blur(6px); z-index: 200; display: none;
+    align-items: center; justify-content: center;
+  }
+  .modal-overlay.active { display: flex; }
+  .modal {
+    background: #fff; border-radius: var(--radius); padding: 32px;
+    width: 90%; max-width: 520px; box-shadow: 0 24px 48px rgba(0,0,0,0.12);
+  }
+  .modal h2 { font-size: 18px; font-weight: 700; margin-bottom: 20px; }
+  .modal label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; color: var(--text-secondary); }
+  .modal input, .modal textarea, .modal select {
+    width: 100%; padding: 10px 14px; border: 1px solid #e5e7eb; border-radius: var(--radius-sm);
+    font-family: inherit; font-size: 14px; margin-bottom: 16px; outline: none;
+    transition: border 0.2s;
+  }
+  .modal input:focus, .modal textarea:focus, .modal select:focus { border-color: var(--accent); }
+  .modal textarea { min-height: 80px; resize: vertical; }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
+
+  /* Empty state */
+  .empty-state {
+    text-align: center; padding: 80px 20px; color: var(--text-secondary);
+  }
+  .empty-state svg { width: 64px; height: 64px; margin-bottom: 16px; opacity: 0.3; }
+  .empty-state p { font-size: 15px; }
+
+  /* Keyboard hint */
+  .keyboard-hints {
+    text-align: center; font-size: 12px; color: var(--text-secondary);
+    margin-top: 8px;
+  }
+  .keyboard-hints kbd {
+    display: inline-block; padding: 2px 7px; background: #e5e7eb;
+    border-radius: 4px; font-size: 11px; font-family: inherit;
+  }
+
+  @media (max-width: 600px) {
+    .topbar { padding: 12px 16px; }
+    .topbar h1 { font-size: 16px; }
+    .topbar-stats { gap: 12px; font-size: 12px; }
+    .app { padding: 16px 12px 60px; }
+    .card-question { font-size: 18px; }
+    .card-face { padding: 28px 20px; }
+    .progress-section { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>Interview <span>Prep</span></h1>
+  <div class="topbar-stats">
+    <span>Reviewed: <strong id="stat-reviewed">0</strong></span>
+    <span>Mastery: <strong id="stat-mastery">0%</strong></span>
+    <span>Streak: <strong id="stat-streak">0</strong></span>
+  </div>
+</div>
+
+<div class="app">
+  <!-- Session banner -->
+  <div class="session-banner" id="sessionBanner">
+    <div>
+      <div class="session-progress" id="sessionProgress">Card 1 of 10</div>
+      <div style="font-size:13px;opacity:0.7;margin-top:2px">Practice Session</div>
+    </div>
+    <div class="session-timer" id="sessionTimer">00:00</div>
+    <button class="btn" style="color:#fff;border-color:rgba(255,255,255,0.3)" onclick="endSession()">End</button>
+  </div>
+
+  <!-- Progress -->
+  <div class="progress-section" id="progressSection"></div>
+
+  <!-- Tabs -->
+  <div class="tabs" id="tabs"></div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <button class="btn" onclick="shuffleDeck()">Shuffle</button>
+    <button class="btn primary" onclick="startSession()">Practice (10 cards)</button>
+    <button class="btn" onclick="openAddModal()">+ Add Card</button>
+    <button class="btn danger" onclick="resetProgress()">Reset</button>
+  </div>
+
+  <!-- Card -->
+  <div class="card-container" id="cardContainer">
+    <div class="flashcard" id="flashcard" onclick="flipCard()">
+      <div class="card-face card-front" id="cardFront">
+        <div class="card-category" id="cardCat"></div>
+        <div class="card-number" id="cardNum"></div>
+        <div class="card-question" id="cardQuestion"></div>
+        <div class="card-hint">Click to flip</div>
+        <div class="stars" id="starsFront"></div>
+      </div>
+      <div class="card-face card-back" id="cardBack">
+        <div class="card-category" id="cardCatBack"></div>
+        <div class="card-number" id="cardNumBack"></div>
+        <div class="card-answer" id="cardAnswer"></div>
+        <div class="stars" id="starsBack"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div class="actions" id="actions">
+    <button class="action-btn need-practice" onclick="markCard('need-practice')">Need Practice</button>
+    <button class="action-btn skip" onclick="nextCard()">Skip</button>
+    <button class="action-btn got-it" onclick="markCard('got-it')">Got It</button>
+  </div>
+
+  <!-- Nav arrows -->
+  <div class="nav-arrows">
+    <div class="nav-arrow" onclick="prevCard()">&larr;</div>
+    <div class="nav-arrow" onclick="nextCard()">&rarr;</div>
+  </div>
+
+  <div class="keyboard-hints">
+    <kbd>Space</kbd> flip &nbsp; <kbd>&larr;</kbd><kbd>&rarr;</kbd> navigate &nbsp; <kbd>G</kbd> got it &nbsp; <kbd>N</kbd> need practice
+  </div>
+</div>
+
+<!-- Add Card Modal -->
+<div class="modal-overlay" id="addModal">
+  <div class="modal">
+    <h2>Add Custom Card</h2>
+    <label>Category</label>
+    <select id="newCategory">
+      <option value="Enterprise Architecture">Enterprise Architecture</option>
+      <option value="Leadership & Team Building">Leadership & Team Building</option>
+      <option value="AI & Innovation">AI & Innovation</option>
+      <option value="Behavioral (STAR)">Behavioral (STAR)</option>
+    </select>
+    <label>Question</label>
+    <input type="text" id="newQuestion" placeholder="What would you be asked?">
+    <label>Answer Framework (use bullet points separated by |)</label>
+    <textarea id="newAnswer" placeholder="Point 1 | Point 2 | Point 3"></textarea>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeAddModal()">Cancel</button>
+      <button class="btn primary" onclick="addCustomCard()">Add Card</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── Default Cards ───
+const DEFAULT_CARDS = [
+  // Enterprise Architecture
+  {id:'ea1',cat:'Enterprise Architecture',q:'Describe your approach to cloud migration at scale',a:[
+    '<strong>CIBC experience:</strong> Led cloud migration for critical banking workloads — assessed 200+ apps, categorized by 6R model (rehost, refactor, etc.), built migration factory with automated pipelines',
+    '<strong>Framework:</strong> Start with discovery + dependency mapping, establish landing zones, run proof-of-concept with low-risk apps, then wave-based migration with rollback plans',
+    '<strong>Key lesson:</strong> Migration is 30% technical, 70% organizational — change management, training, and getting app teams to own their cloud footprint is the real challenge'
+  ]},
+  {id:'ea2',cat:'Enterprise Architecture',q:'How do you evaluate build vs buy decisions?',a:[
+    '<strong>Decision matrix:</strong> Score on strategic differentiation, TCO over 5 years, integration complexity, vendor lock-in risk, and team capability to maintain',
+    '<strong>CIBC example:</strong> Built custom API gateway layer vs buying because our regulatory requirements made off-the-shelf solutions 60% customization anyway',
+    '<strong>Rule of thumb:</strong> Buy commodity, build differentiator. If it is not your core business advantage, do not build it — but always own the integration layer'
+  ]},
+  {id:'ea3',cat:'Enterprise Architecture',q:'Walk me through designing a microservices architecture',a:[
+    '<strong>Start with domains:</strong> Use domain-driven design to identify bounded contexts — do not split by technical layers, split by business capabilities',
+    '<strong>Practical approach:</strong> At CIBC, decomposed monolithic banking platform into 12 domain services with event-driven communication via Kafka, API gateway for external consumers',
+    '<strong>Guardrails:</strong> Each service owns its data, contracts via OpenAPI, circuit breakers for resilience, centralized observability (traces, metrics, logs) — and a clear service ownership model'
+  ]},
+  {id:'ea4',cat:'Enterprise Architecture',q:'How do you handle data governance across multiple teams?',a:[
+    '<strong>Framework:</strong> Establish data domains with clear ownership, data contracts (schema registry), and a federated governance model — central standards, distributed execution',
+    '<strong>CIBC implementation:</strong> Built data mesh approach — each domain team owns their data products, central team provides platform (catalog, lineage, quality checks)',
+    '<strong>Key principle:</strong> Governance should enable, not block. Automate compliance checks in pipelines rather than manual review gates'
+  ]},
+  {id:'ea5',cat:'Enterprise Architecture',q:'Describe a time you had to modernize a legacy system',a:[
+    '<strong>Strangler fig pattern:</strong> At IBM, modernized a 15-year-old mainframe-based system by wrapping legacy APIs, routing new traffic through modern services, gradually decommissioning old code',
+    '<strong>Approach:</strong> Never big-bang rewrite. Map critical user journeys, modernize those paths first, measure adoption, then expand. Maintained zero downtime throughout',
+    '<strong>Result:</strong> 60% reduction in operational cost, 4x improvement in deployment frequency, and team morale dramatically improved working with modern stack'
+  ]},
+  {id:'ea6',cat:'Enterprise Architecture',q:'How do you balance technical debt with feature delivery?',a:[
+    '<strong>Quantify it:</strong> Track tech debt as tickets with estimated cost-of-delay — makes it visible to product owners in the same backlog language they understand',
+    '<strong>20% rule:</strong> Allocate 20% of every sprint to debt reduction, non-negotiable. At CIBC, this prevented accumulation while maintaining delivery velocity',
+    '<strong>Strategic debt:</strong> Not all debt is bad — intentional shortcuts with a payoff timeline are fine. The danger is invisible, untracked debt that compounds'
+  ]},
+  {id:'ea7',cat:'Enterprise Architecture',q:"What's your approach to API design and versioning?",a:[
+    '<strong>Design-first:</strong> OpenAPI spec before code. Consumer-driven contract testing. RESTful for CRUD, GraphQL for flexible queries, gRPC for internal high-throughput',
+    '<strong>Versioning strategy:</strong> URL path versioning (v1, v2) for major breaks, backward-compatible additions without version bump. Sunset policy with 6-month deprecation windows',
+    '<strong>Real example:</strong> At CIBC, built API platform serving 40+ consumer teams — self-service portal, rate limiting, and automated breaking-change detection in CI'
+  ]},
+  {id:'ea8',cat:'Enterprise Architecture',q:'How do you evaluate and select technology stacks?',a:[
+    '<strong>Criteria matrix:</strong> Community health, hiring pool, operational maturity, security posture, total cost, and alignment with existing ecosystem',
+    '<strong>Process:</strong> Architecture Decision Records (ADRs) for every significant choice. Time-boxed spikes (2 weeks max) to validate assumptions before committing',
+    '<strong>Anti-pattern:</strong> Avoid resume-driven development. The best tech is the one your team can operate at 3 AM — boring technology is often the right choice'
+  ]},
+  {id:'ea9',cat:'Enterprise Architecture',q:'Describe your experience with enterprise integration patterns',a:[
+    '<strong>Pattern toolkit:</strong> Event-driven (Kafka/RabbitMQ), API-led connectivity (experience/process/system layers), saga pattern for distributed transactions',
+    '<strong>IBM background:</strong> Implemented ESB-to-microservices transition, replacing heavyweight TIBCO integrations with lightweight event streaming and API composition',
+    '<strong>Key insight:</strong> Integration architecture is the highest-leverage work — get it wrong and every team is blocked. Invest heavily in shared integration patterns and platforms'
+  ]},
+  {id:'ea10',cat:'Enterprise Architecture',q:'How do you ensure architectural decisions are followed?',a:[
+    '<strong>Fitness functions:</strong> Automated architecture tests in CI — dependency checks, layer violations, API contract compliance. If it is not automated, it will not be followed',
+    '<strong>Architecture guild:</strong> At CIBC, ran bi-weekly architecture review with tech leads — not gatekeeping, but collaborative design sessions where decisions are shared',
+    '<strong>Culture over control:</strong> Write clear ADRs, make the right thing the easy thing (golden paths, templates, starter kits), and trust teams within guardrails'
+  ]},
+
+  // Leadership & Team Building
+  {id:'lt1',cat:'Leadership & Team Building',q:'How did you scale from 4 to 50+ people?',a:[
+    '<strong>Deloitte practice:</strong> Grew from founding team of 4 to 50+ across architecture, delivery, and DevOps — hired senior leads first who could each build pods of 8-10',
+    '<strong>Structure:</strong> Moved from flat to pod model — each pod has a lead, dedicated scrum master, and owns a domain. Cross-pod alignment via architecture guild and shared OKRs',
+    '<strong>Key learning:</strong> At 15 people you need process, at 30 you need middle management, at 50 you need culture documented. Each inflection point requires reinventing how you communicate'
+  ]},
+  {id:'lt2',cat:'Leadership & Team Building',q:'Describe building an offshore delivery model',a:[
+    '<strong>CIBC + Deloitte:</strong> Built India-based delivery center — started with 5, scaled to 25. Overlap hours (2-3 hrs), async-first communication, detailed runbooks for every process',
+    '<strong>What worked:</strong> Embedded offshore leads in onshore standups, invested in relationship-building trips, gave offshore teams ownership (not just execution)',
+    '<strong>Pitfall avoided:</strong> Never treat offshore as "cheaper hands" — they need context, decision-making authority, and career growth paths or attrition kills your velocity'
+  ]},
+  {id:'lt3',cat:'Leadership & Team Building',q:'How do you handle underperformers?',a:[
+    '<strong>Framework:</strong> Diagnose first — is it skill, will, or context? Most "underperformance" is actually unclear expectations, wrong role fit, or personal challenges',
+    '<strong>Process:</strong> Direct conversation within 2 weeks of noticing, documented improvement plan with specific measurable goals, 30-day check-in, escalate if no progress',
+    '<strong>Philosophy:</strong> Be kind, not nice. Letting underperformance slide hurts the whole team. But always give people a genuine chance — I have seen many turn around with the right support'
+  ]},
+  {id:'lt4',cat:'Leadership & Team Building',q:'Tell me about a conflict between teams you resolved',a:[
+    '<strong>Situation:</strong> At CIBC, platform team and application team deadlocked over API ownership — both claimed authority, blocking a critical delivery',
+    '<strong>Action:</strong> Facilitated a joint architecture session, reframed from "who owns it" to "what does the customer need." Created shared API contract with clear RACI',
+    '<strong>Result:</strong> Unblocked delivery in 1 week, established a reusable governance model that prevented 3 similar conflicts in the next quarter'
+  ]},
+  {id:'lt5',cat:'Leadership & Team Building',q:'How do you build culture in a hybrid team?',a:[
+    '<strong>Intentional rituals:</strong> Weekly all-hands (camera on), monthly retrospectives, quarterly in-person offsites. Culture does not happen by accident in hybrid — you design it',
+    '<strong>Async-first:</strong> Document decisions in writing, record key meetings, maintain team wiki. Remote people should never feel like second-class citizens',
+    '<strong>Personal touch:</strong> 1:1s focused on career growth not just status, celebrate wins publicly, share failures openly. Built Lumen partly to keep family connected — same principle applies to teams'
+  ]},
+  {id:'lt6',cat:'Leadership & Team Building',q:'Describe your approach to hiring architects',a:[
+    '<strong>What I look for:</strong> Breadth over depth at senior level, ability to communicate trade-offs to non-technical stakeholders, evidence of influencing without authority',
+    '<strong>Process:</strong> Architecture whiteboard session (real problem, not trivia), past-project deep-dive (probe decisions and trade-offs), culture conversation with team members',
+    '<strong>Red flags:</strong> Architects who only talk technology, cannot explain why they chose something, or have never built something end-to-end'
+  ]},
+  {id:'lt7',cat:'Leadership & Team Building',q:'How do you mentor senior engineers into architects?',a:[
+    '<strong>Stretch assignments:</strong> Give them cross-team problems to solve, put them in front of stakeholders, let them lead architecture reviews — learn by doing',
+    '<strong>Framework:</strong> T-shaped growth — deep expertise plus broad understanding. Pair them with business leaders to build commercial awareness',
+    '<strong>At Deloitte:</strong> Created an internal architecture academy — 3 engineers promoted to architect roles within 18 months through structured mentoring and real project ownership'
+  ]},
+  {id:'lt8',cat:'Leadership & Team Building',q:"What's your stakeholder management approach?",a:[
+    '<strong>Map and adapt:</strong> Identify stakeholders by influence and interest, tailor communication style — executives get outcomes and risks, teams get details and timelines',
+    '<strong>Proactive communication:</strong> No surprises. Weekly status to sponsors, monthly steering committee, and ad-hoc escalation framework for blockers',
+    '<strong>Trust building:</strong> Deliver on small promises consistently. At CIBC, turned a skeptical CTO into a champion by delivering 3 quick wins before proposing the big architecture overhaul'
+  ]},
+  {id:'lt9',cat:'Leadership & Team Building',q:'How do you prioritize competing initiatives?',a:[
+    '<strong>Framework:</strong> WSJF (Weighted Shortest Job First) — value, time-criticality, risk-reduction, and effort. Makes prioritization data-driven, not political',
+    '<strong>Transparency:</strong> Publish the prioritized backlog with rationale. When leaders ask for reprioritization, show the trade-off explicitly — "we can do X, but Y slips by 3 weeks"',
+    '<strong>Real example:</strong> At CIBC, used this to say no to 4 lower-impact projects and focus on 2 that delivered 10x more business value'
+  ]},
+  {id:'lt10',cat:'Leadership & Team Building',q:'Describe a time you said no to a senior leader',a:[
+    '<strong>Situation:</strong> VP wanted to adopt a specific vendor platform because of a conference demo. Technical assessment showed it would not integrate with our existing ecosystem',
+    '<strong>Approach:</strong> Built a comparison matrix with the VP\'s criteria, ran a 2-week proof-of-concept, presented findings with data — not opinion. Proposed an alternative that met their goals',
+    '<strong>Result:</strong> VP appreciated the rigorous approach, adopted the alternative. Key lesson: never say "no," say "here is a better way to get what you want"'
+  ]},
+
+  // AI & Innovation
+  {id:'ai1',cat:'AI & Innovation',q:'How are you using AI in your current role?',a:[
+    '<strong>Lumen system:</strong> Built a family AI operating system — local-first with Ollama, multi-agent architecture, graph memory (Metis), RAG, voice interfaces, and MCP integration',
+    '<strong>Smara:</strong> Building a memory API product — structured memory layer for AI agents with Redis + PostgreSQL, deployed on Railway, used by personal and team AI systems',
+    '<strong>Daily practice:</strong> Claude Code as pair programmer, AI-assisted architecture reviews, automated research pipelines — not just experimenting, shipping AI products daily'
+  ]},
+  {id:'ai2',cat:'AI & Innovation',q:'Describe your experience building AI products',a:[
+    '<strong>Smara Memory API:</strong> Full product — API design, multi-tenant architecture, Redis caching, vector search, deployed SaaS. Solving the "AI has no memory" problem',
+    '<strong>PJ Tales:</strong> AI-powered bedtime story generation for kids — content pipeline, mobile app, TTS integration. Real product with real users (family)',
+    '<strong>Scoper:</strong> 9-agent estimation pipeline for software projects — multi-agent orchestration, structured output, practical enterprise use case'
+  ]},
+  {id:'ai3',cat:'AI & Innovation',q:"What's your view on LLMs in enterprise architecture?",a:[
+    '<strong>Pragmatic optimist:</strong> LLMs are transformative for code generation, documentation, analysis, and customer interaction — but require guardrails for enterprise use',
+    '<strong>Architecture implications:</strong> Need new patterns — prompt management, model gateway, evaluation pipelines, cost monitoring, graceful degradation when AI fails',
+    '<strong>Where I see value:</strong> Internal developer productivity (2-3x), knowledge management, legacy code understanding, and automated architecture documentation'
+  ]},
+  {id:'ai4',cat:'AI & Innovation',q:'How do you evaluate AI vendors and tools?',a:[
+    '<strong>Framework:</strong> Model quality for your use case, data privacy posture, API reliability and latency, cost at scale, and lock-in risk',
+    '<strong>Hands-on approach:</strong> Always run your own benchmarks on your data — vendor demos are best-case scenarios. I evaluate 3+ options for every AI component',
+    '<strong>Current stack reasoning:</strong> Claude for complex reasoning, Ollama for privacy-sensitive local tasks, OpenAI for specific fine-tuning needs — best-of-breed, not single vendor'
+  ]},
+  {id:'ai5',cat:'AI & Innovation',q:'Describe your RAG architecture approach',a:[
+    '<strong>Lumen RAG stack:</strong> Document chunking with overlap, embedding via local models, pgvector for storage, hybrid search (semantic + keyword), reranking before LLM',
+    '<strong>Key insights:</strong> Chunking strategy matters more than embedding model. Metadata filtering reduces noise dramatically. Always show sources for trust',
+    '<strong>Enterprise considerations:</strong> Access control on documents, freshness management, evaluation pipeline to measure retrieval quality, and graceful handling of "I don\'t know"'
+  ]},
+  {id:'ai6',cat:'AI & Innovation',q:'How do you handle AI governance and ethics?',a:[
+    '<strong>Framework:</strong> Transparency (users know when they are interacting with AI), human-in-the-loop for high-stakes decisions, bias testing, and data privacy by design',
+    '<strong>Practical implementation:</strong> In Lumen, all AI actions are logged, family members can see and correct AI outputs, sensitive data stays local (Ollama)',
+    '<strong>Enterprise view:</strong> Need an AI review board (not just legal), model cards for every deployment, automated bias testing in CI, and clear escalation paths when AI fails'
+  ]},
+  {id:'ai7',cat:'AI & Innovation',q:"What's MCP and why does it matter?",a:[
+    '<strong>Model Context Protocol:</strong> Anthropic\'s open standard for connecting AI models to tools and data sources — like USB for AI. Enables models to call APIs, read files, query databases',
+    '<strong>Why it matters:</strong> Standardizes tool use across AI systems, enables composable AI architectures, reduces custom integration work by 80%',
+    '<strong>My experience:</strong> Built MCP servers for Smara (memory), Lumen (home automation, calendar, email). Use it daily — it is the integration layer that makes AI agents practical'
+  ]},
+  {id:'ai8',cat:'AI & Innovation',q:'How do you build multi-agent systems?',a:[
+    '<strong>Architecture:</strong> Orchestrator pattern — one coordinator agent routes to specialist agents (research, coding, analysis). Each agent has focused tools and clear boundaries',
+    '<strong>Scoper example:</strong> 9 agents — intake, decomposition, estimation, risk, QA, aggregation — each with specific prompts and tools, communicating via structured messages',
+    '<strong>Key learnings:</strong> Keep agents focused (single responsibility), use structured output for inter-agent communication, always have a human checkpoint for critical decisions'
+  ]},
+  {id:'ai9',cat:'AI & Innovation',q:'Describe your approach to AI memory and context',a:[
+    '<strong>Smara architecture:</strong> Three memory layers — short-term (conversation context), episodic (specific interactions stored in Redis), long-term (graph + vector in PostgreSQL)',
+    '<strong>Why it matters:</strong> Without memory, AI resets every conversation. Smara gives AI agents persistent, searchable, structured memory — the missing infrastructure layer',
+    '<strong>Technical approach:</strong> Entity extraction, relationship mapping, temporal awareness, and relevance scoring. Memory is not just storage — it is intelligent retrieval'
+  ]},
+  {id:'ai10',cat:'AI & Innovation',q:'How do you measure AI ROI?',a:[
+    '<strong>Framework:</strong> Time saved x hourly cost for productivity tools. Revenue generated or cost avoided for products. User satisfaction delta for customer-facing AI',
+    '<strong>Practical metrics:</strong> Track before/after for every AI deployment — code review time, documentation speed, customer response time. Measure weekly, not quarterly',
+    '<strong>Honest assessment:</strong> Not everything has clear ROI yet. Some investments (like Lumen) are learning accelerators — the ROI is capability building that compounds over time'
+  ]},
+
+  // Behavioral (STAR)
+  {id:'bh1',cat:'Behavioral (STAR)',q:'Tell me about your biggest failure',a:[
+    '<strong>Situation:</strong> Early at Deloitte, pushed for a microservices rewrite of a client\'s monolith without adequate stakeholder buy-in or team readiness',
+    '<strong>Impact:</strong> Project ran 3 months over, team burned out, client trust damaged. Had to roll back partial changes and adopt incremental approach',
+    '<strong>Learning:</strong> Technical excellence without organizational readiness is a recipe for failure. Now I always validate change capacity before proposing ambitious architecture changes'
+  ]},
+  {id:'bh2',cat:'Behavioral (STAR)',q:'Describe a time you delivered under impossible deadlines',a:[
+    '<strong>Situation:</strong> CIBC regulatory deadline — 6 weeks to deliver API security overhaul that was scoped for 4 months. Non-negotiable compliance requirement',
+    '<strong>Action:</strong> Ruthlessly descoped to must-have controls, mobilized 3 teams in parallel, daily standups with exec sponsor, automated testing to maintain quality',
+    '<strong>Result:</strong> Delivered core security controls in 5 weeks, passed audit. Completed remaining scope in next quarter. Key: scope flexibility, not timeline flexibility'
+  ]},
+  {id:'bh3',cat:'Behavioral (STAR)',q:'How do you handle ambiguity?',a:[
+    '<strong>Framework:</strong> Identify what you DO know, what you NEED to know, and what you can DECIDE without knowing. Make reversible decisions fast, irreversible ones carefully',
+    '<strong>Example:</strong> When starting Smara, unclear if market existed — built MVP in 2 weeks, shipped to real users (self + family), validated learning before building more',
+    '<strong>Philosophy:</strong> Ambiguity is a feature of leadership roles, not a bug. The skill is moving forward with 60% information while creating feedback loops to course-correct'
+  ]},
+  {id:'bh4',cat:'Behavioral (STAR)',q:'Tell me about a time you changed your mind',a:[
+    '<strong>Situation:</strong> Initially committed to building everything in Lumen as custom code — "not invented here" mindset for maximum learning and control',
+    '<strong>Trigger:</strong> Realized after 3 months that rebuilding commodity features (auth, email) was consuming time that should go to differentiated capabilities',
+    '<strong>Result:</strong> Adopted best-of-breed approach — Cloudflare for tunnels, Redis for caching, Railway for hosting. Now build only what differentiates. Shipping 3x faster'
+  ]},
+  {id:'bh5',cat:'Behavioral (STAR)',q:'Describe your most impactful project',a:[
+    '<strong>CIBC cloud architecture:</strong> Led enterprise cloud strategy serving 11M+ customers — designed reference architecture adopted by 200+ application teams',
+    '<strong>Impact:</strong> Reduced infrastructure costs by 40%, deployment frequency from monthly to daily, incident resolution time cut by 60%',
+    '<strong>Why it mattered:</strong> Changed how a major bank thinks about technology delivery — from project-based to product-based, from manual to automated, from siloed to platform'
+  ]},
+  {id:'bh6',cat:'Behavioral (STAR)',q:'Describe a time you influenced without authority',a:[
+    '<strong>Situation:</strong> At IBM, needed 5 teams to adopt new API standards but had no reporting authority over any of them',
+    '<strong>Action:</strong> Built a compelling demo, identified early adopters, helped them succeed visibly, then used their success stories to convince skeptics. Created a community of practice',
+    '<strong>Result:</strong> 4 of 5 teams adopted within 3 months. The holdout came on board after seeing the productivity gains. Influence through proof, not position'
+  ]},
+  {id:'bh7',cat:'Behavioral (STAR)',q:'How do you handle disagreements with your manager?',a:[
+    '<strong>Approach:</strong> Data over opinion. When I disagree, I prepare a one-pager with options, trade-offs, and my recommendation with rationale',
+    '<strong>Example:</strong> Manager wanted to hire 10 juniors. I showed data that 4 seniors would deliver more, cost less in ramp time, and improve team quality. Compromised on 6 mid-level + 2 senior',
+    '<strong>Philosophy:</strong> Disagree and commit. Once a decision is made, execute fully — do not undermine with "I told you so" if it fails'
+  ]},
+  {id:'bh8',cat:'Behavioral (STAR)',q:'Tell me about a time you had to learn something quickly',a:[
+    '<strong>Situation:</strong> Assigned to lead AI integration at CIBC with 3 weeks to become credible — had ML background but no LLM production experience',
+    '<strong>Action:</strong> Immersive learning — built 3 prototypes, read 20+ papers, interviewed 5 vendors, built Lumen as a personal learning accelerator',
+    '<strong>Result:</strong> Delivered credible AI strategy to CTO within 3 weeks, got approval for $2M pilot. Key: learn by building, not just reading'
+  ]},
+  {id:'bh9',cat:'Behavioral (STAR)',q:'Describe how you handle competing priorities from multiple stakeholders',a:[
+    '<strong>Framework:</strong> Make trade-offs visible. Create a shared priority board, force-rank with stakeholders in the room, and document what is NOT being done and why',
+    '<strong>Example:</strong> Three VPs wanted their projects prioritized. Facilitated a session where each presented business case, collectively ranked by value and urgency',
+    '<strong>Result:</strong> Aligned on top 2 priorities, deferred the third with clear conditions for escalation. Transparency eliminated the political maneuvering'
+  ]},
+  {id:'bh10',cat:'Behavioral (STAR)',q:'What do you do in your first 90 days in a new role?',a:[
+    '<strong>Days 1-30 (Listen):</strong> Meet every stakeholder, understand current architecture, identify top 3 pain points, build relationship with key engineers and business partners',
+    '<strong>Days 31-60 (Quick wins):</strong> Fix 2-3 visible problems to build credibility, document current state, start shaping 6-month vision with team input',
+    '<strong>Days 61-90 (Strategy):</strong> Present architecture roadmap, align with business strategy, establish governance cadence, propose first major initiative with business case'
+  ]}
+];
+
+// ─── State ───
+const STORAGE_KEY = 'interview-prep-v2';
+
+function loadState() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (raw) return JSON.parse(raw);
+  return { cards: DEFAULT_CARDS.map(c => ({...c, status: 'new', difficulty: 3, reviewCount: 0, lastReview: null, customCard: false})), stats: { reviewed: 0, streak: 0, lastDate: null } };
+}
+
+function saveState() { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+
+let state = loadState();
+// Ensure new default cards are added on reload
+const existingIds = new Set(state.cards.map(c => c.id));
+DEFAULT_CARDS.forEach(dc => {
+  if (!existingIds.has(dc.id)) {
+    state.cards.push({...dc, status: 'new', difficulty: 3, reviewCount: 0, lastReview: null, customCard: false});
+  }
+});
+saveState();
+
+let currentFilter = 'All';
+let filteredCards = [];
+let currentIndex = 0;
+let isFlipped = false;
+let sessionActive = false;
+let sessionCards = [];
+let sessionIndex = 0;
+let sessionStart = null;
+let sessionTimerInterval = null;
+
+const CATEGORIES = ['All', 'Enterprise Architecture', 'Leadership & Team Building', 'AI & Innovation', 'Behavioral (STAR)'];
+const CAT_COLORS = {
+  'Enterprise Architecture': '#5b5fc7',
+  'Leadership & Team Building': '#0891b2',
+  'AI & Innovation': '#7c3aed',
+  'Behavioral (STAR)': '#db2777'
+};
+
+// ─── Rendering ───
+function renderTabs() {
+  const el = document.getElementById('tabs');
+  el.innerHTML = CATEGORIES.map(cat => {
+    const count = cat === 'All' ? state.cards.length : state.cards.filter(c => c.cat === cat).length;
+    return `<div class="tab ${currentFilter === cat ? 'active' : ''}" onclick="setFilter('${cat}')">${cat}<span class="badge">${count}</span></div>`;
+  }).join('');
+}
+
+function renderProgress() {
+  const el = document.getElementById('progressSection');
+  const cats = CATEGORIES.filter(c => c !== 'All');
+  el.innerHTML = cats.map(cat => {
+    const cards = state.cards.filter(c => c.cat === cat);
+    const mastered = cards.filter(c => c.status === 'got-it').length;
+    const pct = cards.length ? Math.round(mastered / cards.length * 100) : 0;
+    const color = CAT_COLORS[cat] || 'var(--accent)';
+    return `<div class="progress-card">
+      <div class="label">${cat}</div>
+      <div class="pct">${pct}%</div>
+      <div class="progress-bar-bg"><div class="progress-bar-fill" style="width:${pct}%;background:${color}"></div></div>
+    </div>`;
+  }).join('');
+}
+
+function updateTopStats() {
+  const total = state.cards.length;
+  const mastered = state.cards.filter(c => c.status === 'got-it').length;
+  document.getElementById('stat-reviewed').textContent = state.stats.reviewed;
+  document.getElementById('stat-mastery').textContent = total ? Math.round(mastered / total * 100) + '%' : '0%';
+  document.getElementById('stat-streak').textContent = state.stats.streak;
+}
+
+function getFilteredCards() {
+  let cards = currentFilter === 'All' ? [...state.cards] : state.cards.filter(c => c.cat === currentFilter);
+  // Spaced repetition: weight "need-practice" cards higher
+  if (!sessionActive) {
+    const needPractice = cards.filter(c => c.status === 'need-practice');
+    const others = cards.filter(c => c.status !== 'need-practice');
+    // Interleave: need-practice cards appear every 2nd position
+    const result = [];
+    let ni = 0, oi = 0;
+    while (ni < needPractice.length || oi < others.length) {
+      if (ni < needPractice.length) result.push(needPractice[ni++]);
+      if (oi < others.length) result.push(others[oi++]);
+      if (oi < others.length) result.push(others[oi++]);
+    }
+    return result;
+  }
+  return cards;
+}
+
+function renderCard() {
+  const cards = sessionActive ? sessionCards : filteredCards;
+  const idx = sessionActive ? sessionIndex : currentIndex;
+  if (!cards.length) {
+    document.getElementById('cardContainer').innerHTML = `<div class="empty-state"><p>No cards in this category.</p></div>`;
+    document.getElementById('actions').style.display = 'none';
+    return;
+  }
+  document.getElementById('actions').style.display = 'flex';
+  const card = cards[idx];
+  const stateCard = state.cards.find(c => c.id === card.id) || card;
+  const total = cards.length;
+
+  // Reset flip
+  isFlipped = false;
+  document.getElementById('flashcard').classList.remove('flipped');
+
+  // Front
+  document.getElementById('cardCat').textContent = card.cat;
+  document.getElementById('cardNum').textContent = `${idx + 1} / ${total}`;
+  document.getElementById('cardQuestion').textContent = card.q;
+
+  // Back
+  document.getElementById('cardCatBack').textContent = card.cat;
+  document.getElementById('cardNumBack').textContent = `${idx + 1} / ${total}`;
+  document.getElementById('cardAnswer').innerHTML = '<ul>' + card.a.map(p => `<li>${p}</li>`).join('') + '</ul>';
+
+  // Stars
+  renderStars('starsFront', stateCard);
+  renderStars('starsBack', stateCard);
+}
+
+function renderStars(containerId, card) {
+  const el = document.getElementById(containerId);
+  el.innerHTML = '';
+  for (let i = 1; i <= 5; i++) {
+    const s = document.createElement('span');
+    s.className = 'star' + (i <= card.difficulty ? ' filled' : '');
+    s.textContent = '\u2605';
+    s.onclick = (e) => { e.stopPropagation(); setDifficulty(card.id, i); };
+    el.appendChild(s);
+  }
+}
+
+function setFilter(cat) {
+  currentFilter = cat;
+  filteredCards = getFilteredCards();
+  currentIndex = 0;
+  renderTabs();
+  renderCard();
+}
+
+function flipCard() {
+  isFlipped = !isFlipped;
+  document.getElementById('flashcard').classList.toggle('flipped', isFlipped);
+}
+
+function nextCard() {
+  if (sessionActive) {
+    sessionIndex++;
+    if (sessionIndex >= sessionCards.length) { endSession(); return; }
+    updateSessionBanner();
+    renderCard();
+    return;
+  }
+  if (filteredCards.length === 0) return;
+  currentIndex = (currentIndex + 1) % filteredCards.length;
+  renderCard();
+}
+
+function prevCard() {
+  if (sessionActive) {
+    sessionIndex = Math.max(0, sessionIndex - 1);
+    updateSessionBanner();
+    renderCard();
+    return;
+  }
+  if (filteredCards.length === 0) return;
+  currentIndex = (currentIndex - 1 + filteredCards.length) % filteredCards.length;
+  renderCard();
+}
+
+function markCard(status) {
+  const cards = sessionActive ? sessionCards : filteredCards;
+  const idx = sessionActive ? sessionIndex : currentIndex;
+  if (!cards.length) return;
+  const card = cards[idx];
+  const stateCard = state.cards.find(c => c.id === card.id);
+  if (stateCard) {
+    stateCard.status = status;
+    stateCard.reviewCount++;
+    stateCard.lastReview = new Date().toISOString();
+  }
+  state.stats.reviewed++;
+  // Update streak
+  const today = new Date().toDateString();
+  if (state.stats.lastDate !== today) {
+    if (state.stats.lastDate) {
+      const last = new Date(state.stats.lastDate);
+      const diff = Math.floor((new Date(today) - last) / 86400000);
+      state.stats.streak = diff === 1 ? state.stats.streak + 1 : 1;
+    } else {
+      state.stats.streak = 1;
+    }
+    state.stats.lastDate = today;
+  }
+  saveState();
+  updateTopStats();
+  renderProgress();
+  nextCard();
+}
+
+function setDifficulty(id, val) {
+  const card = state.cards.find(c => c.id === id);
+  if (card) { card.difficulty = val; saveState(); renderCard(); }
+}
+
+function shuffleDeck() {
+  for (let i = filteredCards.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [filteredCards[i], filteredCards[j]] = [filteredCards[j], filteredCards[i]];
+  }
+  currentIndex = 0;
+  renderCard();
+}
+
+// ─── Practice Session ───
+function startSession() {
+  // Pick 10 random cards, weighted toward need-practice
+  const needPractice = state.cards.filter(c => c.status === 'need-practice');
+  const others = state.cards.filter(c => c.status !== 'need-practice');
+  let pool = [...needPractice, ...needPractice, ...others]; // double-weight need-practice
+  // Shuffle
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  // Deduplicate and take 10
+  const seen = new Set();
+  sessionCards = [];
+  for (const c of pool) {
+    if (!seen.has(c.id) && sessionCards.length < 10) {
+      seen.add(c.id);
+      sessionCards.push(c);
+    }
+  }
+  if (sessionCards.length === 0) return;
+  sessionActive = true;
+  sessionIndex = 0;
+  sessionStart = Date.now();
+  document.getElementById('sessionBanner').classList.add('active');
+  updateSessionBanner();
+  renderCard();
+  sessionTimerInterval = setInterval(updateSessionTimer, 1000);
+}
+
+function endSession() {
+  sessionActive = false;
+  clearInterval(sessionTimerInterval);
+  document.getElementById('sessionBanner').classList.remove('active');
+  filteredCards = getFilteredCards();
+  currentIndex = 0;
+  renderCard();
+}
+
+function updateSessionBanner() {
+  document.getElementById('sessionProgress').textContent = `Card ${sessionIndex + 1} of ${sessionCards.length}`;
+}
+
+function updateSessionTimer() {
+  const elapsed = Math.floor((Date.now() - sessionStart) / 1000);
+  const m = String(Math.floor(elapsed / 60)).padStart(2, '0');
+  const s = String(elapsed % 60).padStart(2, '0');
+  document.getElementById('sessionTimer').textContent = `${m}:${s}`;
+}
+
+// ─── Add Custom Card ───
+function openAddModal() { document.getElementById('addModal').classList.add('active'); }
+function closeAddModal() {
+  document.getElementById('addModal').classList.remove('active');
+  document.getElementById('newQuestion').value = '';
+  document.getElementById('newAnswer').value = '';
+}
+
+function addCustomCard() {
+  const q = document.getElementById('newQuestion').value.trim();
+  const aRaw = document.getElementById('newAnswer').value.trim();
+  const cat = document.getElementById('newCategory').value;
+  if (!q || !aRaw) return;
+  const a = aRaw.split('|').map(s => s.trim()).filter(Boolean);
+  const id = 'custom_' + Date.now();
+  state.cards.push({ id, cat, q, a, status: 'new', difficulty: 3, reviewCount: 0, lastReview: null, customCard: true });
+  saveState();
+  closeAddModal();
+  filteredCards = getFilteredCards();
+  renderTabs();
+  renderProgress();
+  updateTopStats();
+  renderCard();
+}
+
+// ─── Reset ───
+function resetProgress() {
+  if (!confirm('Reset all progress? Cards and custom cards will be kept.')) return;
+  state.cards.forEach(c => { c.status = 'new'; c.reviewCount = 0; c.lastReview = null; });
+  state.stats = { reviewed: 0, streak: 0, lastDate: null };
+  saveState();
+  filteredCards = getFilteredCards();
+  currentIndex = 0;
+  renderTabs(); renderProgress(); updateTopStats(); renderCard();
+}
+
+// ─── Keyboard shortcuts ───
+document.addEventListener('keydown', e => {
+  if (document.getElementById('addModal').classList.contains('active')) return;
+  if (e.key === ' ' || e.code === 'Space') { e.preventDefault(); flipCard(); }
+  if (e.key === 'ArrowRight') nextCard();
+  if (e.key === 'ArrowLeft') prevCard();
+  if (e.key === 'g' || e.key === 'G') markCard('got-it');
+  if (e.key === 'n' || e.key === 'N') markCard('need-practice');
+});
+
+// Close modal on overlay click
+document.getElementById('addModal').addEventListener('click', e => {
+  if (e.target === document.getElementById('addModal')) closeAddModal();
+});
+
+// ─── Init ───
+filteredCards = getFilteredCards();
+renderTabs();
+renderProgress();
+updateTopStats();
+renderCard();
+</script>
+</body>
+</html>

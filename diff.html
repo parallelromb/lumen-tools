@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Text Diff Checker - Lumen Analytics</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #f8f9fc;
+  color: #1a1a2e;
+  min-height: 100vh;
+  padding: 1.5rem;
+}
+a { color: #3b82f6; text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+.header {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+.header h1 { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; }
+.header p { color: #6b7280; font-size: 0.9rem; margin-top: 0.25rem; }
+.back-link { display: inline-block; margin-bottom: 0.5rem; font-size: 0.85rem; }
+
+.glass {
+  background: rgba(255,255,255,0.72);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.6);
+  border-radius: 16px;
+  padding: 1.25rem;
+}
+
+/* Input area */
+.input-area {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.input-panel label {
+  display: block;
+  font-weight: 600;
+  font-size: 0.85rem;
+  margin-bottom: 0.5rem;
+  color: #374151;
+}
+.input-panel textarea {
+  width: 100%;
+  height: 260px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 0.75rem;
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  resize: vertical;
+  background: #fafbfc;
+  color: #1a1a2e;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.input-panel textarea:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+}
+
+/* Controls */
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+.btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 8px;
+  font-family: inherit;
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.btn:hover { transform: translateY(-1px); }
+.btn:active { transform: translateY(0); }
+.btn-primary { background: #3b82f6; color: #fff; }
+.btn-primary:hover { background: #2563eb; }
+.btn-secondary { background: #f3f4f6; color: #374151; border: 1px solid #e5e7eb; }
+.btn-secondary:hover { background: #e5e7eb; }
+.btn-danger { background: #fef2f2; color: #dc2626; border: 1px solid #fecaca; }
+.btn-danger:hover { background: #fee2e2; }
+.btn-green { background: #f0fdf4; color: #16a34a; border: 1px solid #bbf7d0; }
+.btn-green:hover { background: #dcfce7; }
+
+.toggle-group {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+.toggle-group input[type="checkbox"] {
+  accent-color: #3b82f6;
+  width: 15px;
+  height: 15px;
+}
+
+.mode-tabs {
+  display: flex;
+  gap: 2px;
+  background: #f3f4f6;
+  border-radius: 8px;
+  padding: 2px;
+}
+.mode-tab {
+  padding: 0.4rem 0.75rem;
+  border: none;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 0.78rem;
+  font-weight: 500;
+  cursor: pointer;
+  background: transparent;
+  color: #6b7280;
+  transition: all 0.15s;
+}
+.mode-tab.active {
+  background: #fff;
+  color: #1a1a2e;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+}
+
+/* Stats bar */
+.stats-bar {
+  display: flex;
+  gap: 1.25rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+  font-size: 0.8rem;
+}
+.stat {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-weight: 500;
+}
+.stat-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.stat-added .stat-dot { background: #22c55e; }
+.stat-removed .stat-dot { background: #ef4444; }
+.stat-changed .stat-dot { background: #f59e0b; }
+.stat-unchanged .stat-dot { background: #9ca3af; }
+.stat-similarity { color: #3b82f6; font-weight: 600; }
+
+/* Diff output */
+.diff-output {
+  max-height: 600px;
+  overflow: auto;
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  font-size: 0.78rem;
+  line-height: 1.6;
+}
+.diff-output::-webkit-scrollbar { width: 6px; height: 6px; }
+.diff-output::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+
+/* Unified diff */
+.diff-line {
+  display: flex;
+  padding: 0 0.75rem;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.diff-line-num {
+  min-width: 40px;
+  text-align: right;
+  padding-right: 0.75rem;
+  color: #9ca3af;
+  user-select: none;
+  flex-shrink: 0;
+}
+.diff-line-content { flex: 1; }
+.diff-line.added { background: rgba(34,197,94,0.1); }
+.diff-line.removed { background: rgba(239,68,68,0.1); }
+.diff-line.changed { background: rgba(245,158,11,0.08); }
+.diff-line.header { background: rgba(59,130,246,0.08); color: #3b82f6; font-weight: 600; }
+.char-add { background: rgba(34,197,94,0.3); border-radius: 2px; }
+.char-del { background: rgba(239,68,68,0.3); border-radius: 2px; }
+
+/* Side-by-side */
+.side-by-side {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+}
+.sbs-panel { overflow-x: auto; }
+.sbs-panel-header {
+  padding: 0.5rem 0.75rem;
+  font-weight: 600;
+  font-size: 0.78rem;
+  color: #6b7280;
+  border-bottom: 1px solid #e5e7eb;
+  background: rgba(243,244,246,0.5);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.sbs-line {
+  display: flex;
+  padding: 0 0.5rem;
+  min-height: 1.6em;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.sbs-line-num {
+  min-width: 35px;
+  text-align: right;
+  padding-right: 0.5rem;
+  color: #9ca3af;
+  user-select: none;
+  flex-shrink: 0;
+}
+.sbs-line-content { flex: 1; }
+.sbs-line.added { background: rgba(34,197,94,0.1); }
+.sbs-line.removed { background: rgba(239,68,68,0.1); }
+.sbs-line.changed { background: rgba(245,158,11,0.08); }
+.sbs-line.empty { background: rgba(156,163,175,0.06); }
+.sbs-divider {
+  width: 1px;
+  background: #e5e7eb;
+}
+
+/* Merge tool */
+.merge-section { margin-top: 1rem; }
+.merge-section h3 { font-size: 0.9rem; font-weight: 600; margin-bottom: 0.75rem; }
+.merge-conflict {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  overflow: hidden;
+  margin-bottom: 0.75rem;
+}
+.merge-conflict-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0.75rem;
+  background: rgba(243,244,246,0.8);
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: #6b7280;
+}
+.merge-options { display: flex; gap: 0.35rem; }
+.merge-btn {
+  padding: 0.25rem 0.6rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 0.72rem;
+  font-weight: 500;
+  cursor: pointer;
+  background: #fff;
+  transition: all 0.15s;
+}
+.merge-btn:hover { border-color: #3b82f6; color: #3b82f6; }
+.merge-btn.selected { background: #3b82f6; color: #fff; border-color: #3b82f6; }
+.merge-preview {
+  padding: 0.5rem 0.75rem;
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  font-size: 0.78rem;
+  white-space: pre-wrap;
+  line-height: 1.5;
+  min-height: 1.6em;
+}
+.merge-preview.left { background: rgba(239,68,68,0.05); }
+.merge-preview.right { background: rgba(34,197,94,0.05); }
+.merge-result-area {
+  margin-top: 0.75rem;
+}
+.merge-result-area textarea {
+  width: 100%;
+  height: 200px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 0.75rem;
+  font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  resize: vertical;
+  background: #fafbfc;
+  outline: none;
+}
+
+.hidden { display: none !important; }
+
+@media (max-width: 768px) {
+  .input-area { grid-template-columns: 1fr; }
+  .side-by-side { grid-template-columns: 1fr; }
+  .controls { gap: 0.35rem; }
+}
+</style>
+</head>
+<body>
+
+<a href="index.html" class="back-link">&larr; Back to Analytics</a>
+<div class="header">
+  <h1>Text Diff Checker</h1>
+  <p>Compare text, find differences, and merge changes</p>
+</div>
+
+<div class="glass" style="margin-bottom:1rem;">
+  <div class="input-area">
+    <div class="input-panel">
+      <label>Original</label>
+      <textarea id="leftInput" placeholder="Paste original text here..." spellcheck="false"></textarea>
+    </div>
+    <div class="input-panel">
+      <label>Modified</label>
+      <textarea id="rightInput" placeholder="Paste modified text here..." spellcheck="false"></textarea>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="btn btn-primary" onclick="computeDiff()" id="diffBtn">Compare</button>
+    <button class="btn btn-secondary" onclick="swapSides()" title="Swap sides">&#8644; Swap</button>
+    <button class="btn btn-secondary" onclick="loadSample()">Load Sample</button>
+    <button class="btn btn-danger" onclick="clearAll()">Clear All</button>
+    <div style="flex:1"></div>
+    <div class="toggle-group">
+      <input type="checkbox" id="ignoreWhitespace">
+      <label for="ignoreWhitespace">Ignore whitespace</label>
+    </div>
+    <div class="toggle-group">
+      <input type="checkbox" id="ignoreCase">
+      <label for="ignoreCase">Case-insensitive</label>
+    </div>
+  </div>
+</div>
+
+<div id="resultsPanel" class="glass hidden">
+  <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:0.5rem;margin-bottom:0.75rem;">
+    <div class="stats-bar" id="statsBar"></div>
+    <div style="display:flex;gap:0.5rem;align-items:center;">
+      <div class="mode-tabs">
+        <button class="mode-tab active" data-mode="inline" onclick="setMode('inline',this)">Inline</button>
+        <button class="mode-tab" data-mode="sidebyside" onclick="setMode('sidebyside',this)">Side-by-Side</button>
+        <button class="mode-tab" data-mode="unified" onclick="setMode('unified',this)">Unified</button>
+        <button class="mode-tab" data-mode="merge" onclick="setMode('merge',this)">Merge</button>
+      </div>
+      <button class="btn btn-secondary" onclick="copyUnified()" title="Copy as unified diff">Copy</button>
+      <button class="btn btn-secondary" onclick="downloadPatch()" title="Download .patch file">&#8615; .patch</button>
+    </div>
+  </div>
+  <div class="diff-output" id="diffOutput"></div>
+  <div id="mergePanel" class="merge-section hidden"></div>
+</div>
+
+<script>
+// ---- LCS-based diff engine ----
+function diffLines(a, b) {
+  const n = a.length, m = b.length;
+  // Optimise: if both are huge, use a simpler O(ND) approach
+  // For typical usage, standard LCS DP is fine up to ~5000 lines
+  const dp = Array.from({length: n+1}, () => new Uint16Array(m+1));
+  for (let i = n-1; i >= 0; i--)
+    for (let j = m-1; j >= 0; j--)
+      dp[i][j] = a[i] === b[j] ? dp[i+1][j+1]+1 : Math.max(dp[i+1][j], dp[i][j+1]);
+
+  const result = [];
+  let i = 0, j = 0;
+  while (i < n || j < m) {
+    if (i < n && j < m && a[i] === b[j]) {
+      result.push({type: 'equal', left: a[i], right: b[j], leftNum: i+1, rightNum: j+1});
+      i++; j++;
+    } else if (j < m && (i >= n || dp[i][j+1] >= dp[i+1][j])) {
+      result.push({type: 'add', right: b[j], rightNum: j+1});
+      j++;
+    } else {
+      result.push({type: 'remove', left: a[i], leftNum: i+1});
+      i++;
+    }
+  }
+
+  // Group adjacent remove+add as "changed" pairs
+  const grouped = [];
+  let idx = 0;
+  while (idx < result.length) {
+    if (result[idx].type === 'remove') {
+      const removes = [];
+      while (idx < result.length && result[idx].type === 'remove') removes.push(result[idx++]);
+      const adds = [];
+      while (idx < result.length && result[idx].type === 'add') adds.push(result[idx++]);
+      const pairs = Math.min(removes.length, adds.length);
+      for (let k = 0; k < pairs; k++) {
+        grouped.push({type: 'changed', left: removes[k].left, right: adds[k].right, leftNum: removes[k].leftNum, rightNum: adds[k].rightNum});
+      }
+      for (let k = pairs; k < removes.length; k++) grouped.push(removes[k]);
+      for (let k = pairs; k < adds.length; k++) grouped.push(adds[k]);
+    } else {
+      grouped.push(result[idx++]);
+    }
+  }
+  return grouped;
+}
+
+// Char-level diff for changed lines
+function diffChars(a, b) {
+  const n = a.length, m = b.length;
+  if (n > 500 || m > 500) return {aSpans: [{text:a,type:'del'}], bSpans: [{text:b,type:'add'}]};
+  const dp = Array.from({length: n+1}, () => new Uint16Array(m+1));
+  for (let i = n-1; i >= 0; i--)
+    for (let j = m-1; j >= 0; j--)
+      dp[i][j] = a[i] === b[j] ? dp[i+1][j+1]+1 : Math.max(dp[i+1][j], dp[i][j+1]);
+
+  const aSpans = [], bSpans = [];
+  let i = 0, j = 0;
+  let aBuf = '', bBuf = '', eqBuf = '';
+  function flushDiff() {
+    if (aBuf) { aSpans.push({text:aBuf,type:'del'}); aBuf=''; }
+    if (bBuf) { bSpans.push({text:bBuf,type:'add'}); bBuf=''; }
+  }
+  function flushEq() {
+    if (eqBuf) { aSpans.push({text:eqBuf,type:'eq'}); bSpans.push({text:eqBuf,type:'eq'}); eqBuf=''; }
+  }
+  while (i < n || j < m) {
+    if (i < n && j < m && a[i] === b[j]) {
+      flushDiff();
+      eqBuf += a[i]; i++; j++;
+    } else if (j < m && (i >= n || dp[i][j+1] >= dp[i+1][j])) {
+      flushEq();
+      bBuf += b[j]; j++;
+    } else {
+      flushEq();
+      aBuf += a[i]; i++;
+    }
+  }
+  flushEq(); flushDiff();
+  return {aSpans, bSpans};
+}
+
+function esc(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function spansToHtml(spans, addCls, delCls) {
+  return spans.map(s => {
+    if (s.type === 'add') return `<span class="${addCls}">${esc(s.text)}</span>`;
+    if (s.type === 'del') return `<span class="${delCls}">${esc(s.text)}</span>`;
+    return esc(s.text);
+  }).join('');
+}
+
+// ---- State ----
+let currentDiff = [];
+let currentMode = 'inline';
+let mergeChoices = {};
+
+function normalize(text) {
+  let t = text;
+  if (document.getElementById('ignoreCase').checked) t = t.toLowerCase();
+  if (document.getElementById('ignoreWhitespace').checked) t = t.replace(/\s+/g, ' ').trim();
+  return t;
+}
+
+function computeDiff() {
+  const leftRaw = document.getElementById('leftInput').value;
+  const rightRaw = document.getElementById('rightInput').value;
+  saveToStorage();
+
+  const leftLines = leftRaw.split('\n');
+  const rightLines = rightRaw.split('\n');
+
+  const leftNorm = leftLines.map(normalize);
+  const rightNorm = rightLines.map(normalize);
+
+  // Diff on normalized, but store original
+  const normDiff = diffLines(leftNorm, rightNorm);
+
+  // Map back to original text
+  currentDiff = normDiff.map(d => ({
+    ...d,
+    left: d.leftNum ? leftLines[d.leftNum-1] : d.left,
+    right: d.rightNum ? rightLines[d.rightNum-1] : d.right,
+  }));
+
+  mergeChoices = {};
+  document.getElementById('resultsPanel').classList.remove('hidden');
+  renderStats();
+  renderDiff();
+}
+
+function renderStats() {
+  let added = 0, removed = 0, changed = 0, unchanged = 0;
+  currentDiff.forEach(d => {
+    if (d.type === 'equal') unchanged++;
+    else if (d.type === 'add') added++;
+    else if (d.type === 'remove') removed++;
+    else if (d.type === 'changed') { changed++; }
+  });
+  const total = unchanged + changed + added + removed;
+  const sim = total > 0 ? Math.round((unchanged / (unchanged + changed + Math.max(added, removed))) * 100) : 100;
+
+  document.getElementById('statsBar').innerHTML = `
+    <span class="stat stat-added"><span class="stat-dot"></span>${added} added</span>
+    <span class="stat stat-removed"><span class="stat-dot"></span>${removed} removed</span>
+    <span class="stat stat-changed"><span class="stat-dot"></span>${changed} changed</span>
+    <span class="stat stat-unchanged"><span class="stat-dot"></span>${unchanged} unchanged</span>
+    <span class="stat stat-similarity">${sim}% similar</span>
+  `;
+}
+
+function setMode(mode, el) {
+  currentMode = mode;
+  document.querySelectorAll('.mode-tab').forEach(t => t.classList.remove('active'));
+  if (el) el.classList.add('active');
+  else document.querySelector(`.mode-tab[data-mode="${mode}"]`)?.classList.add('active');
+  renderDiff();
+}
+
+function renderDiff() {
+  const out = document.getElementById('diffOutput');
+  const mergePanel = document.getElementById('mergePanel');
+  mergePanel.classList.add('hidden');
+
+  if (currentMode === 'inline') renderInline(out);
+  else if (currentMode === 'sidebyside') renderSideBySide(out);
+  else if (currentMode === 'unified') renderUnified(out);
+  else if (currentMode === 'merge') { renderInline(out); renderMerge(mergePanel); }
+}
+
+function renderInline(container) {
+  let html = '';
+  currentDiff.forEach(d => {
+    if (d.type === 'equal') {
+      html += `<div class="diff-line"><span class="diff-line-num">${d.leftNum}</span><span class="diff-line-content"> ${esc(d.left)}</span></div>`;
+    } else if (d.type === 'remove') {
+      html += `<div class="diff-line removed"><span class="diff-line-num">${d.leftNum}</span><span class="diff-line-content">-${esc(d.left)}</span></div>`;
+    } else if (d.type === 'add') {
+      html += `<div class="diff-line added"><span class="diff-line-num">${d.rightNum}</span><span class="diff-line-content">+${esc(d.right)}</span></div>`;
+    } else if (d.type === 'changed') {
+      const {aSpans, bSpans} = diffChars(d.left, d.right);
+      html += `<div class="diff-line removed"><span class="diff-line-num">${d.leftNum}</span><span class="diff-line-content">-${spansToHtml(aSpans, 'char-add', 'char-del')}</span></div>`;
+      html += `<div class="diff-line added"><span class="diff-line-num">${d.rightNum}</span><span class="diff-line-content">+${spansToHtml(bSpans, 'char-add', 'char-del')}</span></div>`;
+    }
+  });
+  container.innerHTML = html || '<div style="padding:1rem;color:#9ca3af;text-align:center;">No differences found</div>';
+}
+
+function renderSideBySide(container) {
+  let leftHtml = '<div class="sbs-panel-header">Original</div>';
+  let rightHtml = '<div class="sbs-panel-header">Modified</div>';
+
+  currentDiff.forEach(d => {
+    if (d.type === 'equal') {
+      leftHtml += `<div class="sbs-line"><span class="sbs-line-num">${d.leftNum}</span><span class="sbs-line-content">${esc(d.left)}</span></div>`;
+      rightHtml += `<div class="sbs-line"><span class="sbs-line-num">${d.rightNum}</span><span class="sbs-line-content">${esc(d.right)}</span></div>`;
+    } else if (d.type === 'remove') {
+      leftHtml += `<div class="sbs-line removed"><span class="sbs-line-num">${d.leftNum}</span><span class="sbs-line-content">${esc(d.left)}</span></div>`;
+      rightHtml += `<div class="sbs-line empty"><span class="sbs-line-num"></span><span class="sbs-line-content"></span></div>`;
+    } else if (d.type === 'add') {
+      leftHtml += `<div class="sbs-line empty"><span class="sbs-line-num"></span><span class="sbs-line-content"></span></div>`;
+      rightHtml += `<div class="sbs-line added"><span class="sbs-line-num">${d.rightNum}</span><span class="sbs-line-content">${esc(d.right)}</span></div>`;
+    } else if (d.type === 'changed') {
+      const {aSpans, bSpans} = diffChars(d.left, d.right);
+      leftHtml += `<div class="sbs-line changed"><span class="sbs-line-num">${d.leftNum}</span><span class="sbs-line-content">${spansToHtml(aSpans, 'char-add', 'char-del')}</span></div>`;
+      rightHtml += `<div class="sbs-line changed"><span class="sbs-line-num">${d.rightNum}</span><span class="sbs-line-content">${spansToHtml(bSpans, 'char-add', 'char-del')}</span></div>`;
+    }
+  });
+
+  container.innerHTML = `<div class="side-by-side"><div class="sbs-panel">${leftHtml}</div><div class="sbs-panel">${rightHtml}</div></div>`;
+
+  // Sync scrolling
+  const panels = container.querySelectorAll('.sbs-panel');
+  if (panels.length === 2) {
+    let syncing = false;
+    panels.forEach((p, i) => {
+      p.addEventListener('scroll', () => {
+        if (syncing) return;
+        syncing = true;
+        panels[1-i].scrollTop = p.scrollTop;
+        panels[1-i].scrollLeft = p.scrollLeft;
+        syncing = false;
+      });
+    });
+  }
+}
+
+function renderUnified(container) {
+  let text = generateUnifiedText();
+  let html = '';
+  text.split('\n').forEach(line => {
+    let cls = '';
+    if (line.startsWith('@@')) cls = 'header';
+    else if (line.startsWith('+')) cls = 'added';
+    else if (line.startsWith('-')) cls = 'removed';
+    html += `<div class="diff-line ${cls}"><span class="diff-line-content">${esc(line)}</span></div>`;
+  });
+  container.innerHTML = html || '<div style="padding:1rem;color:#9ca3af;text-align:center;">No differences found</div>';
+}
+
+function generateUnifiedText() {
+  let lines = ['--- original', '+++ modified'];
+  let chunk = [], leftStart = 0, rightStart = 0, leftCount = 0, rightCount = 0, inChunk = false;
+
+  function flushChunk() {
+    if (!inChunk) return;
+    lines.push(`@@ -${leftStart},${leftCount} +${rightStart},${rightCount} @@`);
+    lines.push(...chunk);
+    chunk = []; inChunk = false; leftCount = 0; rightCount = 0;
+  }
+
+  let contextBefore = [];
+  currentDiff.forEach((d, idx) => {
+    if (d.type === 'equal') {
+      if (inChunk) {
+        // Check if next non-equal is within 3 lines
+        let nextDiff = false;
+        for (let k = idx+1; k < Math.min(idx+4, currentDiff.length); k++) {
+          if (currentDiff[k].type !== 'equal') { nextDiff = true; break; }
+        }
+        if (nextDiff) {
+          chunk.push(' ' + d.left);
+          leftCount++; rightCount++;
+        } else {
+          // Add up to 3 trailing context
+          chunk.push(' ' + d.left);
+          leftCount++; rightCount++;
+          flushChunk();
+        }
+      } else {
+        contextBefore.push(d);
+        if (contextBefore.length > 3) contextBefore.shift();
+      }
+    } else {
+      if (!inChunk) {
+        inChunk = true;
+        leftStart = contextBefore.length > 0 ? contextBefore[0].leftNum : (d.leftNum || d.rightNum || 1);
+        rightStart = contextBefore.length > 0 ? contextBefore[0].rightNum : (d.rightNum || d.leftNum || 1);
+        contextBefore.forEach(c => {
+          chunk.push(' ' + c.left);
+          leftCount++; rightCount++;
+        });
+        contextBefore = [];
+      }
+      if (d.type === 'remove') {
+        chunk.push('-' + d.left); leftCount++;
+      } else if (d.type === 'add') {
+        chunk.push('+' + d.right); rightCount++;
+      } else if (d.type === 'changed') {
+        chunk.push('-' + d.left); leftCount++;
+        chunk.push('+' + d.right); rightCount++;
+      }
+    }
+  });
+  flushChunk();
+  return lines.join('\n');
+}
+
+function renderMerge(container) {
+  container.classList.remove('hidden');
+  let conflictIdx = 0;
+  let html = '<h3>Merge Tool</h3><p style="font-size:0.8rem;color:#6b7280;margin-bottom:0.75rem;">Choose left (original) or right (modified) for each difference.</p>';
+
+  currentDiff.forEach((d, i) => {
+    if (d.type === 'equal') return;
+    const ci = conflictIdx++;
+    const choice = mergeChoices[ci] || null;
+
+    const leftText = d.type === 'add' ? '(empty)' : d.left;
+    const rightText = d.type === 'remove' ? '(empty)' : d.right;
+
+    html += `<div class="merge-conflict">
+      <div class="merge-conflict-header">
+        <span>Change #${ci+1} (line ${d.leftNum || d.rightNum})</span>
+        <div class="merge-options">
+          <button class="merge-btn ${choice==='left'?'selected':''}" onclick="chooseMerge(${ci},'left',${i})">Use Left</button>
+          <button class="merge-btn ${choice==='right'?'selected':''}" onclick="chooseMerge(${ci},'right',${i})">Use Right</button>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;">
+        <div class="merge-preview left">${esc(leftText)}</div>
+        <div class="merge-preview right">${esc(rightText)}</div>
+      </div>
+    </div>`;
+  });
+
+  html += `<div style="margin-top:0.75rem;display:flex;gap:0.5rem;align-items:center;">
+    <button class="btn btn-green" onclick="buildMergedOutput()">Build Merged Output</button>
+    <button class="btn btn-secondary" onclick="copyMerged()">Copy Merged</button>
+  </div>
+  <div class="merge-result-area"><textarea id="mergedOutput" placeholder="Merged output will appear here..." readonly></textarea></div>`;
+
+  container.innerHTML = html;
+}
+
+function chooseMerge(conflictIdx, side, diffIdx) {
+  mergeChoices[conflictIdx] = side;
+  // Re-render merge panel
+  renderMerge(document.getElementById('mergePanel'));
+}
+
+function buildMergedOutput() {
+  let result = [];
+  let ci = 0;
+  currentDiff.forEach(d => {
+    if (d.type === 'equal') {
+      result.push(d.left);
+    } else {
+      const choice = mergeChoices[ci] || 'left';
+      if (d.type === 'remove') {
+        if (choice === 'left') result.push(d.left);
+        // right = omit (it was removed)
+      } else if (d.type === 'add') {
+        if (choice === 'right') result.push(d.right);
+        // left = omit (it was added)
+      } else if (d.type === 'changed') {
+        result.push(choice === 'left' ? d.left : d.right);
+      }
+      ci++;
+    }
+  });
+  document.getElementById('mergedOutput').value = result.join('\n');
+}
+
+function copyMerged() {
+  buildMergedOutput();
+  const ta = document.getElementById('mergedOutput');
+  navigator.clipboard.writeText(ta.value).then(() => showToast('Merged output copied'));
+}
+
+// ---- Actions ----
+function swapSides() {
+  const l = document.getElementById('leftInput');
+  const r = document.getElementById('rightInput');
+  const tmp = l.value;
+  l.value = r.value;
+  r.value = tmp;
+  saveToStorage();
+}
+
+function clearAll() {
+  document.getElementById('leftInput').value = '';
+  document.getElementById('rightInput').value = '';
+  document.getElementById('resultsPanel').classList.add('hidden');
+  currentDiff = [];
+  mergeChoices = {};
+  saveToStorage();
+}
+
+function copyUnified() {
+  navigator.clipboard.writeText(generateUnifiedText()).then(() => showToast('Unified diff copied'));
+}
+
+function downloadPatch() {
+  const text = generateUnifiedText();
+  const blob = new Blob([text], {type: 'text/plain'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'changes.patch';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function loadSample() {
+  document.getElementById('leftInput').value = `function greet(name) {
+  console.log("Hello, " + name);
+  return true;
+}
+
+function add(a, b) {
+  return a + b;
+}
+
+// Main
+const result = add(2, 3);
+greet("World");
+console.log("Result:", result);`;
+
+  document.getElementById('rightInput').value = `function greet(name, greeting = "Hello") {
+  console.log(greeting + ", " + name + "!");
+  return greeting;
+}
+
+function add(a, b) {
+  if (typeof a !== 'number' || typeof b !== 'number') {
+    throw new Error('Arguments must be numbers');
+  }
+  return a + b;
+}
+
+// Main
+const result = add(2, 3);
+greet("World", "Hey");
+console.log("Sum:", result);`;
+  saveToStorage();
+  computeDiff();
+}
+
+// ---- Toast ----
+function showToast(msg) {
+  const t = document.createElement('div');
+  t.textContent = msg;
+  Object.assign(t.style, {
+    position:'fixed',bottom:'2rem',left:'50%',transform:'translateX(-50%)',
+    background:'#1a1a2e',color:'#fff',padding:'0.5rem 1.25rem',borderRadius:'8px',
+    fontSize:'0.82rem',fontWeight:'500',zIndex:'9999',opacity:'0',transition:'opacity 0.3s'
+  });
+  document.body.appendChild(t);
+  requestAnimationFrame(() => t.style.opacity = '1');
+  setTimeout(() => { t.style.opacity = '0'; setTimeout(() => t.remove(), 300); }, 1800);
+}
+
+// ---- localStorage ----
+function saveToStorage() {
+  try {
+    localStorage.setItem('lumen-diff-left', document.getElementById('leftInput').value);
+    localStorage.setItem('lumen-diff-right', document.getElementById('rightInput').value);
+  } catch(e) {}
+}
+
+function loadFromStorage() {
+  try {
+    const l = localStorage.getItem('lumen-diff-left');
+    const r = localStorage.getItem('lumen-diff-right');
+    if (l) document.getElementById('leftInput').value = l;
+    if (r) document.getElementById('rightInput').value = r;
+  } catch(e) {}
+}
+
+// Auto-save on input
+document.getElementById('leftInput').addEventListener('input', saveToStorage);
+document.getElementById('rightInput').addEventListener('input', saveToStorage);
+
+// Init
+loadFromStorage();
+</script>
+</body>
+</html>

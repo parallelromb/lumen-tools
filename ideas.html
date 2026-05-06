@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Project Ideas Board - Lumen Analytics</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:#f8f9fc;color:#1a1a2e;min-height:100vh}
+button{font-family:inherit;cursor:pointer;border:none;background:none}
+input,textarea,select{font-family:inherit;border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:0.5rem 0.75rem;font-size:0.875rem;background:#fff;color:#1a1a2e;outline:none}
+input:focus,textarea:focus,select:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,0.1)}
+textarea{resize:vertical}
+
+.glass{background:rgba(255,255,255,0.72);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.6);border-radius:16px}
+
+/* Top bar */
+.topbar{display:flex;align-items:center;gap:1rem;padding:1rem 2rem;border-bottom:1px solid rgba(0,0,0,0.06);position:sticky;top:0;z-index:100;background:rgba(248,249,252,0.92);backdrop-filter:blur(20px)}
+.topbar .logo{display:flex;align-items:center;gap:0.5rem}
+.topbar .logo svg{width:28px;height:28px}
+.topbar h1{font-size:1.25rem;font-weight:700;letter-spacing:-0.02em}
+.topbar .back{color:#6b7280;text-decoration:none;font-size:0.85rem;font-weight:500}
+.topbar .back:hover{color:#3b82f6}
+.topbar-right{margin-left:auto;display:flex;align-items:center;gap:0.75rem}
+
+/* Tabs */
+.tabs{display:flex;gap:0.5rem;padding:1rem 2rem 0;flex-wrap:wrap}
+.tab{padding:0.5rem 1rem;border-radius:8px;font-size:0.85rem;font-weight:500;color:#6b7280;transition:all 0.15s}
+.tab:hover{background:rgba(59,130,246,0.08);color:#3b82f6}
+.tab.active{background:#3b82f6;color:#fff}
+
+/* Search & filter bar */
+.filter-bar{display:flex;gap:0.75rem;padding:1rem 2rem;flex-wrap:wrap;align-items:center}
+.filter-bar input[type="text"]{flex:1;min-width:200px}
+.filter-bar select{min-width:130px}
+
+/* Kanban */
+.kanban{display:flex;gap:1rem;padding:1rem 2rem;overflow-x:auto;min-height:60vh;align-items:flex-start}
+.kanban-col{min-width:280px;max-width:320px;flex:1;border-radius:16px;background:rgba(0,0,0,0.03);padding:0.75rem;display:flex;flex-direction:column;gap:0.5rem}
+.kanban-col-header{display:flex;align-items:center;gap:0.5rem;padding:0.5rem;font-weight:600;font-size:0.85rem;color:#374151}
+.kanban-col-header .count{background:rgba(0,0,0,0.08);border-radius:99px;padding:0.1rem 0.5rem;font-size:0.75rem;font-weight:500}
+.kanban-cards{display:flex;flex-direction:column;gap:0.5rem;min-height:40px}
+
+/* Idea card */
+.idea-card{border-radius:12px;padding:0.875rem;cursor:pointer;transition:transform 0.15s,box-shadow 0.15s;position:relative}
+.idea-card:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.08)}
+.idea-card .card-title{font-weight:600;font-size:0.9rem;margin-bottom:0.35rem;padding-right:2rem}
+.idea-card .card-meta{display:flex;flex-wrap:wrap;gap:0.35rem;margin-bottom:0.4rem}
+.idea-card .card-desc{font-size:0.8rem;color:#6b7280;line-height:1.4;margin-bottom:0.5rem;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.badge{display:inline-block;padding:0.15rem 0.5rem;border-radius:6px;font-size:0.7rem;font-weight:500}
+.badge-cat{background:rgba(59,130,246,0.1);color:#3b82f6}
+.badge-effort{background:rgba(245,158,11,0.1);color:#b45309}
+.badge-rev{background:rgba(16,185,129,0.1);color:#047857}
+.badge-tag{background:rgba(139,92,246,0.08);color:#7c3aed;cursor:pointer}
+.card-footer{display:flex;align-items:center;gap:0.5rem;margin-top:0.25rem}
+.score-pill{background:linear-gradient(135deg,rgba(59,130,246,0.12),rgba(139,92,246,0.12));color:#4338ca;font-weight:600;font-size:0.75rem;padding:0.2rem 0.6rem;border-radius:6px}
+.vote-btns{display:flex;align-items:center;gap:0.15rem;margin-left:auto}
+.vote-btns button{font-size:0.85rem;padding:0.15rem 0.3rem;border-radius:4px;color:#9ca3af;transition:color 0.15s}
+.vote-btns button:hover{color:#3b82f6}
+.vote-btns .vote-count{font-size:0.75rem;font-weight:600;color:#374151;min-width:1.2rem;text-align:center}
+.move-btns{display:flex;gap:0.15rem}
+.move-btns button{font-size:0.7rem;padding:0.15rem 0.35rem;border-radius:4px;color:#9ca3af;border:1px solid rgba(0,0,0,0.08)}
+.move-btns button:hover{color:#3b82f6;border-color:#3b82f6}
+
+/* Grid view */
+.grid-view{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:1rem;padding:1rem 2rem}
+.grid-view .idea-card{cursor:pointer}
+
+/* Stats view */
+.stats-view{padding:1.5rem 2rem;display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:1.5rem}
+.stat-card{padding:1.5rem}
+.stat-card h3{font-size:0.95rem;font-weight:600;margin-bottom:1rem}
+.stat-number{font-size:2.5rem;font-weight:700;letter-spacing:-0.03em}
+.stat-sub{font-size:0.8rem;color:#6b7280;margin-top:0.25rem}
+.chart-bar{display:flex;align-items:center;gap:0.5rem;margin-bottom:0.5rem}
+.chart-bar .label{font-size:0.8rem;width:100px;text-align:right;color:#374151;flex-shrink:0}
+.chart-bar .bar{height:24px;border-radius:6px;min-width:4px;transition:width 0.3s}
+.chart-bar .val{font-size:0.75rem;font-weight:600;color:#6b7280;min-width:24px}
+.top-list{list-style:none}
+.top-list li{display:flex;align-items:center;gap:0.75rem;padding:0.5rem 0;border-bottom:1px solid rgba(0,0,0,0.04)}
+.top-list li:last-child{border-bottom:none}
+.top-rank{font-weight:700;font-size:0.9rem;color:#9ca3af;width:1.5rem}
+.top-title{font-weight:500;font-size:0.85rem;flex:1}
+.top-score{font-weight:700;font-size:0.85rem;color:#4338ca}
+
+/* Modal */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.3);backdrop-filter:blur(4px);z-index:200;display:none;align-items:center;justify-content:center;padding:2rem}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:20px;width:100%;max-width:640px;max-height:90vh;overflow-y:auto;padding:2rem;box-shadow:0 24px 80px rgba(0,0,0,0.15)}
+.modal h2{font-size:1.2rem;font-weight:700;margin-bottom:1.5rem}
+.form-row{margin-bottom:1rem}
+.form-row label{display:block;font-size:0.8rem;font-weight:600;color:#374151;margin-bottom:0.35rem}
+.form-row input,.form-row textarea,.form-row select{width:100%}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.form-grid .form-row{margin-bottom:0}
+.pros-cons{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin-bottom:1rem}
+.pros-cons .col h4{font-size:0.8rem;font-weight:600;margin-bottom:0.5rem}
+.pros-cons .col h4.pro{color:#10b981}
+.pros-cons .col h4.con{color:#ef4444}
+.list-items{list-style:none;margin-bottom:0.5rem}
+.list-items li{display:flex;align-items:center;gap:0.35rem;margin-bottom:0.35rem;font-size:0.85rem}
+.list-items li button{color:#ef4444;font-size:0.7rem}
+.add-item-row{display:flex;gap:0.35rem}
+.add-item-row input{flex:1;font-size:0.8rem;padding:0.35rem 0.5rem}
+.add-item-row button{padding:0.35rem 0.6rem;font-size:0.8rem;border-radius:6px;background:#f3f4f6;color:#374151;font-weight:500}
+.links-list{margin-bottom:0.5rem}
+.links-list a{font-size:0.8rem;color:#3b82f6;display:block;margin-bottom:0.25rem;text-decoration:none;word-break:break-all}
+.links-list a:hover{text-decoration:underline}
+.link-row span{font-size:0.8rem;display:block;margin-bottom:0.25rem;word-break:break-all}
+.link-row button{color:#ef4444;font-size:0.7rem}
+.modal-actions{display:flex;gap:0.75rem;margin-top:1.5rem;justify-content:flex-end}
+.btn{padding:0.6rem 1.2rem;border-radius:10px;font-size:0.85rem;font-weight:600;transition:all 0.15s}
+.btn-primary{background:#3b82f6;color:#fff}
+.btn-primary:hover{background:#2563eb}
+.btn-secondary{background:#f3f4f6;color:#374151}
+.btn-secondary:hover{background:#e5e7eb}
+.btn-danger{background:#fef2f2;color:#ef4444}
+.btn-danger:hover{background:#fee2e2}
+.btn-sm{padding:0.4rem 0.8rem;font-size:0.8rem;border-radius:8px}
+.btn-export{background:#f0fdf4;color:#047857}
+.btn-export:hover{background:#dcfce7}
+
+/* Colors for status columns */
+.status-raw{border-left:3px solid #9ca3af}
+.status-researching{border-left:3px solid #3b82f6}
+.status-validated{border-left:3px solid #8b5cf6}
+.status-building{border-left:3px solid #f59e0b}
+.status-launched{border-left:3px solid #10b981}
+.status-killed{border-left:3px solid #ef4444}
+
+.col-color-raw{background:rgba(156,163,175,0.08)}
+.col-color-researching{background:rgba(59,130,246,0.06)}
+.col-color-validated{background:rgba(139,92,246,0.06)}
+.col-color-building{background:rgba(245,158,11,0.06)}
+.col-color-launched{background:rgba(16,185,129,0.06)}
+.col-color-killed{background:rgba(239,68,68,0.06)}
+
+.hidden{display:none!important}
+@media(max-width:768px){
+  .kanban{flex-direction:column}
+  .kanban-col{max-width:100%;min-width:100%}
+  .form-grid,.pros-cons{grid-template-columns:1fr}
+  .topbar{padding:0.75rem 1rem}
+  .filter-bar,.tabs{padding:0.75rem 1rem}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <a href="index.html" class="back">&larr; Analytics</a>
+  <div class="logo">
+    <svg viewBox="0 0 28 28" fill="none"><path d="M14 3C13 3 12 4 12 5.5V10L8 7C7 6.3 5.5 6.8 5.2 8C4.8 9.2 5.5 10 6.5 10.5L11 13L6.5 15.5C5.5 16 4.8 16.8 5.2 18C5.5 19.2 7 19.7 8 19L12 16V20.5C12 22 13 23 14 23C15 23 16 22 16 20.5V16L20 19C21 19.7 22.5 19.2 22.8 18C23.2 16.8 22.5 16 21.5 15.5L17 13L21.5 10.5C22.5 10 23.2 9.2 22.8 8C22.5 6.8 21 6.3 20 7L16 10V5.5C16 4 15 3 14 3Z" fill="#f59e0b" stroke="#f59e0b" stroke-width="0.5" stroke-linejoin="round"/><circle cx="14" cy="13" r="2.5" fill="#fff"/></svg>
+  </div>
+  <h1>Project Ideas Board</h1>
+  <div class="topbar-right">
+    <button class="btn btn-sm btn-export" onclick="exportJSON()" title="Export JSON">Export JSON</button>
+    <button class="btn btn-sm btn-export" onclick="exportMarkdown()" title="Export Markdown">Export MD</button>
+    <button class="btn btn-sm btn-primary" onclick="openModal()">+ New Idea</button>
+  </div>
+</div>
+
+<div class="tabs" id="viewTabs">
+  <button class="tab active" data-view="kanban">Kanban</button>
+  <button class="tab" data-view="grid">Grid</button>
+  <button class="tab" data-view="stats">Stats</button>
+</div>
+
+<div class="filter-bar">
+  <input type="text" id="searchInput" placeholder="Search ideas, tags...">
+  <select id="filterCategory"><option value="">All Categories</option></select>
+  <select id="filterStatus"><option value="">All Statuses</option></select>
+  <select id="filterScore">
+    <option value="">All Scores</option>
+    <option value="high">High (8+)</option>
+    <option value="mid">Medium (4-7)</option>
+    <option value="low">Low (0-3)</option>
+  </select>
+</div>
+
+<div id="kanbanView" class="kanban"></div>
+<div id="gridView" class="grid-view hidden"></div>
+<div id="statsView" class="stats-view hidden"></div>
+
+<!-- Modal -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <h2 id="modalTitle">New Idea</h2>
+    <input type="hidden" id="ideaId">
+    <div class="form-row"><label>Title</label><input type="text" id="fTitle" placeholder="Project name"></div>
+    <div class="form-row"><label>Description</label><textarea id="fDesc" rows="3" placeholder="Brief description of the idea..."></textarea></div>
+    <div class="form-grid">
+      <div class="form-row"><label>Category</label><select id="fCategory"></select></div>
+      <div class="form-row"><label>Status</label><select id="fStatus"></select></div>
+      <div class="form-row"><label>Effort</label><select id="fEffort"></select></div>
+      <div class="form-row"><label>Revenue Potential</label><select id="fRevenue"></select></div>
+    </div>
+    <div class="form-row" style="margin-top:1rem"><label>Tags (comma-separated)</label><input type="text" id="fTags" placeholder="AI, developer tools, family"></div>
+    <div class="form-row"><label>Novelty Factor (1-10)</label><input type="number" id="fNovelty" min="1" max="10" value="5"></div>
+    <div class="pros-cons">
+      <div class="col">
+        <h4 class="pro">+ Pros</h4>
+        <ul class="list-items" id="prosList"></ul>
+        <div class="add-item-row"><input type="text" id="proInput" placeholder="Add pro..."><button onclick="addListItem('pro')">+</button></div>
+      </div>
+      <div class="col">
+        <h4 class="con">- Cons</h4>
+        <ul class="list-items" id="consList"></ul>
+        <div class="add-item-row"><input type="text" id="conInput" placeholder="Add con..."><button onclick="addListItem('con')">+</button></div>
+      </div>
+    </div>
+    <div class="form-row">
+      <label>Reference Links</label>
+      <div id="linksList" class="links-list"></div>
+      <div class="add-item-row"><input type="text" id="linkInput" placeholder="https://..."><button onclick="addLink()">+ Link</button></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-danger" id="deleteBtn" onclick="deleteIdea()" style="margin-right:auto;display:none">Delete</button>
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveIdea()">Save Idea</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const CATEGORIES = ['SaaS','Mobile App','Content','Service','Open Source','Internal Tool'];
+const STATUSES = ['Raw Idea','Researching','Validated','Building','Launched','Killed'];
+const STATUS_KEYS = ['raw','researching','validated','building','launched','killed'];
+const EFFORTS = ['Weekend','1 Week','1 Month','3+ Months'];
+const REVENUES = ['None','$100/mo','$1K/mo','$10K/mo'];
+const EFFORT_VAL = {Weekend:1,'1 Week':2,'1 Month':4,'3+ Months':12};
+const REV_VAL = {None:0,'$100/mo':1,'$1K/mo':10,'$10K/mo':100};
+const STATUS_COLORS = {
+  'Raw Idea':'raw','Researching':'researching','Validated':'validated',
+  'Building':'building','Launched':'launched','Killed':'killed'
+};
+
+let ideas = [];
+let tempPros = [];
+let tempCons = [];
+let tempLinks = [];
+let currentView = 'kanban';
+
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
+
+function calcScore(idea){
+  const r = REV_VAL[idea.revenue]||0;
+  const e = EFFORT_VAL[idea.effort]||1;
+  const n = (idea.novelty||5)/5;
+  return Math.round((r/e)*n*10)/10;
+}
+
+function getDefaultIdeas(){
+  return [
+    {id:uid(),title:'Smara',desc:'AI-native memory API for teams and agents. Context recall, semantic search, knowledge graph.',category:'SaaS',status:'Building',effort:'1 Month',revenue:'$10K/mo',tags:['AI','memory','API','developer tools'],novelty:8,pros:['Unique positioning','Already live on Railway','MCP integration'],cons:['Crowded AI space','Needs enterprise sales'],links:['https://smara.dev'],votes:3,created:'2026-01-15'},
+    {id:uid(),title:'Scoper',desc:'9-agent estimation pipeline for software projects. Breaks down scope, estimates effort, generates proposals.',category:'SaaS',status:'Building',effort:'3+ Months',revenue:'$10K/mo',tags:['AI','estimation','developer tools'],novelty:7,pros:['Unique multi-agent approach','High pain point'],cons:['Complex to build','Hard to validate accuracy'],links:[],votes:2,created:'2026-02-20'},
+    {id:uid(),title:'MCP Doctor',desc:'MCP testing and monitoring SaaS. Health checks, conformance tests, uptime alerts for MCP servers.',category:'SaaS',status:'Killed',effort:'1 Week',revenue:'$1K/mo',tags:['AI','MCP','monitoring'],novelty:6,pros:['Low effort MVP','Growing MCP ecosystem'],cons:['Niche market','Langfuse dominates monitoring'],links:[],votes:-1,created:'2026-03-01'},
+    {id:uid(),title:'PJ Tales App',desc:'Bedtime story channel mobile app. AI-generated stories personalized for kids.',category:'Mobile App',status:'Building',effort:'1 Month',revenue:'$1K/mo',tags:['family','AI','content','kids'],novelty:7,pros:['Personal use case','Emotional value','Subscription model'],cons:['Content moderation','App store approval'],links:[],votes:2,created:'2026-02-10'},
+    {id:uid(),title:'Etsy Digital Products',desc:'Investment Wisdom digital downloads on Etsy. Printable guides, checklists, planners.',category:'Content',status:'Validated',effort:'1 Week',revenue:'$1K/mo',tags:['finance','passive income','content'],novelty:4,pros:['Low effort','Passive income','Existing marketplace'],cons:['Competitive','Low margins per unit'],links:[],votes:1,created:'2026-03-20'},
+    {id:uid(),title:'NRI Teaching Platform',desc:'Grandparent-to-grandchild teaching platform for NRI families. Cultural knowledge transfer.',category:'SaaS',status:'Raw Idea',effort:'3+ Months',revenue:'$10K/mo',tags:['family','education','NRI','culture'],novelty:9,pros:['Underserved market','Emotional resonance','Community flywheel'],cons:['Hard to monetize','Niche audience','Long build'],links:[],votes:1,created:'2026-03-30'},
+    {id:uid(),title:'AI Career Coach',desc:'AI-powered career coaching tool. Resume review, interview prep, skill gap analysis.',category:'SaaS',status:'Raw Idea',effort:'1 Month',revenue:'$1K/mo',tags:['AI','career','coaching'],novelty:5,pros:['Large TAM','Can integrate with Lumen'],cons:['Very competitive','Hard to differentiate'],links:[],votes:0,created:'2026-04-01'},
+    {id:uid(),title:'Freelance Consulting',desc:'AI/ML architecture consulting for startups. System design, LLM integration, cost optimization.',category:'Service',status:'Researching',effort:'Weekend',revenue:'$10K/mo',tags:['consulting','AI','freelance'],novelty:3,pros:['Immediate revenue','No product needed','Builds network'],cons:['Not scalable','Time-intensive'],links:[],votes:2,created:'2026-04-05'},
+    {id:uid(),title:'Open Source MCP Tools',desc:'Collection of open-source MCP utilities: testing CLI, server templates, protocol validators.',category:'Open Source',status:'Raw Idea',effort:'1 Week',revenue:'None',tags:['open source','MCP','developer tools'],novelty:6,pros:['Community building','Lead gen for Smara','Low risk'],cons:['No direct revenue','Maintenance burden'],links:[],votes:0,created:'2026-04-10'},
+    {id:uid(),title:'Family Dashboard SaaS',desc:'Productized version of Lumen family dashboard. Chores, meals, calendar, shared notes for families.',category:'SaaS',status:'Raw Idea',effort:'3+ Months',revenue:'$1K/mo',tags:['family','SaaS','productivity'],novelty:5,pros:['Dog-fooding Lumen','Subscription model','Growing market'],cons:['Crowded space','B2C is hard','Long build'],links:[],votes:0,created:'2026-04-15'}
+  ];
+}
+
+function load(){
+  const d = localStorage.getItem('lumen_ideas');
+  if(d){try{ideas=JSON.parse(d)}catch(e){ideas=getDefaultIdeas()}}
+  else{ideas=getDefaultIdeas();save()}
+}
+function save(){localStorage.setItem('lumen_ideas',JSON.stringify(ideas))}
+
+// Populate selects
+function populateSelects(){
+  [['fCategory',CATEGORIES],['fStatus',STATUSES],['fEffort',EFFORTS],['fRevenue',REVENUES]].forEach(([id,opts])=>{
+    const s=document.getElementById(id);
+    s.innerHTML=opts.map(o=>`<option value="${o}">${o}</option>`).join('');
+  });
+  document.getElementById('filterCategory').innerHTML='<option value="">All Categories</option>'+CATEGORIES.map(c=>`<option>${c}</option>`).join('');
+  document.getElementById('filterStatus').innerHTML='<option value="">All Statuses</option>'+STATUSES.map(s=>`<option>${s}</option>`).join('');
+}
+
+function getFiltered(){
+  const q = document.getElementById('searchInput').value.toLowerCase();
+  const cat = document.getElementById('filterCategory').value;
+  const st = document.getElementById('filterStatus').value;
+  const sc = document.getElementById('filterScore').value;
+  return ideas.filter(i=>{
+    if(q && !i.title.toLowerCase().includes(q) && !i.desc.toLowerCase().includes(q) && !(i.tags||[]).some(t=>t.toLowerCase().includes(q))) return false;
+    if(cat && i.category!==cat) return false;
+    if(st && i.status!==st) return false;
+    if(sc){
+      const s=calcScore(i);
+      if(sc==='high'&&s<8) return false;
+      if(sc==='mid'&&(s<4||s>=8)) return false;
+      if(sc==='low'&&s>=4) return false;
+    }
+    return true;
+  });
+}
+
+function renderCard(idea,showStatus){
+  const score = calcScore(idea);
+  const sk = STATUS_COLORS[idea.status]||'raw';
+  return `<div class="idea-card glass status-${sk}" onclick="openModal('${idea.id}')">
+    <div class="card-title">${esc(idea.title)}</div>
+    <div class="card-meta">
+      <span class="badge badge-cat">${esc(idea.category)}</span>
+      <span class="badge badge-effort">${esc(idea.effort)}</span>
+      <span class="badge badge-rev">${esc(idea.revenue)}</span>
+      ${showStatus?`<span class="badge" style="background:rgba(0,0,0,0.06);color:#374151">${esc(idea.status)}</span>`:''}
+    </div>
+    ${idea.desc?`<div class="card-desc">${esc(idea.desc)}</div>`:''}
+    ${(idea.tags||[]).length?`<div class="card-meta">${idea.tags.map(t=>`<span class="badge badge-tag">${esc(t)}</span>`).join('')}</div>`:''}
+    <div class="card-footer">
+      <span class="score-pill" title="Opportunity Score">${score}</span>
+      <div class="vote-btns" onclick="event.stopPropagation()">
+        <button onclick="vote('${idea.id}',1)" title="Upvote">&#9650;</button>
+        <span class="vote-count">${idea.votes||0}</span>
+        <button onclick="vote('${idea.id}',-1)" title="Downvote">&#9660;</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function renderKanban(){
+  const el = document.getElementById('kanbanView');
+  const filtered = getFiltered();
+  el.innerHTML = STATUSES.map((status,i)=>{
+    const cards = filtered.filter(id=>id.status===status).sort((a,b)=>(b.votes||0)-(a.votes||0));
+    const sk = STATUS_KEYS[i];
+    return `<div class="kanban-col col-color-${sk}">
+      <div class="kanban-col-header">${status}<span class="count">${cards.length}</span></div>
+      <div class="kanban-cards" data-status="${status}">
+        ${cards.map(c=>renderCard(c,false)).join('')}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderGrid(){
+  const el = document.getElementById('gridView');
+  const filtered = getFiltered().sort((a,b)=>calcScore(b)-calcScore(a));
+  el.innerHTML = filtered.map(c=>renderCard(c,true)).join('');
+}
+
+function renderStats(){
+  const el = document.getElementById('statsView');
+  const all = ideas;
+  const total = all.length;
+  const byCat = {};CATEGORIES.forEach(c=>byCat[c]=0);all.forEach(i=>byCat[i.category]=(byCat[i.category]||0)+1);
+  const bySt = {};STATUSES.forEach(s=>bySt[s]=0);all.forEach(i=>bySt[i.status]=(bySt[i.status]||0)+1);
+  const sorted = [...all].sort((a,b)=>calcScore(b)-calcScore(a));
+  const top5 = sorted.slice(0,5);
+  const catColors = ['#3b82f6','#8b5cf6','#f59e0b','#10b981','#ef4444','#6366f1'];
+  const stColors = ['#9ca3af','#3b82f6','#8b5cf6','#f59e0b','#10b981','#ef4444'];
+  const maxCat = Math.max(...Object.values(byCat),1);
+  const maxSt = Math.max(...Object.values(bySt),1);
+
+  el.innerHTML = `
+    <div class="glass stat-card">
+      <h3>Total Ideas</h3>
+      <div class="stat-number">${total}</div>
+      <div class="stat-sub">${bySt['Building']||0} building, ${bySt['Launched']||0} launched</div>
+    </div>
+    <div class="glass stat-card">
+      <h3>By Category</h3>
+      ${CATEGORIES.map((c,i)=>`<div class="chart-bar"><span class="label">${c}</span><div class="bar" style="width:${(byCat[c]/maxCat)*100}%;background:${catColors[i]}"></div><span class="val">${byCat[c]}</span></div>`).join('')}
+    </div>
+    <div class="glass stat-card">
+      <h3>By Status</h3>
+      ${STATUSES.map((s,i)=>`<div class="chart-bar"><span class="label">${s}</span><div class="bar" style="width:${(bySt[s]/maxSt)*100}%;background:${stColors[i]}"></div><span class="val">${bySt[s]}</span></div>`).join('')}
+    </div>
+    <div class="glass stat-card">
+      <h3>Top Scored Ideas</h3>
+      <ol class="top-list">${top5.map((idea,i)=>`<li><span class="top-rank">${i+1}</span><span class="top-title">${esc(idea.title)}</span><span class="top-score">${calcScore(idea)}</span></li>`).join('')}</ol>
+    </div>
+    <div class="glass stat-card">
+      <h3>Revenue Breakdown</h3>
+      ${REVENUES.map(r=>{const cnt=all.filter(i=>i.revenue===r).length;return`<div class="chart-bar"><span class="label">${r}</span><div class="bar" style="width:${(cnt/Math.max(total,1))*100}%;background:#10b981"></div><span class="val">${cnt}</span></div>`}).join('')}
+    </div>
+    <div class="glass stat-card">
+      <h3>Effort Distribution</h3>
+      ${EFFORTS.map(e=>{const cnt=all.filter(i=>i.effort===e).length;return`<div class="chart-bar"><span class="label">${e}</span><div class="bar" style="width:${(cnt/Math.max(total,1))*100}%;background:#f59e0b"></div><span class="val">${cnt}</span></div>`}).join('')}
+    </div>
+  `;
+}
+
+function render(){
+  document.getElementById('kanbanView').classList.toggle('hidden',currentView!=='kanban');
+  document.getElementById('gridView').classList.toggle('hidden',currentView!=='grid');
+  document.getElementById('statsView').classList.toggle('hidden',currentView!=='stats');
+  if(currentView==='kanban') renderKanban();
+  else if(currentView==='grid') renderGrid();
+  else renderStats();
+}
+
+// Tabs
+document.getElementById('viewTabs').addEventListener('click',e=>{
+  if(!e.target.classList.contains('tab')) return;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  e.target.classList.add('active');
+  currentView = e.target.dataset.view;
+  render();
+});
+
+// Filters
+['searchInput','filterCategory','filterStatus','filterScore'].forEach(id=>{
+  document.getElementById(id).addEventListener('input',render);
+  document.getElementById(id).addEventListener('change',render);
+});
+
+// Vote
+function vote(id,dir){
+  const idea = ideas.find(i=>i.id===id);
+  if(idea){idea.votes=(idea.votes||0)+dir;save();render()}
+}
+
+// Modal
+function openModal(id){
+  const modal = document.getElementById('modal');
+  tempPros=[];tempCons=[];tempLinks=[];
+  if(id){
+    const idea = ideas.find(i=>i.id===id);
+    if(!idea) return;
+    document.getElementById('modalTitle').textContent='Edit Idea';
+    document.getElementById('ideaId').value=id;
+    document.getElementById('fTitle').value=idea.title;
+    document.getElementById('fDesc').value=idea.desc||'';
+    document.getElementById('fCategory').value=idea.category;
+    document.getElementById('fStatus').value=idea.status;
+    document.getElementById('fEffort').value=idea.effort;
+    document.getElementById('fRevenue').value=idea.revenue;
+    document.getElementById('fTags').value=(idea.tags||[]).join(', ');
+    document.getElementById('fNovelty').value=idea.novelty||5;
+    tempPros=[...(idea.pros||[])];
+    tempCons=[...(idea.cons||[])];
+    tempLinks=[...(idea.links||[])];
+    document.getElementById('deleteBtn').style.display='inline-flex';
+  } else {
+    document.getElementById('modalTitle').textContent='New Idea';
+    document.getElementById('ideaId').value='';
+    document.getElementById('fTitle').value='';
+    document.getElementById('fDesc').value='';
+    document.getElementById('fCategory').value=CATEGORIES[0];
+    document.getElementById('fStatus').value=STATUSES[0];
+    document.getElementById('fEffort').value=EFFORTS[0];
+    document.getElementById('fRevenue').value=REVENUES[0];
+    document.getElementById('fTags').value='';
+    document.getElementById('fNovelty').value=5;
+    document.getElementById('deleteBtn').style.display='none';
+  }
+  renderProsCons();renderLinks();
+  modal.classList.add('open');
+}
+function closeModal(){document.getElementById('modal').classList.remove('open')}
+
+function renderProsCons(){
+  document.getElementById('prosList').innerHTML=tempPros.map((p,i)=>`<li>+ ${esc(p)} <button onclick="tempPros.splice(${i},1);renderProsCons()">&times;</button></li>`).join('');
+  document.getElementById('consList').innerHTML=tempCons.map((c,i)=>`<li>- ${esc(c)} <button onclick="tempCons.splice(${i},1);renderProsCons()">&times;</button></li>`).join('');
+}
+function addListItem(type){
+  const input = document.getElementById(type==='pro'?'proInput':'conInput');
+  const val = input.value.trim();
+  if(!val) return;
+  if(type==='pro') tempPros.push(val); else tempCons.push(val);
+  input.value='';renderProsCons();
+}
+function renderLinks(){
+  document.getElementById('linksList').innerHTML=tempLinks.map((l,i)=>`<div class="link-row"><span><a href="${esc(l)}" target="_blank">${esc(l)}</a> <button onclick="tempLinks.splice(${i},1);renderLinks()">&times;</button></span></div>`).join('');
+}
+function addLink(){
+  const input=document.getElementById('linkInput');
+  const val=input.value.trim();
+  if(!val)return;
+  tempLinks.push(val);input.value='';renderLinks();
+}
+
+// Enter key for add items
+['proInput','conInput','linkInput'].forEach(id=>{
+  document.getElementById(id).addEventListener('keydown',e=>{
+    if(e.key==='Enter'){
+      e.preventDefault();
+      if(id==='proInput') addListItem('pro');
+      else if(id==='conInput') addListItem('con');
+      else addLink();
+    }
+  });
+});
+
+function saveIdea(){
+  const title = document.getElementById('fTitle').value.trim();
+  if(!title){alert('Title is required');return}
+  const id = document.getElementById('ideaId').value;
+  const data = {
+    title,
+    desc:document.getElementById('fDesc').value.trim(),
+    category:document.getElementById('fCategory').value,
+    status:document.getElementById('fStatus').value,
+    effort:document.getElementById('fEffort').value,
+    revenue:document.getElementById('fRevenue').value,
+    tags:document.getElementById('fTags').value.split(',').map(t=>t.trim()).filter(Boolean),
+    novelty:parseInt(document.getElementById('fNovelty').value)||5,
+    pros:[...tempPros],
+    cons:[...tempCons],
+    links:[...tempLinks]
+  };
+  if(id){
+    const idx = ideas.findIndex(i=>i.id===id);
+    if(idx>=0) Object.assign(ideas[idx],data);
+  } else {
+    data.id=uid();data.votes=0;data.created=new Date().toISOString().split('T')[0];
+    ideas.push(data);
+  }
+  save();closeModal();render();
+}
+
+function deleteIdea(){
+  const id=document.getElementById('ideaId').value;
+  if(!id)return;
+  if(!confirm('Delete this idea?'))return;
+  ideas=ideas.filter(i=>i.id!==id);
+  save();closeModal();render();
+}
+
+// Export
+function exportJSON(){
+  const blob = new Blob([JSON.stringify(ideas,null,2)],{type:'application/json'});
+  const a = document.createElement('a');a.href=URL.createObjectURL(blob);a.download='project-ideas.json';a.click();
+}
+
+function exportMarkdown(){
+  const sorted = [...ideas].sort((a,b)=>calcScore(b)-calcScore(a));
+  let md = '# Project Ideas Pitch Deck\n\n';
+  md += `_Generated ${new Date().toLocaleDateString()}_\n\n`;
+  md += `**Total Ideas:** ${ideas.length} | **Building:** ${ideas.filter(i=>i.status==='Building').length} | **Launched:** ${ideas.filter(i=>i.status==='Launched').length}\n\n---\n\n`;
+  sorted.forEach((idea,i)=>{
+    const score = calcScore(idea);
+    md += `## ${i+1}. ${idea.title}\n\n`;
+    md += `**Category:** ${idea.category} | **Status:** ${idea.status} | **Effort:** ${idea.effort} | **Revenue:** ${idea.revenue} | **Score:** ${score}\n\n`;
+    if(idea.desc) md += `${idea.desc}\n\n`;
+    if(idea.tags?.length) md += `**Tags:** ${idea.tags.join(', ')}\n\n`;
+    if(idea.pros?.length){md += `**Pros:**\n`;idea.pros.forEach(p=>md+=`- ${p}\n`);md+='\n';}
+    if(idea.cons?.length){md += `**Cons:**\n`;idea.cons.forEach(c=>md+=`- ${c}\n`);md+='\n';}
+    if(idea.links?.length){md += `**Links:**\n`;idea.links.forEach(l=>md+=`- ${l}\n`);md+='\n';}
+    md += `**Votes:** ${idea.votes||0} | **Novelty:** ${idea.novelty||5}/10\n\n---\n\n`;
+  });
+  const blob = new Blob([md],{type:'text/markdown'});
+  const a = document.createElement('a');a.href=URL.createObjectURL(blob);a.download='project-ideas-pitch.md';a.click();
+}
+
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+
+// Click outside modal
+document.getElementById('modal').addEventListener('click',e=>{if(e.target===e.currentTarget)closeModal()});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closeModal()});
+
+// Init
+populateSelects();
+load();
+render();
+</script>
+</body>
+</html>

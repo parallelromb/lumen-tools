@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lorem Ipsum & Placeholder Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #f8f9fc;
+  color: #1a1a2e;
+  min-height: 100vh;
+  padding: 1.5rem;
+}
+.header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+.header h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  margin-bottom: 0.25rem;
+}
+.header p { color: #6b7280; font-size: 0.9rem; }
+.back-link {
+  position: absolute;
+  top: 1.5rem;
+  left: 1.5rem;
+  color: #3b82f6;
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.back-link:hover { text-decoration: underline; }
+
+.glass {
+  background: rgba(255,255,255,0.72);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.6);
+  border-radius: 16px;
+  padding: 1.5rem;
+}
+.container {
+  max-width: 1100px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+/* Section tabs */
+.section-tabs {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.section-tab {
+  padding: 0.5rem 1rem;
+  border-radius: 10px;
+  border: 1px solid rgba(0,0,0,0.08);
+  background: rgba(255,255,255,0.5);
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: #6b7280;
+  transition: all 0.2s;
+}
+.section-tab:hover { background: rgba(255,255,255,0.9); color: #1a1a2e; }
+.section-tab.active { background: #1a1a2e; color: #fff; border-color: #1a1a2e; }
+
+/* Text gen tabs */
+.text-tabs {
+  display: flex;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+.text-tab {
+  padding: 0.4rem 0.75rem;
+  border-radius: 8px;
+  border: none;
+  background: rgba(0,0,0,0.04);
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #6b7280;
+  transition: all 0.15s;
+}
+.text-tab:hover { background: rgba(0,0,0,0.08); }
+.text-tab.active { background: #3b82f6; color: #fff; }
+
+/* Controls */
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-end;
+  margin-bottom: 1rem;
+}
+.control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+.control-group label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6b7280;
+}
+.control-group input[type="number"],
+.control-group input[type="text"],
+.control-group select {
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid rgba(0,0,0,0.1);
+  font-size: 0.85rem;
+  font-family: inherit;
+  background: rgba(255,255,255,0.8);
+  width: 120px;
+}
+.control-group input[type="number"]:focus,
+.control-group input[type="text"]:focus,
+.control-group select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+}
+.toggle-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+}
+.toggle {
+  position: relative;
+  width: 40px;
+  height: 22px;
+  cursor: pointer;
+}
+.toggle input { opacity: 0; width: 0; height: 0; }
+.toggle .slider {
+  position: absolute;
+  inset: 0;
+  background: #d1d5db;
+  border-radius: 11px;
+  transition: 0.2s;
+}
+.toggle .slider::before {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  left: 3px;
+  top: 3px;
+  background: #fff;
+  border-radius: 50%;
+  transition: 0.2s;
+}
+.toggle input:checked + .slider { background: #3b82f6; }
+.toggle input:checked + .slider::before { transform: translateX(18px); }
+.toggle-label { font-size: 0.8rem; color: #6b7280; }
+
+/* Buttons */
+.btn {
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  border: none;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s;
+  font-family: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+.btn-primary { background: #3b82f6; color: #fff; }
+.btn-primary:hover { background: #2563eb; }
+.btn-secondary { background: rgba(0,0,0,0.06); color: #374151; }
+.btn-secondary:hover { background: rgba(0,0,0,0.1); }
+.btn-sm { padding: 0.35rem 0.75rem; font-size: 0.75rem; }
+
+/* Output */
+.output-area {
+  position: relative;
+  min-height: 120px;
+  max-height: 400px;
+  overflow-y: auto;
+  background: rgba(0,0,0,0.02);
+  border-radius: 10px;
+  padding: 1rem;
+  font-size: 0.85rem;
+  line-height: 1.7;
+  white-space: pre-wrap;
+  word-break: break-word;
+  border: 1px solid rgba(0,0,0,0.04);
+}
+.output-area:empty::after {
+  content: 'Generated content will appear here...';
+  color: #9ca3af;
+  font-style: italic;
+}
+.stats-bar {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.75rem;
+}
+.stat {
+  font-size: 0.75rem;
+  color: #6b7280;
+}
+.stat strong { color: #1a1a2e; font-weight: 600; }
+.action-bar {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.75rem;
+}
+
+/* Section panels */
+.section-panel { display: none; }
+.section-panel.active { display: block; }
+
+/* Image URL generator */
+.image-results {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+.image-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: rgba(0,0,0,0.02);
+  border-radius: 8px;
+  font-size: 0.8rem;
+}
+.image-row .url {
+  flex: 1;
+  font-family: 'SF Mono', Monaco, Consolas, monospace;
+  font-size: 0.78rem;
+  color: #3b82f6;
+  word-break: break-all;
+}
+.image-row .svc { font-weight: 600; color: #6b7280; min-width: 100px; }
+
+/* Fake data */
+.data-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 0.5rem;
+  margin-top: 1rem;
+  max-height: 400px;
+  overflow-y: auto;
+}
+.data-item {
+  padding: 0.5rem 0.75rem;
+  background: rgba(0,0,0,0.02);
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-family: 'SF Mono', Monaco, Consolas, monospace;
+  word-break: break-all;
+}
+
+/* Color palette */
+.color-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 1rem;
+}
+.color-swatch {
+  width: 80px;
+  text-align: center;
+  cursor: pointer;
+}
+.color-swatch .swatch {
+  width: 80px;
+  height: 60px;
+  border-radius: 10px;
+  margin-bottom: 0.35rem;
+  border: 1px solid rgba(0,0,0,0.08);
+}
+.color-swatch .hex {
+  font-size: 0.7rem;
+  font-weight: 600;
+  font-family: 'SF Mono', Monaco, Consolas, monospace;
+}
+
+/* History */
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  max-height: 400px;
+  overflow-y: auto;
+}
+.history-item {
+  padding: 0.75rem;
+  background: rgba(0,0,0,0.02);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.history-item:hover { background: rgba(0,0,0,0.05); }
+.history-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.7rem;
+  color: #9ca3af;
+  margin-bottom: 0.35rem;
+}
+.history-preview {
+  font-size: 0.8rem;
+  color: #374151;
+  line-height: 1.4;
+  max-height: 3em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.toast {
+  position: fixed;
+  bottom: 2rem;
+  right: 2rem;
+  background: #1a1a2e;
+  color: #fff;
+  padding: 0.75rem 1.25rem;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  font-weight: 500;
+  z-index: 1000;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: all 0.25s;
+  pointer-events: none;
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+<a href="index.html" class="back-link">
+  <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="10 14 4 8 10 2"/></svg>
+  Back
+</a>
+
+<div class="header">
+  <h1>Lorem Ipsum & Placeholder Generator</h1>
+  <p>Text, images, fake data, and colors for prototyping</p>
+</div>
+
+<div class="container">
+  <div class="section-tabs">
+    <button class="section-tab active" data-section="text">Text Generator</button>
+    <button class="section-tab" data-section="images">Placeholder Images</button>
+    <button class="section-tab" data-section="fakedata">Fake Data</button>
+    <button class="section-tab" data-section="colors">Color Palette</button>
+    <button class="section-tab" data-section="history">History</button>
+  </div>
+
+  <!-- TEXT GENERATOR -->
+  <div class="section-panel active glass" id="section-text">
+    <div class="text-tabs">
+      <button class="text-tab active" data-type="lorem">Lorem Ipsum</button>
+      <button class="text-tab" data-type="hipster">Hipster Ipsum</button>
+      <button class="text-tab" data-type="tech">Tech Ipsum</button>
+      <button class="text-tab" data-type="office">Office Ipsum</button>
+      <button class="text-tab" data-type="pirate">Pirate Ipsum</button>
+    </div>
+    <div class="controls">
+      <div class="control-group">
+        <label>Paragraphs</label>
+        <input type="number" id="numParagraphs" value="3" min="1" max="20">
+      </div>
+      <div class="control-group">
+        <label>Sentences / Para</label>
+        <input type="number" id="numSentences" value="5" min="3" max="10">
+      </div>
+      <div class="toggle-wrap">
+        <label class="toggle"><input type="checkbox" id="htmlTags"><span class="slider"></span></label>
+        <span class="toggle-label">Include HTML tags</span>
+      </div>
+      <button class="btn btn-primary" onclick="generateText()">Generate</button>
+    </div>
+    <div class="output-area" id="textOutput"></div>
+    <div class="stats-bar" id="textStats"></div>
+    <div class="action-bar">
+      <button class="btn btn-secondary btn-sm" onclick="copyOutput('textOutput')">Copy</button>
+      <button class="btn btn-secondary btn-sm" onclick="downloadOutput('textOutput', 'lorem.txt')">Download .txt</button>
+    </div>
+  </div>
+
+  <!-- PLACEHOLDER IMAGES -->
+  <div class="section-panel glass" id="section-images">
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:1rem;">Placeholder Image URLs</h3>
+    <div class="controls">
+      <div class="control-group">
+        <label>Width</label>
+        <input type="number" id="imgWidth" value="800" min="1" max="4000">
+      </div>
+      <div class="control-group">
+        <label>Height</label>
+        <input type="number" id="imgHeight" value="600" min="1" max="4000">
+      </div>
+      <button class="btn btn-primary" onclick="generateImageURLs()">Generate URLs</button>
+    </div>
+    <div class="image-results" id="imageResults"></div>
+    <div class="action-bar" style="margin-top:0.75rem">
+      <button class="btn btn-secondary btn-sm" onclick="copyAllImages()">Copy All</button>
+    </div>
+  </div>
+
+  <!-- FAKE DATA -->
+  <div class="section-panel glass" id="section-fakedata">
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:1rem;">Fake Data Generator</h3>
+    <div class="controls">
+      <div class="control-group">
+        <label>Data Type</label>
+        <select id="fakeDataType">
+          <option value="name">Names</option>
+          <option value="email">Emails</option>
+          <option value="phone">Phone Numbers</option>
+          <option value="address">Addresses</option>
+          <option value="company">Company Names</option>
+          <option value="date">Dates</option>
+          <option value="uuid">UUIDs</option>
+        </select>
+      </div>
+      <div class="control-group">
+        <label>Count</label>
+        <input type="number" id="fakeCount" value="10" min="1" max="50">
+      </div>
+      <button class="btn btn-primary" onclick="generateFakeData()">Generate</button>
+    </div>
+    <div class="data-grid" id="fakeDataOutput"></div>
+    <div class="action-bar" style="margin-top:0.75rem">
+      <button class="btn btn-secondary btn-sm" onclick="copyFakeData()">Copy All</button>
+      <button class="btn btn-secondary btn-sm" onclick="downloadFakeData()">Download .txt</button>
+    </div>
+  </div>
+
+  <!-- COLORS -->
+  <div class="section-panel glass" id="section-colors">
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:1rem;">Random Color Palette</h3>
+    <div class="controls">
+      <div class="control-group">
+        <label>Colors</label>
+        <input type="number" id="colorCount" value="6" min="1" max="20">
+      </div>
+      <button class="btn btn-primary" onclick="generateColors()">Generate</button>
+    </div>
+    <div class="color-grid" id="colorOutput"></div>
+    <div class="action-bar" style="margin-top:0.75rem">
+      <button class="btn btn-secondary btn-sm" onclick="copyColors()">Copy All Hex</button>
+    </div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="section-panel glass" id="section-history">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+      <h3 style="font-size:1rem;font-weight:600;">Generation History</h3>
+      <button class="btn btn-secondary btn-sm" onclick="clearHistory()">Clear All</button>
+    </div>
+    <div class="history-list" id="historyList"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Word Banks ──
+const WORDS = {
+  lorem: [
+    'lorem','ipsum','dolor','sit','amet','consectetur','adipiscing','elit','sed','do',
+    'eiusmod','tempor','incididunt','ut','labore','et','dolore','magna','aliqua','enim',
+    'ad','minim','veniam','quis','nostrud','exercitation','ullamco','laboris','nisi',
+    'aliquip','ex','ea','commodo','consequat','duis','aute','irure','in','reprehenderit',
+    'voluptate','velit','esse','cillum','fugiat','nulla','pariatur','excepteur','sint',
+    'occaecat','cupidatat','non','proident','sunt','culpa','qui','officia','deserunt',
+    'mollit','anim','id','est','laborum','blandit','volutpat','maecenas','accumsan',
+    'lacus','vel','facilisis','cras','fermentum','odio','eu','feugiat','pretium','nibh',
+    'praesent','semper','felis','lectus','malesuada','pellentesque','eget','nunc','scelerisque',
+    'viverra','mauris','augue','neque','gravida','risus','commodo','viverra','vitae','congue'
+  ],
+  hipster: [
+    'artisan','craft','kombucha','avocado','toast','vinyl','sustainable','ethical','organic',
+    'cold-brew','sourdough','aesthetic','curated','bespoke','handcrafted','microdose','latte',
+    'matcha','oat-milk','fixie','bicycle','flannel','beard','tattoo','vintage','retro','thrift',
+    'minimalist','hygge','woke','plant-based','zero-waste','upcycled','vegan','gluten-free',
+    'activated','charcoal','turmeric','adaptogen','mushroom','cacao','ceremony','wellness',
+    'mindful','intentional','slow-living','cottagecore','farmhouse','terrazzo','rattan','macrame',
+    'succulent','propagation','sourdough','fermented','kimchi','sriracha','tahini','hummus',
+    'poke','bowl','acai','smoothie','granola','chia','quinoa','kale','spirulina','collagen',
+    'prebiotic','probiotic','gut-health','chakra','crystal','sage','palo-santo','incense',
+    'meditation','breathwork','journaling','manifesting','vibes','energy','aura','frequency'
+  ],
+  tech: [
+    'blockchain','kubernetes','microservices','serverless','API','machine-learning','neural',
+    'network','deep-learning','DevOps','CI/CD','pipeline','container','docker','terraform',
+    'infrastructure','cloud-native','scalable','distributed','agile','sprint','standup',
+    'deployment','repository','merge','commit','webhook','endpoint','middleware','GraphQL',
+    'REST','gRPC','WebSocket','streaming','real-time','low-latency','high-throughput',
+    'horizontal','scaling','load-balancer','CDN','edge','compute','lambda','function',
+    'event-driven','pub-sub','message-queue','Redis','PostgreSQL','MongoDB','Elasticsearch',
+    'vector-database','embedding','transformer','LLM','prompt','fine-tuning','RAG',
+    'inference','GPU','CUDA','quantization','token','context-window','multimodal',
+    'autonomous','agent','workflow','orchestration','observability','telemetry','SLA',
+    'uptime','latency','throughput','bandwidth','cache','invalidation','sharding',
+    'replication','consensus','fault-tolerant','zero-downtime','blue-green','canary'
+  ],
+  office: [
+    'synergy','leverage','paradigm','stakeholder','deliverable','bandwidth','circle-back',
+    'deep-dive','low-hanging-fruit','move-the-needle','actionable','KPI','OKR','pipeline',
+    'deck','alignment','cadence','touchpoint','ecosystem','onboard','offboard','upskill',
+    'scalable','sustainable','bottom-line','top-line','ROI','forecast','quarter','fiscal',
+    'budget','headcount','restructure','optimize','streamline','consolidate','initiative',
+    'strategy','roadmap','milestone','blocker','dependency','risk','mitigation','compliance',
+    'governance','audit','benchmark','best-practice','thought-leadership','value-add',
+    'cross-functional','silo','breakout','workshop','retro','standup','all-hands','town-hall',
+    'skip-level','one-on-one','feedback','review','performance','talent','culture','diversity',
+    'inclusion','engagement','retention','attrition','turnover','succession','pipeline',
+    'competency','matrix','framework','methodology','playbook','template','SOP','rubric'
+  ],
+  pirate: [
+    'arr','matey','ahoy','avast','aye','blimey','buccaneer','captain','corsair','crew',
+    'cutlass','davy-jones','deck','doubloon','fathom','flagship','galleon','gangplank',
+    'grog','harbor','helm','horizon','hull','island','jolly-roger','keelhaul','landlubber',
+    'loot','mast','mutiny','navigation','ocean','parrot','pegleg','plank','plunder',
+    'portside','quartermaster','rigging','rum','sail','scallywag','scurvy','seafarer',
+    'shipwreck','shiver-me-timbers','skull-and-crossbones','starboard','stern','swashbuckler',
+    'sword','telescope','tide','treasure','vessel','voyage','walk-the-plank','whirlpool',
+    'windward','yo-ho-ho','anchor','barnacle','booty','broadside','cannon','chest','compass',
+    'cove','crow-nest','dagger','eyepatch','first-mate','flag','fo-c-sle','gunwale',
+    'hammock','harpoon','jib','keel','lagoon','map','mariner','nautical','poop-deck'
+  ]
+};
+
+let currentTextType = 'lorem';
+let currentSection = 'text';
+let generatedFakeData = [];
+let generatedColors = [];
+
+// ── Section & Tab Switching ──
+document.querySelectorAll('.section-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.section-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.section-panel').forEach(p => p.classList.remove('active'));
+    tab.classList.add('active');
+    currentSection = tab.dataset.section;
+    document.getElementById('section-' + currentSection).classList.add('active');
+    if (currentSection === 'history') renderHistory();
+  });
+});
+
+document.querySelectorAll('.text-tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.text-tab').forEach(t => t.classList.remove('active'));
+    tab.classList.add('active');
+    currentTextType = tab.dataset.type;
+  });
+});
+
+// ── Text Generation ──
+function pickWords(bank, count) {
+  const result = [];
+  for (let i = 0; i < count; i++) {
+    result.push(bank[Math.floor(Math.random() * bank.length)]);
+  }
+  return result;
+}
+
+function makeSentence(bank) {
+  const len = 6 + Math.floor(Math.random() * 10);
+  const words = pickWords(bank, len);
+  words[0] = words[0].charAt(0).toUpperCase() + words[0].slice(1);
+  return words.join(' ') + '.';
+}
+
+function generateText() {
+  const numP = parseInt(document.getElementById('numParagraphs').value) || 3;
+  const numS = parseInt(document.getElementById('numSentences').value) || 5;
+  const htmlTags = document.getElementById('htmlTags').checked;
+  const bank = WORDS[currentTextType];
+
+  const paragraphs = [];
+  for (let p = 0; p < numP; p++) {
+    const sentences = [];
+    for (let s = 0; s < numS; s++) {
+      sentences.push(makeSentence(bank));
+    }
+    paragraphs.push(sentences.join(' '));
+  }
+
+  let output;
+  if (htmlTags) {
+    output = paragraphs.map(p => '<p>' + p + '</p>').join('\n\n');
+  } else {
+    output = paragraphs.join('\n\n');
+  }
+
+  const el = document.getElementById('textOutput');
+  el.textContent = output;
+
+  // Stats
+  const text = paragraphs.join(' ');
+  const words = text.split(/\s+/).filter(Boolean).length;
+  const chars = text.length;
+  const sCount = numP * numS;
+  document.getElementById('textStats').innerHTML =
+    `<span class="stat"><strong>${words}</strong> words</span>` +
+    `<span class="stat"><strong>${chars}</strong> characters</span>` +
+    `<span class="stat"><strong>${sCount}</strong> sentences</span>` +
+    `<span class="stat"><strong>${numP}</strong> paragraphs</span>`;
+
+  saveToHistory('text', `${currentTextType} - ${numP}p/${numS}s`, output);
+}
+
+// ── Image URLs ──
+function generateImageURLs() {
+  const w = parseInt(document.getElementById('imgWidth').value) || 800;
+  const h = parseInt(document.getElementById('imgHeight').value) || 600;
+  const services = [
+    { name: 'placeholder.com', url: `https://via.placeholder.com/${w}x${h}` },
+    { name: 'picsum.photos', url: `https://picsum.photos/${w}/${h}` },
+    { name: 'placehold.co', url: `https://placehold.co/${w}x${h}` },
+  ];
+
+  const container = document.getElementById('imageResults');
+  container.innerHTML = services.map(s =>
+    `<div class="image-row">
+      <span class="svc">${s.name}</span>
+      <span class="url">${s.url}</span>
+      <button class="btn btn-secondary btn-sm" onclick="copyText('${s.url}')">Copy</button>
+    </div>`
+  ).join('');
+
+  const allUrls = services.map(s => s.url).join('\n');
+  saveToHistory('images', `${w}x${h}`, allUrls);
+}
+
+function copyAllImages() {
+  const urls = Array.from(document.querySelectorAll('#imageResults .url')).map(el => el.textContent).join('\n');
+  copyText(urls);
+}
+
+// ── Fake Data ──
+const FIRST_NAMES = ['James','Mary','Robert','Patricia','John','Jennifer','Michael','Linda','David','Elizabeth','William','Barbara','Richard','Susan','Joseph','Jessica','Thomas','Sarah','Charles','Karen','Emma','Liam','Olivia','Noah','Ava','Sophia','Aiden','Mia','Ethan','Isabella'];
+const LAST_NAMES = ['Smith','Johnson','Williams','Brown','Jones','Garcia','Miller','Davis','Rodriguez','Martinez','Hernandez','Lopez','Gonzalez','Wilson','Anderson','Thomas','Taylor','Moore','Jackson','Martin','Lee','Perez','Thompson','White','Harris','Sanchez','Clark','Ramirez','Lewis','Robinson'];
+const STREETS = ['Maple St','Oak Ave','Cedar Ln','Pine Dr','Elm Blvd','Birch Rd','Walnut Way','Spruce Ct','Willow Pl','Cherry Cir','Main St','Broadway','Park Ave','Lake Dr','River Rd','Hill St','Valley View','Sunset Blvd','Forest Trail','Meadow Ln'];
+const CITIES = ['New York','Los Angeles','Chicago','Houston','Phoenix','San Francisco','Toronto','London','Mumbai','Stockholm','Austin','Seattle','Denver','Portland','Atlanta','Boston','Miami','Dallas','Minneapolis','San Diego'];
+const COMPANIES_PRE = ['Tech','Global','Smart','Next','Blue','Green','Alpha','Meta','Cloud','Data','Cyber','Quantum','Apex','Prime','Nova','Hyper','Ultra','Omni','Neo','Vortex'];
+const COMPANIES_SUF = ['Systems','Solutions','Labs','Corp','Inc','Group','Dynamics','Works','Hub','Forge','Logic','Ventures','Partners','Digital','Networks','AI','Analytics','Technologies','Innovations','Robotics'];
+const DOMAINS = ['gmail.com','outlook.com','yahoo.com','proton.me','fastmail.com','hey.com','icloud.com','mail.com'];
+
+function rand(arr) { return arr[Math.floor(Math.random() * arr.length)]; }
+function randInt(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+
+function genUUID() {
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = Math.random() * 16 | 0;
+    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+  });
+}
+
+function generateOneFakeData(type) {
+  switch(type) {
+    case 'name': return rand(FIRST_NAMES) + ' ' + rand(LAST_NAMES);
+    case 'email': {
+      const f = rand(FIRST_NAMES).toLowerCase();
+      const l = rand(LAST_NAMES).toLowerCase();
+      const sep = rand(['.','_','']);
+      return f + sep + l + randInt(1,99) + '@' + rand(DOMAINS);
+    }
+    case 'phone': return `+1 (${randInt(200,999)}) ${randInt(200,999)}-${String(randInt(1000,9999))}`;
+    case 'address': return `${randInt(1,9999)} ${rand(STREETS)}, ${rand(CITIES)}, ${String.fromCharCode(65+randInt(0,25))}${String.fromCharCode(65+randInt(0,25))} ${randInt(10000,99999)}`;
+    case 'company': return rand(COMPANIES_PRE) + ' ' + rand(COMPANIES_SUF);
+    case 'date': {
+      const y = randInt(2020, 2026);
+      const m = String(randInt(1,12)).padStart(2,'0');
+      const d = String(randInt(1,28)).padStart(2,'0');
+      return `${y}-${m}-${d}`;
+    }
+    case 'uuid': return genUUID();
+    default: return '';
+  }
+}
+
+function generateFakeData() {
+  const type = document.getElementById('fakeDataType').value;
+  const count = parseInt(document.getElementById('fakeCount').value) || 10;
+  generatedFakeData = [];
+  for (let i = 0; i < count; i++) {
+    generatedFakeData.push(generateOneFakeData(type));
+  }
+  const container = document.getElementById('fakeDataOutput');
+  container.innerHTML = generatedFakeData.map(d => `<div class="data-item">${d}</div>`).join('');
+  saveToHistory('fakedata', `${type} x${count}`, generatedFakeData.join('\n'));
+}
+
+function copyFakeData() { copyText(generatedFakeData.join('\n')); }
+function downloadFakeData() { downloadText(generatedFakeData.join('\n'), 'fake-data.txt'); }
+
+// ── Colors ──
+function randomHex() {
+  return '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6,'0');
+}
+
+function generateColors() {
+  const count = parseInt(document.getElementById('colorCount').value) || 6;
+  generatedColors = [];
+  for (let i = 0; i < count; i++) generatedColors.push(randomHex());
+
+  const container = document.getElementById('colorOutput');
+  container.innerHTML = generatedColors.map(c =>
+    `<div class="color-swatch" onclick="copyText('${c}')">
+      <div class="swatch" style="background:${c}"></div>
+      <div class="hex">${c}</div>
+    </div>`
+  ).join('');
+  saveToHistory('colors', `${count} colors`, generatedColors.join(', '));
+}
+
+function copyColors() { copyText(generatedColors.join('\n')); }
+
+// ── History ──
+function getHistory() {
+  try { return JSON.parse(localStorage.getItem('lorem_history') || '[]'); } catch { return []; }
+}
+
+function saveToHistory(type, label, content) {
+  const history = getHistory();
+  history.unshift({
+    id: Date.now(),
+    type,
+    label,
+    content,
+    timestamp: new Date().toISOString()
+  });
+  if (history.length > 100) history.length = 100;
+  localStorage.setItem('lorem_history', JSON.stringify(history));
+}
+
+function renderHistory() {
+  const history = getHistory();
+  const container = document.getElementById('historyList');
+  if (history.length === 0) {
+    container.innerHTML = '<p style="color:#9ca3af;font-size:0.85rem;text-align:center;padding:2rem 0;">No history yet. Generate some content to see it here.</p>';
+    return;
+  }
+  container.innerHTML = history.map(h => {
+    const d = new Date(h.timestamp);
+    const time = d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+    const typeLabels = { text: 'Text', images: 'Images', fakedata: 'Fake Data', colors: 'Colors' };
+    return `<div class="history-item" onclick="copyText(${JSON.stringify(h.content).replace(/"/g, '&quot;')})">
+      <div class="history-meta">
+        <span>${typeLabels[h.type] || h.type} &middot; ${h.label}</span>
+        <span>${time}</span>
+      </div>
+      <div class="history-preview">${h.content.substring(0, 150).replace(/</g,'&lt;')}${h.content.length > 150 ? '...' : ''}</div>
+    </div>`;
+  }).join('');
+}
+
+function clearHistory() {
+  localStorage.removeItem('lorem_history');
+  renderHistory();
+  showToast('History cleared');
+}
+
+// ── Utility ──
+function copyText(text) {
+  navigator.clipboard.writeText(text).then(() => showToast('Copied to clipboard'));
+}
+
+function copyOutput(id) {
+  const el = document.getElementById(id);
+  copyText(el.textContent);
+}
+
+function downloadOutput(id, filename) {
+  downloadText(document.getElementById(id).textContent, filename);
+}
+
+function downloadText(text, filename) {
+  const blob = new Blob([text], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showToast('Downloaded ' + filename);
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// Init with some text
+generateText();
+</script>
+</body>
+</html>

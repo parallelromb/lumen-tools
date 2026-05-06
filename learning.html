@@ -1,0 +1,1159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Learning & Courses Tracker — Sri</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #f8f9fc;
+    color: #1a1a2e;
+    min-height: 100vh;
+    padding: 1.5rem;
+  }
+  a { color: #3b82f6; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  .back { display: inline-block; margin-bottom: 1rem; font-size: 0.85rem; color: #6b7280; }
+  .back:hover { color: #3b82f6; }
+  .header { text-align: center; margin-bottom: 1.5rem; }
+  .header h1 { font-size: 1.85rem; font-weight: 700; letter-spacing: -0.02em; }
+  .header p { color: #6b7280; font-size: 0.9rem; margin-top: 0.25rem; }
+
+  .glass {
+    background: rgba(255,255,255,0.72);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.6);
+    border-radius: 16px;
+  }
+  .card { padding: 1.5rem; }
+
+  /* Tabs */
+  .tabs { display: flex; justify-content: center; gap: 0.4rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+  .tab {
+    padding: 0.55rem 1.1rem; border-radius: 10px; border: 1px solid rgba(0,0,0,0.08);
+    background: rgba(255,255,255,0.5); backdrop-filter: blur(10px);
+    cursor: pointer; font-size: 0.82rem; font-weight: 500; color: #6b7280;
+    transition: all 0.2s;
+  }
+  .tab:hover { background: rgba(255,255,255,0.8); color: #1a1a2e; }
+  .tab.active { background: #1a1a2e; color: #fff; border-color: #1a1a2e; }
+
+  .tab-content { display: none; max-width: 1200px; margin: 0 auto; }
+  .tab-content.active { display: block; }
+
+  /* Stats row */
+  .stats-row { display: flex; justify-content: center; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+  .stat-card { padding: 1rem 1.5rem; text-align: center; min-width: 130px; }
+  .stat-card .value { font-size: 1.6rem; font-weight: 700; }
+  .stat-card .label { font-size: 0.7rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.2rem; }
+
+  /* Forms */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+  .form-grid.three { grid-template-columns: 1fr 1fr 1fr; }
+  .form-group { display: flex; flex-direction: column; gap: 0.3rem; }
+  .form-group.full { grid-column: 1 / -1; }
+  label { font-size: 0.78rem; font-weight: 500; color: #6b7280; }
+  input, select, textarea {
+    padding: 0.6rem 0.75rem; border-radius: 8px; border: 1px solid rgba(0,0,0,0.1);
+    font-family: inherit; font-size: 0.85rem; background: rgba(255,255,255,0.8);
+    transition: border-color 0.2s;
+  }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: #3b82f6; }
+  textarea { resize: vertical; min-height: 60px; }
+  .slider-wrap { display: flex; align-items: center; gap: 0.5rem; }
+  .slider-wrap input[type=range] { flex: 1; accent-color: #3b82f6; }
+  .slider-val { font-size: 0.85rem; font-weight: 600; min-width: 36px; text-align: right; }
+
+  .btn {
+    padding: 0.6rem 1.2rem; border-radius: 10px; border: none; font-family: inherit;
+    font-size: 0.85rem; font-weight: 600; cursor: pointer; transition: all 0.2s;
+  }
+  .btn-primary { background: #1a1a2e; color: #fff; }
+  .btn-primary:hover { background: #2d2d4e; }
+  .btn-secondary { background: rgba(0,0,0,0.05); color: #1a1a2e; }
+  .btn-secondary:hover { background: rgba(0,0,0,0.1); }
+  .btn-danger { background: rgba(239,68,68,0.1); color: #ef4444; }
+  .btn-danger:hover { background: rgba(239,68,68,0.2); }
+  .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.78rem; border-radius: 8px; }
+  .btn-row { display: flex; gap: 0.5rem; margin-top: 0.75rem; flex-wrap: wrap; }
+
+  /* Stars */
+  .stars { display: flex; gap: 2px; cursor: pointer; }
+  .stars .star { font-size: 1.2rem; color: #d1d5db; transition: color 0.15s; }
+  .stars .star.filled { color: #f59e0b; }
+  .stars .star:hover { color: #f59e0b; }
+
+  /* Kanban */
+  .kanban { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1rem; }
+  .kanban-col { min-height: 200px; }
+  .kanban-col h3 {
+    font-size: 0.85rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;
+    margin-bottom: 0.75rem; padding-bottom: 0.5rem; border-bottom: 2px solid;
+  }
+  .kanban-col.not-started h3 { color: #6b7280; border-color: #d1d5db; }
+  .kanban-col.in-progress h3 { color: #3b82f6; border-color: #3b82f6; }
+  .kanban-col.completed h3 { color: #10b981; border-color: #10b981; }
+  .kanban-card {
+    background: rgba(255,255,255,0.8); border-radius: 10px; padding: 0.85rem;
+    margin-bottom: 0.6rem; border: 1px solid rgba(0,0,0,0.06); cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .kanban-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
+  .kanban-card .title { font-weight: 600; font-size: 0.85rem; margin-bottom: 0.3rem; }
+  .kanban-card .meta { font-size: 0.72rem; color: #6b7280; display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+  .badge {
+    display: inline-block; padding: 0.15rem 0.5rem; border-radius: 6px; font-size: 0.7rem; font-weight: 500;
+  }
+  .badge-ai { background: rgba(168,85,247,0.1); color: #a855f7; }
+  .badge-arch { background: rgba(59,130,246,0.1); color: #3b82f6; }
+  .badge-cloud { background: rgba(14,165,233,0.1); color: #0ea5e9; }
+  .badge-lead { background: rgba(245,158,11,0.1); color: #f59e0b; }
+  .badge-fin { background: rgba(16,185,129,0.1); color: #10b981; }
+  .badge-code { background: rgba(99,102,241,0.1); color: #6366f1; }
+  .badge-design { background: rgba(236,72,153,0.1); color: #ec4899; }
+
+  .progress-bar-wrap { background: rgba(0,0,0,0.06); border-radius: 4px; height: 6px; margin-top: 0.4rem; overflow: hidden; }
+  .progress-bar-fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
+  .progress-bar-fill.blue { background: #3b82f6; }
+  .progress-bar-fill.green { background: #10b981; }
+  .progress-bar-fill.yellow { background: #f59e0b; }
+
+  /* Charts */
+  .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.25rem; }
+  .chart-box { max-height: 320px; display: flex; align-items: center; justify-content: center; }
+  .chart-box canvas { max-height: 300px; }
+
+  /* Learning log */
+  .log-table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+  .log-table th { text-align: left; font-weight: 600; color: #6b7280; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.04em; padding: 0.5rem 0.75rem; border-bottom: 1px solid rgba(0,0,0,0.08); }
+  .log-table td { padding: 0.6rem 0.75rem; border-bottom: 1px solid rgba(0,0,0,0.04); }
+  .log-table tr:hover td { background: rgba(59,130,246,0.03); }
+
+  /* Weekly goal */
+  .goal-ring-wrap { display: flex; align-items: center; gap: 2rem; }
+  .goal-ring { position: relative; width: 140px; height: 140px; }
+  .goal-ring canvas { width: 140px !important; height: 140px !important; }
+  .goal-ring .center-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); text-align: center; }
+  .goal-ring .center-text .big { font-size: 1.4rem; font-weight: 700; }
+  .goal-ring .center-text .small { font-size: 0.7rem; color: #6b7280; }
+
+  /* Certificates */
+  .cert-card {
+    display: flex; align-items: center; gap: 1rem; padding: 0.85rem 1rem;
+    background: rgba(255,255,255,0.6); border-radius: 10px; border: 1px solid rgba(0,0,0,0.05);
+    margin-bottom: 0.5rem;
+  }
+  .cert-icon { width: 36px; height: 36px; background: rgba(245,158,11,0.12); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+  /* Review reminders */
+  .review-item { display: flex; align-items: center; justify-content: space-between; padding: 0.6rem 0; border-bottom: 1px solid rgba(0,0,0,0.04); }
+  .review-item:last-child { border-bottom: none; }
+  .review-due { font-size: 0.72rem; font-weight: 600; padding: 0.2rem 0.5rem; border-radius: 6px; }
+  .review-overdue { background: rgba(239,68,68,0.1); color: #ef4444; }
+  .review-today { background: rgba(245,158,11,0.1); color: #f59e0b; }
+  .review-upcoming { background: rgba(59,130,246,0.1); color: #3b82f6; }
+
+  /* Skills mapping */
+  .skill-map-item { display: flex; align-items: center; gap: 0.5rem; padding: 0.4rem 0; }
+  .skill-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.3); backdrop-filter: blur(4px);
+    display: none; align-items: center; justify-content: center; z-index: 1000; padding: 1rem;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal { width: 100%; max-width: 560px; max-height: 90vh; overflow-y: auto; padding: 1.75rem; }
+  .modal h2 { font-size: 1.15rem; font-weight: 700; margin-bottom: 1rem; }
+
+  /* Responsive */
+  @media (max-width: 768px) {
+    .kanban { grid-template-columns: 1fr; }
+    .charts-grid { grid-template-columns: 1fr; }
+    .form-grid { grid-template-columns: 1fr; }
+    .form-grid.three { grid-template-columns: 1fr; }
+    .goal-ring-wrap { flex-direction: column; align-items: flex-start; }
+  }
+</style>
+</head>
+<body>
+<a href="index.html" class="back">&larr; Back to Analytics</a>
+<div class="header">
+  <h1>Learning & Courses Tracker</h1>
+  <p>Track courses, study sessions, certificates, and skill development</p>
+</div>
+
+<div class="tabs">
+  <div class="tab active" data-tab="dashboard">Dashboard</div>
+  <div class="tab" data-tab="courses">Courses</div>
+  <div class="tab" data-tab="kanban">Progress Board</div>
+  <div class="tab" data-tab="charts">Analytics</div>
+  <div class="tab" data-tab="log">Learning Log</div>
+  <div class="tab" data-tab="goal">Weekly Goal</div>
+  <div class="tab" data-tab="certs">Certificates</div>
+  <div class="tab" data-tab="review">Spaced Review</div>
+  <div class="tab" data-tab="skills">Skills Link</div>
+  <div class="tab" data-tab="export">Export</div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="tab-dashboard" class="tab-content active">
+  <div class="stats-row" id="stats-row"></div>
+  <div class="charts-grid" style="margin-bottom:1.5rem">
+    <div class="glass card"><h3 style="font-size:0.9rem;font-weight:600;margin-bottom:0.75rem">By Category</h3><div class="chart-box"><canvas id="dash-cat-chart"></canvas></div></div>
+    <div class="glass card"><h3 style="font-size:0.9rem;font-weight:600;margin-bottom:0.75rem">By Platform</h3><div class="chart-box"><canvas id="dash-plat-chart"></canvas></div></div>
+  </div>
+  <div class="glass card">
+    <h3 style="font-size:0.9rem;font-weight:600;margin-bottom:0.75rem">Recent Activity</h3>
+    <div id="recent-activity"></div>
+  </div>
+</div>
+
+<!-- COURSES -->
+<div id="tab-courses" class="tab-content">
+  <div class="glass card" style="margin-bottom:1.25rem">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:0.5rem">
+      <h3 style="font-size:1rem;font-weight:600">All Courses</h3>
+      <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+        <select id="filter-cat" style="font-size:0.8rem;padding:0.4rem 0.6rem;border-radius:8px;border:1px solid rgba(0,0,0,0.1)">
+          <option value="">All Categories</option>
+        </select>
+        <select id="filter-status" style="font-size:0.8rem;padding:0.4rem 0.6rem;border-radius:8px;border:1px solid rgba(0,0,0,0.1)">
+          <option value="">All Statuses</option>
+          <option value="Not Started">Not Started</option>
+          <option value="In Progress">In Progress</option>
+          <option value="Completed">Completed</option>
+        </select>
+        <button class="btn btn-primary btn-sm" onclick="openCourseModal()">+ Add Course</button>
+      </div>
+    </div>
+    <div id="courses-list"></div>
+  </div>
+</div>
+
+<!-- KANBAN -->
+<div id="tab-kanban" class="tab-content">
+  <div class="kanban" id="kanban-board">
+    <div class="kanban-col not-started"><h3>Not Started <span id="k-ns-count"></span></h3><div id="k-ns"></div></div>
+    <div class="kanban-col in-progress"><h3>In Progress <span id="k-ip-count"></span></h3><div id="k-ip"></div></div>
+    <div class="kanban-col completed"><h3>Completed <span id="k-c-count"></span></h3><div id="k-c"></div></div>
+  </div>
+</div>
+
+<!-- CHARTS -->
+<div id="tab-charts" class="tab-content">
+  <div class="charts-grid">
+    <div class="glass card"><h3 style="font-size:0.9rem;font-weight:600;margin-bottom:0.75rem">Category Breakdown</h3><div class="chart-box"><canvas id="chart-cat"></canvas></div></div>
+    <div class="glass card"><h3 style="font-size:0.9rem;font-weight:600;margin-bottom:0.75rem">Platform Distribution</h3><div class="chart-box"><canvas id="chart-plat"></canvas></div></div>
+    <div class="glass card"><h3 style="font-size:0.9rem;font-weight:600;margin-bottom:0.75rem">Completion by Category</h3><div class="chart-box"><canvas id="chart-completion"></canvas></div></div>
+    <div class="glass card"><h3 style="font-size:0.9rem;font-weight:600;margin-bottom:0.75rem">Ratings Distribution</h3><div class="chart-box"><canvas id="chart-ratings"></canvas></div></div>
+  </div>
+</div>
+
+<!-- LEARNING LOG -->
+<div id="tab-log" class="tab-content">
+  <div class="glass card" style="margin-bottom:1.25rem">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+      <h3 style="font-size:1rem;font-weight:600">Study Sessions</h3>
+      <button class="btn btn-primary btn-sm" onclick="openLogModal()">+ Log Session</button>
+    </div>
+    <div id="log-summary" style="display:flex;gap:1rem;margin-bottom:1rem;flex-wrap:wrap"></div>
+    <table class="log-table">
+      <thead><tr><th>Date</th><th>Course</th><th>Duration</th><th>Key Takeaways</th><th></th></tr></thead>
+      <tbody id="log-tbody"></tbody>
+    </table>
+    <div id="log-empty" style="text-align:center;color:#9ca3af;padding:2rem;font-size:0.85rem;display:none">No study sessions logged yet.</div>
+  </div>
+</div>
+
+<!-- WEEKLY GOAL -->
+<div id="tab-goal" class="tab-content">
+  <div class="glass card">
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:1rem">Weekly Learning Goal</h3>
+    <div class="goal-ring-wrap">
+      <div>
+        <div class="form-group" style="margin-bottom:0.75rem">
+          <label>Target hours per week</label>
+          <input type="number" id="goal-hours" min="1" max="80" value="10" style="width:100px" onchange="saveGoal();renderGoal()">
+        </div>
+        <div class="goal-ring">
+          <canvas id="goal-chart"></canvas>
+          <div class="center-text"><div class="big" id="goal-current">0</div><div class="small">of <span id="goal-target">10</span>h</div></div>
+        </div>
+      </div>
+      <div style="flex:1">
+        <h4 style="font-size:0.85rem;font-weight:600;margin-bottom:0.5rem">This Week's Sessions</h4>
+        <div id="goal-sessions"></div>
+        <div id="goal-streak" style="margin-top:1rem;font-size:0.85rem"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CERTIFICATES -->
+<div id="tab-certs" class="tab-content">
+  <div class="glass card">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+      <h3 style="font-size:1rem;font-weight:600">Certificates & Credentials</h3>
+      <button class="btn btn-primary btn-sm" onclick="openCertModal()">+ Add Certificate</button>
+    </div>
+    <div id="certs-list"></div>
+    <div id="certs-empty" style="text-align:center;color:#9ca3af;padding:2rem;font-size:0.85rem;display:none">No certificates tracked yet.</div>
+  </div>
+</div>
+
+<!-- SPACED REVIEW -->
+<div id="tab-review" class="tab-content">
+  <div class="glass card">
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:0.5rem">Spaced Review Reminders</h3>
+    <p style="font-size:0.8rem;color:#6b7280;margin-bottom:1rem">After completing a course, review reminders are scheduled at 1, 7, and 30 days.</p>
+    <div id="review-list"></div>
+    <div id="review-empty" style="text-align:center;color:#9ca3af;padding:2rem;font-size:0.85rem;display:none">Complete a course to generate review reminders.</div>
+  </div>
+</div>
+
+<!-- SKILLS LINK -->
+<div id="tab-skills" class="tab-content">
+  <div class="glass card">
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:0.5rem">Course &rarr; Skill Mapping</h3>
+    <p style="font-size:0.8rem;color:#6b7280;margin-bottom:1rem">Links courses to skills from the <a href="skill-matrix.html">Skill Matrix</a>.</p>
+    <div id="skills-link-list"></div>
+  </div>
+</div>
+
+<!-- EXPORT -->
+<div id="tab-export" class="tab-content">
+  <div class="glass card">
+    <h3 style="font-size:1rem;font-weight:600;margin-bottom:1rem">Export Data</h3>
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="exportJSON()">Export JSON</button>
+      <button class="btn btn-secondary" onclick="exportMarkdown()">Export Markdown</button>
+      <button class="btn btn-secondary" onclick="importJSON()">Import JSON</button>
+      <button class="btn btn-danger" onclick="resetAll()">Reset All Data</button>
+    </div>
+    <pre id="export-preview" style="margin-top:1rem;background:rgba(0,0,0,0.03);border-radius:10px;padding:1rem;font-size:0.75rem;max-height:400px;overflow:auto;display:none;white-space:pre-wrap"></pre>
+    <input type="file" id="import-file" accept=".json" style="display:none" onchange="handleImport(event)">
+  </div>
+</div>
+
+<!-- COURSE MODAL -->
+<div class="modal-overlay" id="course-modal">
+  <div class="glass modal">
+    <h2 id="course-modal-title">Add Course</h2>
+    <input type="hidden" id="course-edit-id">
+    <div class="form-grid">
+      <div class="form-group full"><label>Title</label><input type="text" id="c-title" placeholder="Course or resource title"></div>
+      <div class="form-group"><label>Platform</label>
+        <select id="c-platform"><option>Coursera</option><option>Udemy</option><option>YouTube</option><option>Book</option><option>Podcast</option><option>Blog</option><option>Workshop</option></select>
+      </div>
+      <div class="form-group"><label>Category</label>
+        <select id="c-category"><option>AI/ML</option><option>Architecture</option><option>Cloud</option><option>Leadership</option><option>Finance</option><option>Coding</option><option>Design</option></select>
+      </div>
+      <div class="form-group full"><label>URL</label><input type="url" id="c-url" placeholder="https://..."></div>
+      <div class="form-group"><label>Status</label>
+        <select id="c-status"><option>Not Started</option><option>In Progress</option><option>Completed</option></select>
+      </div>
+      <div class="form-group"><label>Progress</label>
+        <div class="slider-wrap"><input type="range" id="c-progress" min="0" max="100" value="0" oninput="document.getElementById('c-prog-val').textContent=this.value+'%'"><span class="slider-val" id="c-prog-val">0%</span></div>
+      </div>
+      <div class="form-group"><label>Rating</label><div class="stars" id="c-stars"></div></div>
+      <div class="form-group"><label>Skill Tags</label><input type="text" id="c-skills" placeholder="e.g. Python, LLM Orchestration"></div>
+      <div class="form-group full"><label>Notes</label><textarea id="c-notes" placeholder="Key takeaways, thoughts..."></textarea></div>
+    </div>
+    <div class="btn-row" style="justify-content:flex-end">
+      <button class="btn btn-secondary" onclick="closeCourseModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveCourse()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- LOG SESSION MODAL -->
+<div class="modal-overlay" id="log-modal">
+  <div class="glass modal">
+    <h2>Log Study Session</h2>
+    <div class="form-grid">
+      <div class="form-group"><label>Date</label><input type="date" id="l-date"></div>
+      <div class="form-group"><label>Course</label><select id="l-course"></select></div>
+      <div class="form-group"><label>Duration (minutes)</label><input type="number" id="l-duration" min="1" max="600" value="30"></div>
+      <div class="form-group full"><label>Key Takeaways</label><textarea id="l-takeaways" placeholder="What did you learn?"></textarea></div>
+    </div>
+    <div class="btn-row" style="justify-content:flex-end">
+      <button class="btn btn-secondary" onclick="closeLogModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveLogEntry()">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- CERTIFICATE MODAL -->
+<div class="modal-overlay" id="cert-modal">
+  <div class="glass modal">
+    <h2>Add Certificate</h2>
+    <div class="form-grid">
+      <div class="form-group full"><label>Certificate Name</label><input type="text" id="cert-name" placeholder="AWS Solutions Architect Associate"></div>
+      <div class="form-group"><label>Issuer</label><input type="text" id="cert-issuer" placeholder="Amazon"></div>
+      <div class="form-group"><label>Date Earned</label><input type="date" id="cert-date"></div>
+      <div class="form-group full"><label>Credential URL</label><input type="url" id="cert-url" placeholder="https://..."></div>
+      <div class="form-group"><label>Related Course</label><select id="cert-course"><option value="">None</option></select></div>
+    </div>
+    <div class="btn-row" style="justify-content:flex-end">
+      <button class="btn btn-secondary" onclick="closeCertModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveCert()">Save</button>
+    </div>
+  </div>
+</div>
+
+<div style="text-align:center;margin-top:2rem;color:#9ca3af;font-size:0.75rem">Learning Tracker &middot; Local-first &middot; Data stored in browser localStorage</div>
+
+<script>
+// ============================================================
+// DATA
+// ============================================================
+const LS_COURSES = 'learning-courses';
+const LS_LOG = 'learning-log';
+const LS_CERTS = 'learning-certs';
+const LS_GOAL = 'learning-goal';
+const LS_REVIEWS = 'learning-reviews';
+
+const CATEGORY_COLORS = {
+  'AI/ML': '#a855f7', Architecture: '#3b82f6', Cloud: '#0ea5e9',
+  Leadership: '#f59e0b', Finance: '#10b981', Coding: '#6366f1', Design: '#ec4899'
+};
+const CATEGORY_BADGES = {
+  'AI/ML': 'badge-ai', Architecture: 'badge-arch', Cloud: 'badge-cloud',
+  Leadership: 'badge-lead', Finance: 'badge-fin', Coding: 'badge-code', Design: 'badge-design'
+};
+const PLATFORM_COLORS = {
+  Coursera: '#0056d2', Udemy: '#a435f0', YouTube: '#ff0000', Book: '#1a1a2e',
+  Podcast: '#8b5cf6', Blog: '#10b981', Workshop: '#f59e0b'
+};
+
+const SKILL_MAP = {
+  'AI/ML': ['LLM Orchestration','RAG Systems','Multi-Agent Systems','pgvector/Embeddings','Python'],
+  Architecture: ['Enterprise Architecture','Microservices','API Design','Data Modeling','Event-Driven'],
+  Cloud: ['AWS','Azure/Databricks','Cloudflare','Railway','Docker','CI/CD'],
+  Leadership: ['Team Building','Stakeholder Mgmt','Offshore Delivery','Vendor Management','Agile/SAFe'],
+  Finance: [],
+  Coding: ['TypeScript','Python','SQL','Next.js/React','FastAPI','Node.js'],
+  Design: []
+};
+
+const DEFAULT_COURSES = [
+  { id: '1', title: 'Andrew Ng ML Specialization', platform: 'Coursera', category: 'AI/ML', url: 'https://www.coursera.org/specializations/machine-learning-introduction', status: 'In Progress', progress: 60, rating: 0, notes: 'Excellent foundational ML course.', skills: 'Python, LLM Orchestration', createdAt: '2025-09-15' },
+  { id: '2', title: 'AWS Solutions Architect', platform: 'Udemy', category: 'Cloud', url: 'https://www.udemy.com/course/aws-certified-solutions-architect-associate/', status: 'In Progress', progress: 30, rating: 0, notes: 'Prep for SAA-C03 certification.', skills: 'AWS, Cloud Architecture', createdAt: '2026-01-10' },
+  { id: '3', title: 'Designing Data-Intensive Applications', platform: 'Book', category: 'Architecture', url: 'https://dataintensive.net/', status: 'Completed', progress: 100, rating: 5, notes: 'Martin Kleppmann. Must-read for any senior engineer.', skills: 'Data Modeling, Event-Driven, Microservices', createdAt: '2024-06-01', completedAt: '2025-03-10' },
+  { id: '4', title: 'Staff Engineer by Will Larson', platform: 'Book', category: 'Leadership', url: 'https://staffeng.com/book', status: 'Completed', progress: 100, rating: 4, notes: 'Great insights on staff+ engineering tracks.', skills: 'Team Building, Stakeholder Mgmt', createdAt: '2025-05-01', completedAt: '2025-08-20' },
+  { id: '5', title: 'Fast.ai Practical Deep Learning', platform: 'YouTube', category: 'AI/ML', url: 'https://course.fast.ai/', status: 'Not Started', progress: 0, rating: 0, notes: 'Top-down approach to deep learning.', skills: 'Python, LLM Orchestration, RAG Systems', createdAt: '2026-04-01' },
+  { id: '6', title: 'Personal Finance for Engineers', platform: 'Udemy', category: 'Finance', url: '', status: 'Completed', progress: 100, rating: 0, notes: 'Good intro to FIRE, index funds, tax optimization.', skills: '', createdAt: '2025-11-01', completedAt: '2026-01-05' },
+  { id: '7', title: 'Rust Programming Language', platform: 'Book', category: 'Coding', url: 'https://doc.rust-lang.org/book/', status: 'In Progress', progress: 15, rating: 0, notes: 'Learning systems programming. Borrow checker is wild.', skills: 'TypeScript', createdAt: '2026-03-01' },
+  { id: '8', title: 'LangChain for LLM Applications', platform: 'YouTube', category: 'AI/ML', url: 'https://www.youtube.com/results?search_query=langchain+tutorial', status: 'In Progress', progress: 45, rating: 0, notes: 'Building RAG and agent chains.', skills: 'LLM Orchestration, RAG Systems, Multi-Agent Systems, Python', createdAt: '2026-02-15' }
+];
+
+let courses = [];
+let logEntries = [];
+let certificates = [];
+let weeklyGoal = { hours: 10 };
+let reviews = [];
+let courseRating = 0;
+let chartInstances = {};
+
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+
+function load() {
+  const c = localStorage.getItem(LS_COURSES);
+  courses = c ? JSON.parse(c) : JSON.parse(JSON.stringify(DEFAULT_COURSES));
+  const l = localStorage.getItem(LS_LOG);
+  logEntries = l ? JSON.parse(l) : [];
+  const ct = localStorage.getItem(LS_CERTS);
+  certificates = ct ? JSON.parse(ct) : [];
+  const g = localStorage.getItem(LS_GOAL);
+  weeklyGoal = g ? JSON.parse(g) : { hours: 10 };
+  const r = localStorage.getItem(LS_REVIEWS);
+  reviews = r ? JSON.parse(r) : generateReviews();
+  if (!c) saveCourses();
+  if (!r) saveReviews();
+}
+function saveCourses() { localStorage.setItem(LS_COURSES, JSON.stringify(courses)); }
+function saveLog() { localStorage.setItem(LS_LOG, JSON.stringify(logEntries)); }
+function saveCerts() { localStorage.setItem(LS_CERTS, JSON.stringify(certificates)); }
+function saveGoal() { weeklyGoal.hours = parseInt(document.getElementById('goal-hours').value) || 10; localStorage.setItem(LS_GOAL, JSON.stringify(weeklyGoal)); }
+function saveReviews() { localStorage.setItem(LS_REVIEWS, JSON.stringify(reviews)); }
+
+function generateReviews() {
+  const r = [];
+  courses.filter(c => c.status === 'Completed' && c.completedAt).forEach(c => {
+    const d = new Date(c.completedAt);
+    [1, 7, 30].forEach(days => {
+      const due = new Date(d); due.setDate(due.getDate() + days);
+      r.push({ id: uid(), courseId: c.id, courseTitle: c.title, daysAfter: days, dueDate: due.toISOString().slice(0,10), done: due < new Date() ? false : false });
+    });
+  });
+  return r;
+}
+
+// ============================================================
+// TABS
+// ============================================================
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('tab-' + t.dataset.tab).classList.add('active');
+    renderCurrentTab(t.dataset.tab);
+  });
+});
+
+function renderCurrentTab(tab) {
+  if (tab === 'dashboard') renderDashboard();
+  if (tab === 'courses') renderCourses();
+  if (tab === 'kanban') renderKanban();
+  if (tab === 'charts') renderCharts();
+  if (tab === 'log') renderLog();
+  if (tab === 'goal') renderGoal();
+  if (tab === 'certs') renderCerts();
+  if (tab === 'review') renderReview();
+  if (tab === 'skills') renderSkillsLink();
+}
+
+// ============================================================
+// DASHBOARD
+// ============================================================
+function renderDashboard() {
+  const total = courses.length;
+  const completed = courses.filter(c => c.status === 'Completed').length;
+  const inProgress = courses.filter(c => c.status === 'In Progress').length;
+  const totalMinutes = logEntries.reduce((s, e) => s + (parseInt(e.duration) || 0), 0);
+  const hours = (totalMinutes / 60).toFixed(1);
+  const rate = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+  document.getElementById('stats-row').innerHTML = [
+    statCard(total, 'Total Courses', '#3b82f6'),
+    statCard(completed, 'Completed', '#10b981'),
+    statCard(inProgress, 'In Progress', '#f59e0b'),
+    statCard(hours + 'h', 'Hours Invested', '#8b5cf6'),
+    statCard(rate + '%', 'Completion Rate', '#06b6d4')
+  ].join('');
+
+  // Category doughnut
+  renderDoughnut('dash-cat-chart', 'dashCat', getCategoryCounts());
+  // Platform bar
+  renderBarChart('dash-plat-chart', 'dashPlat', getPlatformCounts());
+
+  // Recent activity
+  const recent = [...logEntries].sort((a,b) => b.date.localeCompare(a.date)).slice(0, 5);
+  const ra = document.getElementById('recent-activity');
+  if (recent.length === 0) {
+    ra.innerHTML = '<div style="text-align:center;color:#9ca3af;padding:1rem;font-size:0.85rem">No study sessions yet. Start logging!</div>';
+  } else {
+    ra.innerHTML = recent.map(e => `<div style="display:flex;justify-content:space-between;padding:0.4rem 0;border-bottom:1px solid rgba(0,0,0,0.04);font-size:0.82rem"><span>${e.date} &mdash; <strong>${e.courseName || 'Unknown'}</strong></span><span style="color:#6b7280">${e.duration} min</span></div>`).join('');
+  }
+}
+
+function statCard(value, label, color) {
+  return `<div class="glass stat-card"><div class="value" style="color:${color}">${value}</div><div class="label">${label}</div></div>`;
+}
+
+function getCategoryCounts() {
+  const counts = {};
+  courses.forEach(c => { counts[c.category] = (counts[c.category] || 0) + 1; });
+  return counts;
+}
+function getPlatformCounts() {
+  const counts = {};
+  courses.forEach(c => { counts[c.platform] = (counts[c.platform] || 0) + 1; });
+  return counts;
+}
+
+// ============================================================
+// COURSES LIST
+// ============================================================
+function renderCourses() {
+  const catFilter = document.getElementById('filter-cat').value;
+  const statusFilter = document.getElementById('filter-status').value;
+  // Populate category filter
+  const cats = [...new Set(courses.map(c => c.category))];
+  const catSel = document.getElementById('filter-cat');
+  const currentCat = catSel.value;
+  catSel.innerHTML = '<option value="">All Categories</option>' + cats.map(c => `<option ${c===currentCat?'selected':''}>${c}</option>`).join('');
+
+  let filtered = courses;
+  if (catFilter) filtered = filtered.filter(c => c.category === catFilter);
+  if (statusFilter) filtered = filtered.filter(c => c.status === statusFilter);
+
+  const list = document.getElementById('courses-list');
+  if (filtered.length === 0) { list.innerHTML = '<div style="text-align:center;color:#9ca3af;padding:2rem;font-size:0.85rem">No courses found.</div>'; return; }
+
+  list.innerHTML = filtered.map(c => {
+    const stars = c.rating > 0 ? ' &mdash; ' + '&#9733;'.repeat(c.rating) + '&#9734;'.repeat(5 - c.rating) : '';
+    const statusColor = c.status === 'Completed' ? '#10b981' : c.status === 'In Progress' ? '#3b82f6' : '#9ca3af';
+    return `<div class="kanban-card" onclick="editCourse('${c.id}')">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start">
+        <div class="title">${c.title}</div>
+        <span class="badge ${CATEGORY_BADGES[c.category] || ''}">${c.category}</span>
+      </div>
+      <div class="meta">
+        <span>${c.platform}</span>
+        <span style="color:${statusColor};font-weight:600">${c.status}</span>
+        <span style="color:#f59e0b">${stars}</span>
+      </div>
+      <div class="progress-bar-wrap"><div class="progress-bar-fill ${c.status==='Completed'?'green':'blue'}" style="width:${c.progress}%"></div></div>
+      <div class="meta" style="margin-top:0.25rem"><span>${c.progress}% complete</span></div>
+    </div>`;
+  }).join('');
+}
+
+document.getElementById('filter-cat').addEventListener('change', renderCourses);
+document.getElementById('filter-status').addEventListener('change', renderCourses);
+
+// ============================================================
+// KANBAN
+// ============================================================
+function renderKanban() {
+  const ns = courses.filter(c => c.status === 'Not Started');
+  const ip = courses.filter(c => c.status === 'In Progress');
+  const co = courses.filter(c => c.status === 'Completed');
+  document.getElementById('k-ns-count').textContent = `(${ns.length})`;
+  document.getElementById('k-ip-count').textContent = `(${ip.length})`;
+  document.getElementById('k-c-count').textContent = `(${co.length})`;
+  document.getElementById('k-ns').innerHTML = ns.map(kanbanCard).join('');
+  document.getElementById('k-ip').innerHTML = ip.map(kanbanCard).join('');
+  document.getElementById('k-c').innerHTML = co.map(kanbanCard).join('');
+}
+
+function kanbanCard(c) {
+  const stars = c.rating > 0 ? '<span style="color:#f59e0b">' + '&#9733;'.repeat(c.rating) + '</span>' : '';
+  return `<div class="kanban-card" onclick="editCourse('${c.id}')">
+    <div class="title">${c.title}</div>
+    <div class="meta"><span class="badge ${CATEGORY_BADGES[c.category] || ''}">${c.category}</span><span>${c.platform}</span>${stars}</div>
+    ${c.status !== 'Completed' && c.status !== 'Not Started' ? `<div class="progress-bar-wrap"><div class="progress-bar-fill blue" style="width:${c.progress}%"></div></div>` : ''}
+  </div>`;
+}
+
+// ============================================================
+// CHARTS
+// ============================================================
+function renderDoughnut(canvasId, key, counts) {
+  if (chartInstances[key]) chartInstances[key].destroy();
+  const labels = Object.keys(counts);
+  const data = Object.values(counts);
+  const colors = labels.map(l => CATEGORY_COLORS[l] || PLATFORM_COLORS[l] || '#6b7280');
+  chartInstances[key] = new Chart(document.getElementById(canvasId), {
+    type: 'doughnut',
+    data: { labels, datasets: [{ data, backgroundColor: colors.map(c => c + '33'), borderColor: colors, borderWidth: 2 }] },
+    options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { font: { family: 'Inter', size: 11 }, padding: 12 } } } }
+  });
+}
+
+function renderBarChart(canvasId, key, counts) {
+  if (chartInstances[key]) chartInstances[key].destroy();
+  const labels = Object.keys(counts);
+  const data = Object.values(counts);
+  const colors = labels.map(l => PLATFORM_COLORS[l] || CATEGORY_COLORS[l] || '#6b7280');
+  chartInstances[key] = new Chart(document.getElementById(canvasId), {
+    type: 'bar',
+    data: { labels, datasets: [{ data, backgroundColor: colors.map(c => c + '44'), borderColor: colors, borderWidth: 1.5, borderRadius: 6 }] },
+    options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1, font: { family: 'Inter', size: 11 } } }, x: { ticks: { font: { family: 'Inter', size: 11 } } } } }
+  });
+}
+
+function renderCharts() {
+  renderDoughnut('chart-cat', 'catChart', getCategoryCounts());
+  renderBarChart('chart-plat', 'platChart', getPlatformCounts());
+
+  // Completion by category
+  if (chartInstances.compChart) chartInstances.compChart.destroy();
+  const cats = [...new Set(courses.map(c => c.category))];
+  const compData = cats.map(cat => {
+    const cc = courses.filter(c => c.category === cat);
+    return cc.length > 0 ? Math.round(cc.reduce((s, c) => s + c.progress, 0) / cc.length) : 0;
+  });
+  chartInstances.compChart = new Chart(document.getElementById('chart-completion'), {
+    type: 'bar',
+    data: { labels: cats, datasets: [{ label: 'Avg Progress %', data: compData, backgroundColor: cats.map(c => (CATEGORY_COLORS[c] || '#6b7280') + '44'), borderColor: cats.map(c => CATEGORY_COLORS[c] || '#6b7280'), borderWidth: 1.5, borderRadius: 6 }] },
+    options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 100, ticks: { font: { family: 'Inter', size: 11 } } }, x: { ticks: { font: { family: 'Inter', size: 11 } } } } }
+  });
+
+  // Ratings distribution
+  if (chartInstances.ratingChart) chartInstances.ratingChart.destroy();
+  const rated = courses.filter(c => c.rating > 0);
+  const ratingCounts = [1,2,3,4,5].map(r => rated.filter(c => c.rating === r).length);
+  chartInstances.ratingChart = new Chart(document.getElementById('chart-ratings'), {
+    type: 'bar',
+    data: { labels: ['1 Star','2 Stars','3 Stars','4 Stars','5 Stars'], datasets: [{ data: ratingCounts, backgroundColor: ['#ef444444','#f97316aa','#f59e0baa','#84cc16aa','#10b981aa'], borderColor: ['#ef4444','#f97316','#f59e0b','#84cc16','#10b981'], borderWidth: 1.5, borderRadius: 6 }] },
+    options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1, font: { family: 'Inter', size: 11 } } }, x: { ticks: { font: { family: 'Inter', size: 11 } } } } }
+  });
+}
+
+// ============================================================
+// LEARNING LOG
+// ============================================================
+function renderLog() {
+  const tbody = document.getElementById('log-tbody');
+  const empty = document.getElementById('log-empty');
+  const sorted = [...logEntries].sort((a,b) => b.date.localeCompare(a.date));
+  if (sorted.length === 0) { tbody.innerHTML = ''; empty.style.display = 'block'; } else { empty.style.display = 'none'; }
+
+  // Summary
+  const thisWeek = getWeekEntries();
+  const weekMin = thisWeek.reduce((s,e) => s + (parseInt(e.duration)||0), 0);
+  const totalMin = logEntries.reduce((s,e) => s + (parseInt(e.duration)||0), 0);
+  document.getElementById('log-summary').innerHTML = `
+    <div class="glass" style="padding:0.6rem 1rem;border-radius:10px;font-size:0.8rem"><strong style="color:#3b82f6">${(weekMin/60).toFixed(1)}h</strong> this week</div>
+    <div class="glass" style="padding:0.6rem 1rem;border-radius:10px;font-size:0.8rem"><strong style="color:#8b5cf6">${(totalMin/60).toFixed(1)}h</strong> all time</div>
+    <div class="glass" style="padding:0.6rem 1rem;border-radius:10px;font-size:0.8rem"><strong style="color:#10b981">${sorted.length}</strong> sessions</div>
+  `;
+
+  tbody.innerHTML = sorted.map(e => `<tr>
+    <td>${e.date}</td><td>${e.courseName || 'Unknown'}</td><td>${e.duration} min</td>
+    <td style="max-width:300px;white-space:pre-wrap">${e.takeaways || ''}</td>
+    <td><button class="btn btn-danger btn-sm" onclick="deleteLog('${e.id}')" style="font-size:0.7rem;padding:0.25rem 0.5rem">Del</button></td>
+  </tr>`).join('');
+}
+
+function getWeekEntries() {
+  const now = new Date();
+  const monday = new Date(now); monday.setDate(now.getDate() - ((now.getDay() + 6) % 7));
+  monday.setHours(0,0,0,0);
+  return logEntries.filter(e => new Date(e.date) >= monday);
+}
+
+function openLogModal() {
+  document.getElementById('l-date').value = new Date().toISOString().slice(0,10);
+  const sel = document.getElementById('l-course');
+  sel.innerHTML = courses.map(c => `<option value="${c.id}">${c.title}</option>`).join('');
+  document.getElementById('l-duration').value = 30;
+  document.getElementById('l-takeaways').value = '';
+  document.getElementById('log-modal').classList.add('open');
+}
+function closeLogModal() { document.getElementById('log-modal').classList.remove('open'); }
+
+function saveLogEntry() {
+  const courseId = document.getElementById('l-course').value;
+  const course = courses.find(c => c.id === courseId);
+  logEntries.push({
+    id: uid(),
+    date: document.getElementById('l-date').value,
+    courseId,
+    courseName: course ? course.title : 'Unknown',
+    duration: parseInt(document.getElementById('l-duration').value) || 0,
+    takeaways: document.getElementById('l-takeaways').value
+  });
+  saveLog();
+  closeLogModal();
+  renderLog();
+}
+
+function deleteLog(id) {
+  logEntries = logEntries.filter(e => e.id !== id);
+  saveLog();
+  renderLog();
+}
+
+// ============================================================
+// WEEKLY GOAL
+// ============================================================
+function renderGoal() {
+  document.getElementById('goal-hours').value = weeklyGoal.hours;
+  document.getElementById('goal-target').textContent = weeklyGoal.hours;
+
+  const weekEntries = getWeekEntries();
+  const weekMin = weekEntries.reduce((s,e) => s + (parseInt(e.duration)||0), 0);
+  const weekHours = weekMin / 60;
+  const pct = Math.min(100, Math.round((weekHours / weeklyGoal.hours) * 100));
+
+  document.getElementById('goal-current').textContent = weekHours.toFixed(1);
+
+  // Ring chart
+  if (chartInstances.goalChart) chartInstances.goalChart.destroy();
+  chartInstances.goalChart = new Chart(document.getElementById('goal-chart'), {
+    type: 'doughnut',
+    data: { datasets: [{ data: [pct, 100-pct], backgroundColor: [pct >= 100 ? '#10b981' : '#3b82f6', 'rgba(0,0,0,0.04)'], borderWidth: 0 }] },
+    options: { responsive: true, cutout: '78%', plugins: { legend: { display: false }, tooltip: { enabled: false } } }
+  });
+
+  // Sessions this week
+  const sess = document.getElementById('goal-sessions');
+  if (weekEntries.length === 0) {
+    sess.innerHTML = '<div style="color:#9ca3af;font-size:0.82rem">No sessions this week yet.</div>';
+  } else {
+    sess.innerHTML = weekEntries.map(e => `<div style="font-size:0.82rem;padding:0.25rem 0;border-bottom:1px solid rgba(0,0,0,0.04)">${e.date} &mdash; ${e.courseName} (${e.duration} min)</div>`).join('');
+  }
+
+  // Streak
+  const streak = calculateStreak();
+  document.getElementById('goal-streak').innerHTML = streak > 0 ? `<span style="font-size:1.1rem">&#128293;</span> <strong>${streak}</strong> week streak of hitting your goal` : '<span style="color:#9ca3af">Hit your weekly goal to start a streak!</span>';
+}
+
+function calculateStreak() {
+  // Simple: count consecutive weeks meeting goal going backwards
+  let streak = 0;
+  const now = new Date();
+  for (let w = 0; w < 52; w++) {
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - ((now.getDay() + 6) % 7) - (w * 7));
+    weekStart.setHours(0,0,0,0);
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekEnd.getDate() + 7);
+    const mins = logEntries.filter(e => { const d = new Date(e.date); return d >= weekStart && d < weekEnd; }).reduce((s,e) => s + (parseInt(e.duration)||0), 0);
+    if (mins / 60 >= weeklyGoal.hours) streak++;
+    else break;
+  }
+  return streak;
+}
+
+// ============================================================
+// CERTIFICATES
+// ============================================================
+function renderCerts() {
+  const list = document.getElementById('certs-list');
+  const empty = document.getElementById('certs-empty');
+  if (certificates.length === 0) { list.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+  list.innerHTML = certificates.map(c => `<div class="cert-card">
+    <div class="cert-icon"><svg width="20" height="20" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="8" r="6"/><path d="M6.5 13l-1 6 4.5-2 4.5 2-1-6"/></svg></div>
+    <div style="flex:1">
+      <div style="font-weight:600;font-size:0.85rem">${c.name}</div>
+      <div style="font-size:0.75rem;color:#6b7280">${c.issuer} &mdash; ${c.date}${c.url ? ' &mdash; <a href="'+c.url+'" target="_blank">View credential</a>' : ''}</div>
+    </div>
+    <button class="btn btn-danger btn-sm" onclick="deleteCert('${c.id}')" style="font-size:0.7rem;padding:0.25rem 0.5rem">Del</button>
+  </div>`).join('');
+}
+
+function openCertModal() {
+  document.getElementById('cert-name').value = '';
+  document.getElementById('cert-issuer').value = '';
+  document.getElementById('cert-date').value = new Date().toISOString().slice(0,10);
+  document.getElementById('cert-url').value = '';
+  const sel = document.getElementById('cert-course');
+  sel.innerHTML = '<option value="">None</option>' + courses.map(c => `<option value="${c.id}">${c.title}</option>`).join('');
+  document.getElementById('cert-modal').classList.add('open');
+}
+function closeCertModal() { document.getElementById('cert-modal').classList.remove('open'); }
+
+function saveCert() {
+  const name = document.getElementById('cert-name').value.trim();
+  if (!name) return;
+  certificates.push({
+    id: uid(), name,
+    issuer: document.getElementById('cert-issuer').value.trim(),
+    date: document.getElementById('cert-date').value,
+    url: document.getElementById('cert-url').value.trim(),
+    courseId: document.getElementById('cert-course').value
+  });
+  saveCerts();
+  closeCertModal();
+  renderCerts();
+}
+
+function deleteCert(id) {
+  certificates = certificates.filter(c => c.id !== id);
+  saveCerts();
+  renderCerts();
+}
+
+// ============================================================
+// SPACED REVIEW
+// ============================================================
+function renderReview() {
+  const list = document.getElementById('review-list');
+  const empty = document.getElementById('review-empty');
+  const today = new Date().toISOString().slice(0,10);
+
+  // Regenerate if needed
+  const completedIds = courses.filter(c => c.status === 'Completed' && c.completedAt).map(c => c.id);
+  const existingCourseIds = [...new Set(reviews.map(r => r.courseId))];
+  completedIds.forEach(id => {
+    if (!existingCourseIds.includes(id)) {
+      const c = courses.find(x => x.id === id);
+      const d = new Date(c.completedAt);
+      [1, 7, 30].forEach(days => {
+        const due = new Date(d); due.setDate(due.getDate() + days);
+        reviews.push({ id: uid(), courseId: c.id, courseTitle: c.title, daysAfter: days, dueDate: due.toISOString().slice(0,10), done: false });
+      });
+    }
+  });
+  saveReviews();
+
+  const sorted = [...reviews].sort((a,b) => a.dueDate.localeCompare(b.dueDate));
+  if (sorted.length === 0) { list.innerHTML = ''; empty.style.display = 'block'; return; }
+  empty.style.display = 'none';
+
+  list.innerHTML = sorted.map(r => {
+    let cls = 'review-upcoming';
+    let label = r.dueDate;
+    if (r.done) { cls = ''; label = 'Done'; }
+    else if (r.dueDate < today) { cls = 'review-overdue'; label = 'Overdue'; }
+    else if (r.dueDate === today) { cls = 'review-today'; label = 'Today'; }
+    return `<div class="review-item">
+      <div>
+        <div style="font-size:0.85rem;font-weight:${r.done?'400':'600'};${r.done?'text-decoration:line-through;color:#9ca3af':''}">${r.courseTitle}</div>
+        <div style="font-size:0.72rem;color:#9ca3af">Review at +${r.daysAfter} days &mdash; Due: ${r.dueDate}</div>
+      </div>
+      <div style="display:flex;gap:0.5rem;align-items:center">
+        <span class="review-due ${cls}">${label}</span>
+        ${!r.done ? `<button class="btn btn-sm btn-secondary" onclick="markReviewDone('${r.id}')" style="font-size:0.72rem;padding:0.2rem 0.5rem">Done</button>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function markReviewDone(id) {
+  const r = reviews.find(x => x.id === id);
+  if (r) r.done = true;
+  saveReviews();
+  renderReview();
+}
+
+// ============================================================
+// SKILLS LINK
+// ============================================================
+function renderSkillsLink() {
+  const list = document.getElementById('skills-link-list');
+  const skillCourses = {};
+
+  courses.forEach(c => {
+    // From category mapping
+    const catSkills = SKILL_MAP[c.category] || [];
+    // From manual tags
+    const manualSkills = c.skills ? c.skills.split(',').map(s => s.trim()).filter(Boolean) : [];
+    const allSkills = [...new Set([...catSkills, ...manualSkills])];
+    allSkills.forEach(skill => {
+      if (!skillCourses[skill]) skillCourses[skill] = [];
+      skillCourses[skill].push(c);
+    });
+  });
+
+  const sorted = Object.entries(skillCourses).sort((a,b) => b[1].length - a[1].length);
+  if (sorted.length === 0) { list.innerHTML = '<div style="text-align:center;color:#9ca3af;padding:2rem;font-size:0.85rem">No skill mappings yet.</div>'; return; }
+
+  list.innerHTML = sorted.map(([skill, crs]) => {
+    const color = '#6366f1';
+    return `<div style="margin-bottom:1rem">
+      <div style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.3rem">
+        <div class="skill-dot" style="background:${color}"></div>
+        <strong style="font-size:0.85rem">${skill}</strong>
+        <span style="font-size:0.72rem;color:#9ca3af">(${crs.length} course${crs.length>1?'s':''})</span>
+      </div>
+      ${crs.map(c => `<div style="margin-left:1rem;font-size:0.8rem;padding:0.15rem 0;color:#6b7280">
+        <span class="badge ${CATEGORY_BADGES[c.category] || ''}" style="margin-right:0.3rem">${c.category}</span>
+        ${c.title} <span style="color:${c.status==='Completed'?'#10b981':c.status==='In Progress'?'#3b82f6':'#9ca3af'}">(${c.progress}%)</span>
+      </div>`).join('')}
+    </div>`;
+  }).join('');
+}
+
+// ============================================================
+// COURSE MODAL
+// ============================================================
+function initStars() {
+  const container = document.getElementById('c-stars');
+  container.innerHTML = [1,2,3,4,5].map(i => `<span class="star" data-v="${i}">&#9733;</span>`).join('');
+  container.querySelectorAll('.star').forEach(s => {
+    s.addEventListener('click', () => { courseRating = parseInt(s.dataset.v); updateStarDisplay(); });
+    s.addEventListener('mouseenter', () => { highlightStars(parseInt(s.dataset.v)); });
+  });
+  container.addEventListener('mouseleave', () => updateStarDisplay());
+}
+
+function highlightStars(n) {
+  document.querySelectorAll('#c-stars .star').forEach(s => {
+    s.classList.toggle('filled', parseInt(s.dataset.v) <= n);
+  });
+}
+function updateStarDisplay() { highlightStars(courseRating); }
+
+function openCourseModal(id) {
+  document.getElementById('course-modal-title').textContent = id ? 'Edit Course' : 'Add Course';
+  document.getElementById('course-edit-id').value = id || '';
+  initStars();
+
+  if (id) {
+    const c = courses.find(x => x.id === id);
+    if (!c) return;
+    document.getElementById('c-title').value = c.title;
+    document.getElementById('c-platform').value = c.platform;
+    document.getElementById('c-category').value = c.category;
+    document.getElementById('c-url').value = c.url || '';
+    document.getElementById('c-status').value = c.status;
+    document.getElementById('c-progress').value = c.progress;
+    document.getElementById('c-prog-val').textContent = c.progress + '%';
+    courseRating = c.rating || 0;
+    document.getElementById('c-skills').value = c.skills || '';
+    document.getElementById('c-notes').value = c.notes || '';
+  } else {
+    document.getElementById('c-title').value = '';
+    document.getElementById('c-platform').value = 'Coursera';
+    document.getElementById('c-category').value = 'AI/ML';
+    document.getElementById('c-url').value = '';
+    document.getElementById('c-status').value = 'Not Started';
+    document.getElementById('c-progress').value = 0;
+    document.getElementById('c-prog-val').textContent = '0%';
+    courseRating = 0;
+    document.getElementById('c-skills').value = '';
+    document.getElementById('c-notes').value = '';
+  }
+  updateStarDisplay();
+  document.getElementById('course-modal').classList.add('open');
+}
+
+function closeCourseModal() { document.getElementById('course-modal').classList.remove('open'); }
+
+function editCourse(id) { openCourseModal(id); }
+
+function saveCourse() {
+  const title = document.getElementById('c-title').value.trim();
+  if (!title) return;
+
+  const editId = document.getElementById('course-edit-id').value;
+  const status = document.getElementById('c-status').value;
+  const progress = parseInt(document.getElementById('c-progress').value);
+
+  const data = {
+    title,
+    platform: document.getElementById('c-platform').value,
+    category: document.getElementById('c-category').value,
+    url: document.getElementById('c-url').value.trim(),
+    status,
+    progress: status === 'Completed' ? 100 : progress,
+    rating: courseRating,
+    skills: document.getElementById('c-skills').value.trim(),
+    notes: document.getElementById('c-notes').value.trim()
+  };
+
+  if (editId) {
+    const idx = courses.findIndex(c => c.id === editId);
+    if (idx >= 0) {
+      const old = courses[idx];
+      // Track completion date
+      if (status === 'Completed' && old.status !== 'Completed') {
+        data.completedAt = new Date().toISOString().slice(0,10);
+      } else {
+        data.completedAt = old.completedAt;
+      }
+      data.createdAt = old.createdAt;
+      data.id = editId;
+      courses[idx] = data;
+    }
+  } else {
+    data.id = uid();
+    data.createdAt = new Date().toISOString().slice(0,10);
+    if (status === 'Completed') data.completedAt = new Date().toISOString().slice(0,10);
+    courses.push(data);
+  }
+
+  saveCourses();
+  closeCourseModal();
+  // Re-render current tab
+  const activeTab = document.querySelector('.tab.active').dataset.tab;
+  renderCurrentTab(activeTab);
+}
+
+function deleteCourse(id) {
+  if (!confirm('Delete this course?')) return;
+  courses = courses.filter(c => c.id !== id);
+  saveCourses();
+  const activeTab = document.querySelector('.tab.active').dataset.tab;
+  renderCurrentTab(activeTab);
+}
+
+// ============================================================
+// EXPORT
+// ============================================================
+function exportJSON() {
+  const data = { courses, logEntries, certificates, weeklyGoal, reviews, exportedAt: new Date().toISOString() };
+  const json = JSON.stringify(data, null, 2);
+  document.getElementById('export-preview').textContent = json;
+  document.getElementById('export-preview').style.display = 'block';
+  const blob = new Blob([json], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'learning-tracker-' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+}
+
+function exportMarkdown() {
+  let md = '# Learning & Courses Tracker\n\n';
+  md += `Exported: ${new Date().toISOString().slice(0,10)}\n\n`;
+
+  const statuses = ['In Progress', 'Not Started', 'Completed'];
+  statuses.forEach(s => {
+    const cs = courses.filter(c => c.status === s);
+    if (cs.length === 0) return;
+    md += `## ${s} (${cs.length})\n\n`;
+    cs.forEach(c => {
+      const stars = c.rating > 0 ? ' ' + '★'.repeat(c.rating) + '☆'.repeat(5-c.rating) : '';
+      md += `- **${c.title}** (${c.platform}, ${c.category}) — ${c.progress}%${stars}\n`;
+      if (c.notes) md += `  - ${c.notes}\n`;
+      if (c.url) md += `  - ${c.url}\n`;
+    });
+    md += '\n';
+  });
+
+  if (logEntries.length > 0) {
+    md += '## Study Sessions\n\n';
+    md += '| Date | Course | Duration | Takeaways |\n|------|--------|----------|------------|\n';
+    logEntries.forEach(e => { md += `| ${e.date} | ${e.courseName} | ${e.duration} min | ${e.takeaways || ''} |\n`; });
+    md += '\n';
+  }
+
+  if (certificates.length > 0) {
+    md += '## Certificates\n\n';
+    certificates.forEach(c => { md += `- **${c.name}** — ${c.issuer} (${c.date})${c.url ? ' [View]('+c.url+')' : ''}\n`; });
+  }
+
+  document.getElementById('export-preview').textContent = md;
+  document.getElementById('export-preview').style.display = 'block';
+  const blob = new Blob([md], { type: 'text/markdown' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'learning-tracker-' + new Date().toISOString().slice(0,10) + '.md';
+  a.click();
+}
+
+function importJSON() { document.getElementById('import-file').click(); }
+
+function handleImport(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const data = JSON.parse(e.target.result);
+      if (data.courses) { courses = data.courses; saveCourses(); }
+      if (data.logEntries) { logEntries = data.logEntries; saveLog(); }
+      if (data.certificates) { certificates = data.certificates; saveCerts(); }
+      if (data.weeklyGoal) { weeklyGoal = data.weeklyGoal; localStorage.setItem(LS_GOAL, JSON.stringify(weeklyGoal)); }
+      if (data.reviews) { reviews = data.reviews; saveReviews(); }
+      alert('Data imported successfully!');
+      renderDashboard();
+    } catch(err) { alert('Invalid JSON file.'); }
+  };
+  reader.readAsText(file);
+  event.target.value = '';
+}
+
+function resetAll() {
+  if (!confirm('Reset ALL learning data to defaults? This cannot be undone.')) return;
+  localStorage.removeItem(LS_COURSES);
+  localStorage.removeItem(LS_LOG);
+  localStorage.removeItem(LS_CERTS);
+  localStorage.removeItem(LS_GOAL);
+  localStorage.removeItem(LS_REVIEWS);
+  load();
+  renderDashboard();
+}
+
+// ============================================================
+// INIT
+// ============================================================
+load();
+renderDashboard();
+</script>
+</body>
+</html>

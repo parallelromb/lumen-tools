@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Git Activity Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #f8f9fc;
+    color: #1a1a2e;
+    min-height: 100vh;
+    padding: 1.5rem;
+  }
+  .container { max-width: 1200px; margin: 0 auto; }
+  .header {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+  .header h1 { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; }
+  .header p { color: #6b7280; font-size: 0.9rem; margin-top: 0.25rem; }
+  .back-link {
+    position: absolute; top: 1.5rem; left: 1.5rem;
+    color: #3b82f6; text-decoration: none; font-size: 0.875rem; font-weight: 500;
+  }
+  .back-link:hover { text-decoration: underline; }
+
+  .glass {
+    background: rgba(255,255,255,0.72);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.6);
+    border-radius: 16px;
+    padding: 1.5rem;
+  }
+
+  /* Stats row */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .stat-card {
+    text-align: center;
+    padding: 1.25rem 1rem;
+  }
+  .stat-card .stat-value {
+    font-size: 1.75rem; font-weight: 700; color: #1a1a2e;
+  }
+  .stat-card .stat-label {
+    font-size: 0.75rem; color: #6b7280; margin-top: 0.25rem; font-weight: 500;
+  }
+
+  /* Repo filter */
+  .repo-filters {
+    display: flex; flex-wrap: wrap; gap: 0.5rem;
+    margin-bottom: 1.5rem; justify-content: center;
+  }
+  .repo-btn {
+    padding: 0.4rem 0.85rem; border-radius: 20px; border: 1.5px solid #e5e7eb;
+    background: rgba(255,255,255,0.6); cursor: pointer; font-size: 0.8rem;
+    font-family: inherit; font-weight: 500; transition: all 0.15s;
+  }
+  .repo-btn:hover { border-color: #9ca3af; }
+  .repo-btn.active { background: #1a1a2e; color: #fff; border-color: #1a1a2e; }
+
+  /* Heatmap */
+  .heatmap-section { margin-bottom: 1.5rem; }
+  .heatmap-section h3 { font-size: 0.95rem; font-weight: 600; margin-bottom: 1rem; }
+  .heatmap-wrap { overflow-x: auto; padding-bottom: 0.5rem; }
+  .heatmap {
+    display: flex; gap: 3px;
+  }
+  .heatmap-col { display: flex; flex-direction: column; gap: 3px; }
+  .heatmap-cell {
+    width: 14px; height: 14px; border-radius: 3px;
+    background: #ebedf0; cursor: default; position: relative;
+  }
+  .heatmap-cell[data-count="1"] { background: #9be9a8; }
+  .heatmap-cell[data-count="2"] { background: #40c463; }
+  .heatmap-cell[data-count="3"] { background: #30a14e; }
+  .heatmap-cell[data-count="4"],
+  .heatmap-cell[data-count="5"],
+  .heatmap-cell[data-count="6"] { background: #216e39; }
+  .heatmap-legend {
+    display: flex; align-items: center; gap: 4px; margin-top: 0.75rem;
+    font-size: 0.7rem; color: #6b7280; justify-content: flex-end;
+  }
+  .heatmap-legend-cell {
+    width: 12px; height: 12px; border-radius: 2px;
+  }
+  .heatmap-months {
+    display: flex; gap: 3px; margin-bottom: 4px; font-size: 0.65rem; color: #6b7280;
+  }
+  .heatmap-months span { width: 14px; text-align: center; }
+  .heatmap-tooltip {
+    position: fixed; background: #1a1a2e; color: #fff; font-size: 0.7rem;
+    padding: 4px 8px; border-radius: 6px; pointer-events: none; z-index: 100;
+    display: none; white-space: nowrap;
+  }
+
+  /* Charts grid */
+  .charts-grid {
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .chart-card h3 { font-size: 0.9rem; font-weight: 600; margin-bottom: 1rem; }
+  .chart-wrap { position: relative; height: 220px; }
+
+  /* Branch breakdown */
+  .branch-section { margin-bottom: 1.5rem; }
+  .branch-section h3 { font-size: 0.95rem; font-weight: 600; margin-bottom: 1rem; }
+  .branch-table {
+    width: 100%; border-collapse: collapse; font-size: 0.8rem;
+  }
+  .branch-table th {
+    text-align: left; padding: 0.5rem; color: #6b7280; font-weight: 500;
+    border-bottom: 1px solid #e5e7eb;
+  }
+  .branch-table td {
+    padding: 0.5rem; border-bottom: 1px solid #f3f4f6;
+  }
+  .branch-bar {
+    height: 6px; border-radius: 3px; background: #3b82f6;
+  }
+
+  /* Timeline */
+  .timeline-section { margin-bottom: 1.5rem; }
+  .timeline-section h3 { font-size: 0.95rem; font-weight: 600; margin-bottom: 1rem; }
+  .timeline-list { display: flex; flex-direction: column; gap: 0.5rem; max-height: 400px; overflow-y: auto; }
+  .timeline-item {
+    display: flex; align-items: flex-start; gap: 0.75rem; padding: 0.75rem;
+    border-radius: 10px; background: rgba(255,255,255,0.5); font-size: 0.8rem;
+  }
+  .timeline-dot {
+    width: 8px; height: 8px; border-radius: 50%; margin-top: 5px; flex-shrink: 0;
+  }
+  .timeline-meta { display: flex; gap: 0.5rem; align-items: center; flex-wrap: wrap; }
+  .timeline-repo {
+    padding: 2px 8px; border-radius: 10px; font-size: 0.7rem; font-weight: 600; color: #fff;
+  }
+  .timeline-date { color: #9ca3af; font-size: 0.7rem; }
+  .timeline-branch { color: #6b7280; font-size: 0.7rem; font-style: italic; }
+  .timeline-msg { font-weight: 500; margin-top: 2px; }
+  .timeline-stats { color: #6b7280; font-size: 0.7rem; margin-top: 2px; }
+
+  /* Add commit form */
+  .add-section { margin-bottom: 1.5rem; }
+  .add-section h3 { font-size: 0.95rem; font-weight: 600; margin-bottom: 1rem; }
+  .add-form {
+    display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.75rem;
+  }
+  .add-form .full-width { grid-column: 1 / -1; }
+  .add-form input, .add-form select {
+    padding: 0.6rem 0.75rem; border: 1.5px solid #e5e7eb; border-radius: 10px;
+    font-family: inherit; font-size: 0.825rem; background: rgba(255,255,255,0.7);
+    outline: none; transition: border-color 0.15s;
+  }
+  .add-form input:focus, .add-form select:focus { border-color: #3b82f6; }
+  .add-btn {
+    padding: 0.6rem 1.5rem; background: #1a1a2e; color: #fff; border: none;
+    border-radius: 10px; font-family: inherit; font-size: 0.825rem; font-weight: 600;
+    cursor: pointer; transition: background 0.15s;
+  }
+  .add-btn:hover { background: #2d2d4e; }
+  .reset-btn {
+    padding: 0.6rem 1rem; background: transparent; color: #ef4444; border: 1.5px solid #fecaca;
+    border-radius: 10px; font-family: inherit; font-size: 0.8rem; font-weight: 500;
+    cursor: pointer; margin-left: 0.5rem;
+  }
+  .reset-btn:hover { background: #fef2f2; }
+
+  @media (max-width: 900px) {
+    .stats-row { grid-template-columns: repeat(3, 1fr); }
+    .charts-grid { grid-template-columns: 1fr; }
+    .add-form { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 600px) {
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+    .add-form { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<a href="index.html" class="back-link">&larr; Analytics</a>
+<div class="container">
+  <div class="header">
+    <h1>Git Activity Dashboard</h1>
+    <p>Track commits, activity patterns, and coding habits across all repos</p>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-row" id="statsRow"></div>
+
+  <!-- Repo filters -->
+  <div class="repo-filters" id="repoFilters"></div>
+
+  <!-- Heatmap -->
+  <div class="glass heatmap-section">
+    <h3>Contribution Heatmap (Last 90 Days)</h3>
+    <div class="heatmap-wrap">
+      <div class="heatmap" id="heatmap"></div>
+    </div>
+    <div class="heatmap-legend">
+      <span>Less</span>
+      <div class="heatmap-legend-cell" style="background:#ebedf0"></div>
+      <div class="heatmap-legend-cell" style="background:#9be9a8"></div>
+      <div class="heatmap-legend-cell" style="background:#40c463"></div>
+      <div class="heatmap-legend-cell" style="background:#30a14e"></div>
+      <div class="heatmap-legend-cell" style="background:#216e39"></div>
+      <span>More</span>
+    </div>
+  </div>
+  <div class="heatmap-tooltip" id="heatmapTooltip"></div>
+
+  <!-- Charts -->
+  <div class="charts-grid">
+    <div class="glass chart-card">
+      <h3>Commits by Repo</h3>
+      <div class="chart-wrap"><canvas id="repoChart"></canvas></div>
+    </div>
+    <div class="glass chart-card">
+      <h3>Commits by Day of Week</h3>
+      <div class="chart-wrap"><canvas id="dowChart"></canvas></div>
+    </div>
+    <div class="glass chart-card">
+      <h3>Commits by Hour</h3>
+      <div class="chart-wrap"><canvas id="hourChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Branch breakdown -->
+  <div class="glass branch-section">
+    <h3>Branch Activity</h3>
+    <table class="branch-table" id="branchTable">
+      <thead><tr><th>Branch</th><th>Repo</th><th>Commits</th><th>Activity</th></tr></thead>
+      <tbody></tbody>
+    </table>
+  </div>
+
+  <!-- Recent commits -->
+  <div class="glass timeline-section">
+    <h3>Recent Commits</h3>
+    <div class="timeline-list" id="timeline"></div>
+  </div>
+
+  <!-- Add commit -->
+  <div class="glass add-section">
+    <h3>Add Commit</h3>
+    <form class="add-form" id="addForm">
+      <input type="date" id="cDate" required>
+      <input type="text" id="cRepo" placeholder="Repo name" list="repoList" required>
+      <datalist id="repoList"></datalist>
+      <input type="text" id="cBranch" placeholder="Branch (e.g. main)" value="main">
+      <input type="text" id="cMsg" placeholder="Commit message" class="full-width" required>
+      <input type="number" id="cFiles" placeholder="Files changed" min="0" value="1">
+      <input type="number" id="cAdded" placeholder="Lines added" min="0" value="10">
+      <input type="number" id="cRemoved" placeholder="Lines removed" min="0" value="3">
+      <div>
+        <button type="submit" class="add-btn">Add Commit</button>
+        <button type="button" class="reset-btn" onclick="resetData()">Reset to samples</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+const REPO_COLORS = {
+  'Smara': '#3b82f6',
+  'Lumen': '#8b5cf6',
+  'PJ Tales': '#f59e0b',
+  'Scoper': '#10b981',
+  'OpenClaw': '#ef4444',
+  'Career IDE': '#06b6d4',
+};
+const STORAGE_KEY = 'git-activity-commits';
+
+function today() { return new Date().toISOString().split('T')[0]; }
+function daysAgo(n) {
+  const d = new Date(); d.setDate(d.getDate() - n);
+  return d.toISOString().split('T')[0];
+}
+function randInt(a, b) { return Math.floor(Math.random() * (b - a + 1)) + a; }
+function randHour() { const w = [0,0,0,1,1,1,1,2,2,3,3,3,4,4,4,4,4,5,5,5,5,6,6,6]; return [9,10,11,14,15,16,17,20,21,22,23,0,1,8,13,19,10,11,14,15,21,22,16,20][randInt(0,23)]; }
+
+function generateSamples() {
+  const repos = Object.keys(REPO_COLORS);
+  const branches = { 'Smara': ['main','feat/teams','fix/redis'], 'Lumen': ['main','feat/ios','fix/ssl'], 'PJ Tales': ['main','feat/pipeline'], 'Scoper': ['main','feat/agents','fix/prompts'], 'OpenClaw': ['main','feat/dashboard','refactor/api'], 'Career IDE': ['main','feat/kanban','feat/flashcards'] };
+  const msgs = {
+    'Smara': ['Add Teams integration endpoint','Fix Redis connection pooling','Update API docs','Refactor auth middleware','Add rate limiting','Bump dependencies','Fix CORS for mobile','Add memory search pagination','Update deployment config','Optimize vector search'],
+    'Lumen': ['Wire up iOS home screen','Fix SSL cert renewal','Add weather widget','Update Cloudflare tunnel config','Refactor gateway routes','Add Ollama model selector','Fix VNC reconnect logic','Update morning digest layout','Add graph visualization','Fix memory sync cron'],
+    'PJ Tales': ['Add visual pipeline editor','Fix story generation prompt','Update voice selection UI','Add bedtime timer','Optimize image generation'],
+    'Scoper': ['Implement estimation agent','Fix prompt chain ordering','Add cost breakdown view','Update agent orchestration','Refactor 9-agent pipeline','Add PDF export','Fix token counting','Update pricing model','Add project templates'],
+    'OpenClaw': ['Add analytics dashboard shell','Update system health monitor','Fix kanban drag-drop','Add git activity page','Refactor card components','Update expense tracker','Add bookmark import','Fix chart rendering','Add sleep tracker correlations'],
+    'Career IDE': ['Build flash card component','Add job Kanban board','Implement skill radar','Fix tab navigation','Update interview prep data','Add spaced repetition logic'],
+  };
+  const commits = [];
+  for (let i = 0; i < 30; i++) {
+    const repo = repos[i % repos.length];
+    const br = branches[repo][randInt(0, branches[repo].length - 1)];
+    const msgList = msgs[repo];
+    const msg = msgList[i % msgList.length];
+    const day = daysAgo(randInt(0, 89));
+    const hour = randHour();
+    commits.push({
+      id: 'sample-' + i,
+      date: day,
+      hour: hour,
+      repo: repo,
+      branch: br,
+      message: msg,
+      filesChanged: randInt(1, 12),
+      linesAdded: randInt(5, 300),
+      linesRemoved: randInt(1, 120),
+    });
+  }
+  return commits;
+}
+
+function loadCommits() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (raw) return JSON.parse(raw);
+  const samples = generateSamples();
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(samples));
+  return samples;
+}
+function saveCommits(c) { localStorage.setItem(STORAGE_KEY, JSON.stringify(c)); }
+function resetData() {
+  if (!confirm('Reset all commits to sample data?')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  commits = loadCommits();
+  activeRepo = null;
+  render();
+}
+
+let commits = loadCommits();
+let activeRepo = null;
+
+function filtered() {
+  return activeRepo ? commits.filter(c => c.repo === activeRepo) : commits;
+}
+
+// Stats
+function renderStats() {
+  const fc = filtered();
+  const total = fc.length;
+  // Most active repo
+  const repoCounts = {};
+  fc.forEach(c => { repoCounts[c.repo] = (repoCounts[c.repo] || 0) + 1; });
+  const mostActive = Object.entries(repoCounts).sort((a,b) => b[1]-a[1])[0];
+  // Streak
+  const dates = [...new Set(fc.map(c => c.date))].sort();
+  let maxStreak = 0, streak = 0, prev = null;
+  dates.forEach(d => {
+    const cur = new Date(d);
+    if (prev && (cur - prev) === 86400000) { streak++; }
+    else { streak = 1; }
+    if (streak > maxStreak) maxStreak = streak;
+    prev = cur;
+  });
+  // Avg/day over 90 days
+  const avg = (total / 90).toFixed(1);
+  // Lines
+  const totalLines = fc.reduce((s, c) => s + c.linesAdded + c.linesRemoved, 0);
+
+  const stats = [
+    { value: total, label: 'Total Commits' },
+    { value: mostActive ? mostActive[0] : '-', label: 'Most Active Repo' },
+    { value: maxStreak + 'd', label: 'Longest Streak' },
+    { value: avg, label: 'Avg Commits/Day' },
+    { value: totalLines > 1000 ? (totalLines/1000).toFixed(1)+'k' : totalLines, label: 'Lines Changed' },
+  ];
+  document.getElementById('statsRow').innerHTML = stats.map(s =>
+    `<div class="glass stat-card"><div class="stat-value">${s.value}</div><div class="stat-label">${s.label}</div></div>`
+  ).join('');
+}
+
+// Repo filters
+function renderFilters() {
+  const repos = [...new Set(commits.map(c => c.repo))].sort();
+  const html = [`<button class="repo-btn ${!activeRepo ? 'active' : ''}" onclick="setFilter(null)">All</button>`];
+  repos.forEach(r => {
+    html.push(`<button class="repo-btn ${activeRepo === r ? 'active' : ''}" style="${activeRepo === r ? 'background:'+getRepoColor(r)+';border-color:'+getRepoColor(r) : ''}" onclick="setFilter('${r}')">${r}</button>`);
+  });
+  document.getElementById('repoFilters').innerHTML = html.join('');
+  // datalist
+  document.getElementById('repoList').innerHTML = repos.map(r => `<option value="${r}">`).join('');
+}
+function setFilter(repo) { activeRepo = repo; render(); }
+function getRepoColor(r) { return REPO_COLORS[r] || '#6b7280'; }
+
+// Heatmap
+function renderHeatmap() {
+  const fc = filtered();
+  const countMap = {};
+  fc.forEach(c => { countMap[c.date] = (countMap[c.date] || 0) + 1; });
+
+  const end = new Date();
+  const start = new Date(); start.setDate(start.getDate() - 89);
+  // Align start to Sunday
+  start.setDate(start.getDate() - start.getDay());
+
+  let html = '';
+  const d = new Date(start);
+  let col = [];
+  while (d <= end || col.length > 0) {
+    const dow = d.getDay();
+    if (dow === 0 && col.length > 0) {
+      html += `<div class="heatmap-col">${col.join('')}</div>`;
+      col = [];
+    }
+    if (d <= end) {
+      const ds = d.toISOString().split('T')[0];
+      const count = countMap[ds] || 0;
+      const level = count >= 4 ? 4 : count;
+      const label = ds + ': ' + count + ' commit' + (count !== 1 ? 's' : '');
+      col.push(`<div class="heatmap-cell" data-count="${level}" data-tip="${label}"></div>`);
+      d.setDate(d.getDate() + 1);
+    } else {
+      break;
+    }
+  }
+  if (col.length > 0) {
+    html += `<div class="heatmap-col">${col.join('')}</div>`;
+  }
+  document.getElementById('heatmap').innerHTML = html;
+
+  // tooltips
+  const tooltip = document.getElementById('heatmapTooltip');
+  document.querySelectorAll('.heatmap-cell').forEach(cell => {
+    cell.addEventListener('mouseenter', e => {
+      tooltip.textContent = cell.dataset.tip;
+      tooltip.style.display = 'block';
+      tooltip.style.left = e.clientX + 10 + 'px';
+      tooltip.style.top = e.clientY - 30 + 'px';
+    });
+    cell.addEventListener('mouseleave', () => { tooltip.style.display = 'none'; });
+  });
+}
+
+// Charts
+let repoChartInst, dowChartInst, hourChartInst;
+function renderCharts() {
+  const fc = filtered();
+
+  // Repo doughnut
+  const repoCounts = {};
+  fc.forEach(c => { repoCounts[c.repo] = (repoCounts[c.repo] || 0) + 1; });
+  const repoLabels = Object.keys(repoCounts);
+  const repoData = repoLabels.map(r => repoCounts[r]);
+  const repoColors = repoLabels.map(r => getRepoColor(r));
+  if (repoChartInst) repoChartInst.destroy();
+  repoChartInst = new Chart(document.getElementById('repoChart'), {
+    type: 'doughnut',
+    data: { labels: repoLabels, datasets: [{ data: repoData, backgroundColor: repoColors, borderWidth: 0 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { boxWidth: 12, font: { size: 11, family: 'Inter' } } } } }
+  });
+
+  // Day of week
+  const dowCounts = [0,0,0,0,0,0,0];
+  fc.forEach(c => { const d = new Date(c.date + 'T12:00:00'); dowCounts[d.getDay()]++; });
+  const dowLabels = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+  if (dowChartInst) dowChartInst.destroy();
+  dowChartInst = new Chart(document.getElementById('dowChart'), {
+    type: 'bar',
+    data: { labels: dowLabels, datasets: [{ data: dowCounts, backgroundColor: '#3b82f6', borderRadius: 6, barPercentage: 0.6 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { font: { size: 10, family: 'Inter' } }, grid: { color: 'rgba(0,0,0,0.04)' } }, x: { ticks: { font: { size: 10, family: 'Inter' } }, grid: { display: false } } } }
+  });
+
+  // Hour
+  const hourCounts = new Array(24).fill(0);
+  fc.forEach(c => { hourCounts[c.hour || 0]++; });
+  const hourLabels = Array.from({length:24}, (_, i) => i + ':00');
+  if (hourChartInst) hourChartInst.destroy();
+  hourChartInst = new Chart(document.getElementById('hourChart'), {
+    type: 'bar',
+    data: { labels: hourLabels, datasets: [{ data: hourCounts, backgroundColor: '#8b5cf6', borderRadius: 4, barPercentage: 0.7 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { font: { size: 10, family: 'Inter' } }, grid: { color: 'rgba(0,0,0,0.04)' } }, x: { ticks: { font: { size: 8, family: 'Inter' }, maxRotation: 90, minRotation: 45 }, grid: { display: false } } } }
+  });
+}
+
+// Branch table
+function renderBranches() {
+  const fc = filtered();
+  const branchMap = {};
+  fc.forEach(c => {
+    const key = c.repo + '/' + c.branch;
+    if (!branchMap[key]) branchMap[key] = { repo: c.repo, branch: c.branch, count: 0 };
+    branchMap[key].count++;
+  });
+  const branches = Object.values(branchMap).sort((a,b) => b.count - a.count);
+  const maxCount = branches.length ? branches[0].count : 1;
+  const tbody = document.querySelector('#branchTable tbody');
+  tbody.innerHTML = branches.map(b =>
+    `<tr>
+      <td><code style="background:rgba(0,0,0,0.04);padding:2px 6px;border-radius:4px;font-size:0.75rem">${b.branch}</code></td>
+      <td><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${getRepoColor(b.repo)};margin-right:6px"></span>${b.repo}</td>
+      <td>${b.count}</td>
+      <td style="width:40%"><div class="branch-bar" style="width:${Math.max(5, b.count/maxCount*100)}%;background:${getRepoColor(b.repo)}"></div></td>
+    </tr>`
+  ).join('');
+}
+
+// Timeline
+function renderTimeline() {
+  const fc = filtered().sort((a,b) => b.date.localeCompare(a.date) || (b.hour||0) - (a.hour||0));
+  const shown = fc.slice(0, 50);
+  document.getElementById('timeline').innerHTML = shown.map(c =>
+    `<div class="timeline-item">
+      <div class="timeline-dot" style="background:${getRepoColor(c.repo)}"></div>
+      <div>
+        <div class="timeline-meta">
+          <span class="timeline-repo" style="background:${getRepoColor(c.repo)}">${c.repo}</span>
+          <span class="timeline-branch">${c.branch}</span>
+          <span class="timeline-date">${c.date} ${c.hour != null ? c.hour+':00' : ''}</span>
+        </div>
+        <div class="timeline-msg">${c.message}</div>
+        <div class="timeline-stats">${c.filesChanged} file${c.filesChanged!==1?'s':''} changed, +${c.linesAdded} -${c.linesRemoved}</div>
+      </div>
+    </div>`
+  ).join('');
+}
+
+function render() {
+  renderStats();
+  renderFilters();
+  renderHeatmap();
+  renderCharts();
+  renderBranches();
+  renderTimeline();
+}
+
+// Add commit
+document.getElementById('addForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const c = {
+    id: 'usr-' + Date.now(),
+    date: document.getElementById('cDate').value,
+    hour: new Date().getHours(),
+    repo: document.getElementById('cRepo').value.trim(),
+    branch: document.getElementById('cBranch').value.trim() || 'main',
+    message: document.getElementById('cMsg').value.trim(),
+    filesChanged: parseInt(document.getElementById('cFiles').value) || 1,
+    linesAdded: parseInt(document.getElementById('cAdded').value) || 0,
+    linesRemoved: parseInt(document.getElementById('cRemoved').value) || 0,
+  };
+  if (!c.repo || !c.message || !c.date) return;
+  commits.push(c);
+  saveCommits(commits);
+  e.target.reset();
+  document.getElementById('cDate').value = today();
+  render();
+});
+
+// Init
+document.getElementById('cDate').value = today();
+render();
+</script>
+</body>
+</html>

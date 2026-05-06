@@ -1,0 +1,969 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OKR Tracker - Lumen Analytics</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #f8f9fc;
+    color: #1a1a2e;
+    min-height: 100vh;
+    padding: 1.5rem;
+  }
+
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: #0071e3;
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-bottom: 1.5rem;
+  }
+  .back-link:hover { text-decoration: underline; }
+
+  .header {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+  .header h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+  }
+  .header p {
+    color: #6b7280;
+    font-size: 0.9rem;
+    margin-top: 0.3rem;
+  }
+
+  .glass {
+    background: rgba(255,255,255,0.72);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.6);
+    border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.04);
+  }
+
+  .layout {
+    max-width: 1000px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  .section-title {
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #6b7280;
+    margin-bottom: 1rem;
+  }
+
+  /* Quarter selector */
+  .controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  .quarter-tabs {
+    display: flex;
+    gap: 0.25rem;
+    background: rgba(0,0,0,0.04);
+    border-radius: 10px;
+    padding: 3px;
+  }
+  .quarter-tab {
+    padding: 0.5rem 1rem;
+    border: none;
+    background: none;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #6b7280;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .quarter-tab.active {
+    background: white;
+    color: #1a1a2e;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  }
+  .quarter-tab:hover:not(.active) { color: #1a1a2e; }
+
+  .action-btns { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  .btn {
+    padding: 0.5rem 1rem;
+    border: 1px solid rgba(0,0,0,0.1);
+    background: white;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: #1a1a2e;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn:hover { background: #f3f4f6; }
+  .btn-primary {
+    background: #0071e3;
+    color: white;
+    border-color: #0071e3;
+  }
+  .btn-primary:hover { background: #005bb5; }
+  .btn-danger { color: #ef4444; border-color: rgba(239,68,68,0.3); }
+  .btn-danger:hover { background: rgba(239,68,68,0.06); }
+
+  /* Summary stats */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+  }
+  .stat-card {
+    text-align: center;
+    padding: 1.25rem 1rem;
+  }
+  .stat-value {
+    font-size: 1.8rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    line-height: 1;
+  }
+  .stat-label {
+    font-size: 0.78rem;
+    color: #6b7280;
+    margin-top: 0.4rem;
+    font-weight: 500;
+  }
+  .stat-value.red { color: #ef4444; }
+  .stat-value.yellow { color: #f59e0b; }
+  .stat-value.green { color: #22c55e; }
+
+  /* Objective cards */
+  .objective-card {
+    margin-bottom: 1rem;
+    transition: box-shadow 0.2s;
+  }
+  .objective-card:hover {
+    box-shadow: 0 8px 32px rgba(0,0,0,0.06);
+  }
+  .obj-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    cursor: pointer;
+    user-select: none;
+  }
+  .obj-expand {
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    background: rgba(0,0,0,0.04);
+    font-size: 0.85rem;
+    transition: transform 0.25s;
+    flex-shrink: 0;
+  }
+  .obj-expand.open { transform: rotate(90deg); }
+  .obj-title {
+    font-size: 1rem;
+    font-weight: 600;
+    flex: 1;
+    line-height: 1.35;
+  }
+  .obj-progress-ring {
+    width: 44px;
+    height: 44px;
+    position: relative;
+    flex-shrink: 0;
+  }
+  .obj-progress-ring svg { transform: rotate(-90deg); }
+  .obj-progress-ring .ring-bg {
+    stroke: rgba(0,0,0,0.06);
+    fill: none;
+    stroke-width: 4;
+  }
+  .obj-progress-ring .ring-fill {
+    fill: none;
+    stroke-width: 4;
+    stroke-linecap: round;
+    transition: stroke-dashoffset 0.5s ease;
+  }
+  .obj-progress-pct {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.65rem;
+    font-weight: 700;
+  }
+  .obj-actions {
+    display: flex;
+    gap: 0.25rem;
+    flex-shrink: 0;
+  }
+  .obj-actions button {
+    width: 28px;
+    height: 28px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    color: #9ca3af;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.15s;
+  }
+  .obj-actions button:hover { background: rgba(0,0,0,0.06); color: #1a1a2e; }
+
+  /* Key Results */
+  .kr-list {
+    margin-top: 1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+    padding-left: 2.75rem;
+  }
+  .kr-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+  }
+  .kr-info {
+    flex: 1;
+    min-width: 0;
+  }
+  .kr-label {
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-bottom: 0.35rem;
+    line-height: 1.3;
+  }
+  .kr-bar-track {
+    height: 6px;
+    background: rgba(0,0,0,0.06);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+  .kr-bar-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.4s ease, background 0.3s;
+  }
+  .kr-bar-fill.red { background: #ef4444; }
+  .kr-bar-fill.yellow { background: #f59e0b; }
+  .kr-bar-fill.green { background: #22c55e; }
+
+  .kr-value {
+    font-size: 0.8rem;
+    font-weight: 600;
+    white-space: nowrap;
+    min-width: 60px;
+    text-align: right;
+    cursor: pointer;
+    padding: 0.25rem 0.5rem;
+    border-radius: 6px;
+    transition: background 0.15s;
+  }
+  .kr-value:hover { background: rgba(0,0,0,0.06); }
+
+  .kr-actions {
+    display: flex;
+    gap: 0.15rem;
+  }
+  .kr-actions button {
+    width: 24px;
+    height: 24px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    border-radius: 4px;
+    font-size: 0.7rem;
+    color: #9ca3af;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .kr-actions button:hover { background: rgba(0,0,0,0.06); color: #1a1a2e; }
+
+  .add-kr-btn {
+    padding: 0.4rem 0.75rem;
+    border: 1px dashed rgba(0,0,0,0.15);
+    background: none;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.8rem;
+    color: #6b7280;
+    cursor: pointer;
+    margin-top: 0.5rem;
+    transition: all 0.15s;
+  }
+  .add-kr-btn:hover { border-color: #0071e3; color: #0071e3; }
+
+  /* Chart */
+  .chart-container {
+    position: relative;
+    height: 220px;
+    padding: 0.5rem;
+  }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.3);
+    backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s;
+  }
+  .modal-overlay.active {
+    opacity: 1;
+    pointer-events: all;
+  }
+  .modal {
+    background: white;
+    border-radius: 16px;
+    padding: 2rem;
+    width: 90%;
+    max-width: 440px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+    transform: translateY(10px);
+    transition: transform 0.2s;
+  }
+  .modal-overlay.active .modal { transform: translateY(0); }
+  .modal h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 1.25rem;
+  }
+  .form-group {
+    margin-bottom: 1rem;
+  }
+  .form-group label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #6b7280;
+    margin-bottom: 0.35rem;
+  }
+  .form-group input, .form-group select {
+    width: 100%;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid rgba(0,0,0,0.12);
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .form-group input:focus, .form-group select:focus {
+    border-color: #0071e3;
+  }
+  .modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.5rem;
+    margin-top: 1.5rem;
+  }
+
+  @media (max-width: 640px) {
+    body { padding: 1rem; }
+    .controls { flex-direction: column; align-items: stretch; }
+    .stats-row { grid-template-columns: repeat(2, 1fr); }
+    .kr-list { padding-left: 1rem; }
+    .kr-item { flex-wrap: wrap; }
+  }
+</style>
+</head>
+<body>
+  <a href="index.html" class="back-link">
+    <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 2L4 8l6 6"/></svg>
+    Back to Analytics
+  </a>
+
+  <div class="header">
+    <h1>OKR Tracker</h1>
+    <p>Objectives & Key Results</p>
+  </div>
+
+  <div class="layout">
+    <!-- Controls -->
+    <div class="glass controls">
+      <div class="quarter-tabs" id="quarterTabs"></div>
+      <div class="action-btns">
+        <button class="btn btn-primary" onclick="showAddObjectiveModal()">+ Objective</button>
+        <button class="btn" onclick="takeSnapshot()">Snapshot</button>
+        <button class="btn" onclick="exportMarkdown()">Export MD</button>
+      </div>
+    </div>
+
+    <!-- Summary Stats -->
+    <div class="stats-row" id="statsRow"></div>
+
+    <!-- Objectives -->
+    <div id="objectivesList"></div>
+
+    <!-- Trend Chart -->
+    <div class="glass">
+      <div class="section-title">Weekly Completion Trend</div>
+      <div class="chart-container">
+        <canvas id="trendChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal -->
+  <div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal" id="modalContent"></div>
+  </div>
+
+<script>
+const STORAGE_KEY = 'okr-tracker-data';
+const QUARTERS = ['Q1 2026','Q2 2026','Q3 2026','Q4 2026'];
+
+const DEFAULT_DATA = {
+  currentQuarter: 'Q2 2026',
+  quarters: {
+    'Q1 2026': { objectives: [], snapshots: [] },
+    'Q2 2026': {
+      objectives: [
+        {
+          id: 'obj1',
+          title: 'Generate first revenue from side projects by May 13',
+          expanded: true,
+          keyResults: [
+            { id: 'kr1a', label: 'Get 1 paid Smara customer', current: 0, target: 1 },
+            { id: 'kr1b', label: 'List 3 Etsy products', current: 0, target: 3 },
+            { id: 'kr1c', label: 'Publish 5 dev.to articles for SEO', current: 0, target: 5 },
+            { id: 'kr1d', label: 'Get 100 Smara signups', current: 0, target: 100 }
+          ]
+        },
+        {
+          id: 'obj2',
+          title: 'Establish professional brand online',
+          expanded: true,
+          keyResults: [
+            { id: 'kr2a', label: 'parallelromb.dev with AI chat widget', current: 1, target: 1 },
+            { id: 'kr2b', label: '500 LinkedIn connections in tech', current: 0, target: 500 },
+            { id: 'kr2c', label: '3 blog posts with 1000+ views', current: 0, target: 3 },
+            { id: 'kr2d', label: 'Speaking or podcast appearance', current: 0, target: 1 }
+          ]
+        },
+        {
+          id: 'obj3',
+          title: 'Level up Lumen to production-grade',
+          expanded: true,
+          keyResults: [
+            { id: 'kr3a', label: '99.9% uptime for 30 days', current: 0, target: 30 },
+            { id: 'kr3b', label: 'All agents auto-recovering', current: 0, target: 8 },
+            { id: 'kr3c', label: 'Complete analytics suite', current: 10, target: 10 },
+            { id: 'kr3d', label: 'Family members actively using daily', current: 0, target: 3 }
+          ]
+        }
+      ],
+      snapshots: []
+    },
+    'Q3 2026': { objectives: [], snapshots: [] },
+    'Q4 2026': { objectives: [], snapshots: [] }
+  }
+};
+
+let data;
+
+function load() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (raw) {
+    try { data = JSON.parse(raw); } catch(e) { data = JSON.parse(JSON.stringify(DEFAULT_DATA)); }
+  } else {
+    data = JSON.parse(JSON.stringify(DEFAULT_DATA));
+  }
+  // Ensure all quarters exist
+  QUARTERS.forEach(q => {
+    if (!data.quarters[q]) data.quarters[q] = { objectives: [], snapshots: [] };
+  });
+}
+
+function save() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function currentQ() {
+  return data.quarters[data.currentQuarter];
+}
+
+function uid() {
+  return 'id_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,6);
+}
+
+// Color helpers
+function pctColor(pct) {
+  if (pct >= 70) return 'green';
+  if (pct >= 30) return 'yellow';
+  return 'red';
+}
+
+function krPct(kr) {
+  if (kr.target === 0) return 100;
+  return Math.min(100, Math.round((kr.current / kr.target) * 100));
+}
+
+function objPct(obj) {
+  if (!obj.keyResults.length) return 0;
+  const sum = obj.keyResults.reduce((s, kr) => s + krPct(kr), 0);
+  return Math.round(sum / obj.keyResults.length);
+}
+
+function overallPct() {
+  const objs = currentQ().objectives;
+  if (!objs.length) return 0;
+  const sum = objs.reduce((s, o) => s + objPct(o), 0);
+  return Math.round(sum / objs.length);
+}
+
+function daysLeftInQuarter() {
+  const q = data.currentQuarter;
+  const match = q.match(/Q(\d)\s+(\d+)/);
+  if (!match) return 0;
+  const qNum = parseInt(match[1]);
+  const year = parseInt(match[2]);
+  const endMonth = qNum * 3;
+  const endDate = new Date(year, endMonth, 0); // last day of quarter
+  const now = new Date();
+  const diff = Math.ceil((endDate - now) / (1000*60*60*24));
+  return Math.max(0, diff);
+}
+
+// Render
+function renderQuarterTabs() {
+  const el = document.getElementById('quarterTabs');
+  el.innerHTML = QUARTERS.map(q =>
+    `<button class="quarter-tab ${q === data.currentQuarter ? 'active' : ''}" onclick="switchQuarter('${q}')">${q}</button>`
+  ).join('');
+}
+
+function switchQuarter(q) {
+  data.currentQuarter = q;
+  save();
+  render();
+}
+
+function renderStats() {
+  const el = document.getElementById('statsRow');
+  const objs = currentQ().objectives;
+  const pct = overallPct();
+  const color = pctColor(pct);
+  const days = daysLeftInQuarter();
+  const totalKRs = objs.reduce((s, o) => s + o.keyResults.length, 0);
+  const doneKRs = objs.reduce((s, o) => s + o.keyResults.filter(kr => krPct(kr) >= 100).length, 0);
+
+  el.innerHTML = `
+    <div class="glass stat-card">
+      <div class="stat-value">${objs.length}</div>
+      <div class="stat-label">Objectives</div>
+    </div>
+    <div class="glass stat-card">
+      <div class="stat-value ${color}">${pct}%</div>
+      <div class="stat-label">Overall Completion</div>
+    </div>
+    <div class="glass stat-card">
+      <div class="stat-value">${doneKRs}/${totalKRs}</div>
+      <div class="stat-label">Key Results Done</div>
+    </div>
+    <div class="glass stat-card">
+      <div class="stat-value">${days}</div>
+      <div class="stat-label">Days Left in Quarter</div>
+    </div>
+  `;
+}
+
+function renderObjectives() {
+  const el = document.getElementById('objectivesList');
+  const objs = currentQ().objectives;
+  if (!objs.length) {
+    el.innerHTML = '<div class="glass" style="text-align:center;color:#9ca3af;padding:3rem;">No objectives for this quarter. Click + Objective to add one.</div>';
+    return;
+  }
+  el.innerHTML = objs.map((obj, oi) => {
+    const pct = objPct(obj);
+    const color = pctColor(pct);
+    const circumference = 2 * Math.PI * 17;
+    const dashOffset = circumference - (circumference * pct / 100);
+    const strokeColor = color === 'green' ? '#22c55e' : color === 'yellow' ? '#f59e0b' : '#ef4444';
+
+    return `
+      <div class="glass objective-card">
+        <div class="obj-header" onclick="toggleObjective('${obj.id}')">
+          <div class="obj-expand ${obj.expanded ? 'open' : ''}">&#9654;</div>
+          <div class="obj-title">${escHtml(obj.title)}</div>
+          <div class="obj-progress-ring">
+            <svg width="44" height="44" viewBox="0 0 44 44">
+              <circle class="ring-bg" cx="22" cy="22" r="17"/>
+              <circle class="ring-fill" cx="22" cy="22" r="17"
+                stroke="${strokeColor}"
+                stroke-dasharray="${circumference}"
+                stroke-dashoffset="${dashOffset}"/>
+            </svg>
+            <div class="obj-progress-pct" style="color:${strokeColor}">${pct}%</div>
+          </div>
+          <div class="obj-actions" onclick="event.stopPropagation()">
+            <button title="Edit" onclick="showEditObjectiveModal('${obj.id}')">&#9998;</button>
+            <button title="Delete" onclick="deleteObjective('${obj.id}')">&#10005;</button>
+          </div>
+        </div>
+        ${obj.expanded ? `
+          <div class="kr-list">
+            ${obj.keyResults.map(kr => {
+              const kp = krPct(kr);
+              const kc = pctColor(kp);
+              return `
+                <div class="kr-item">
+                  <div class="kr-info">
+                    <div class="kr-label">${escHtml(kr.label)}</div>
+                    <div class="kr-bar-track">
+                      <div class="kr-bar-fill ${kc}" style="width:${kp}%"></div>
+                    </div>
+                  </div>
+                  <div class="kr-value" onclick="showUpdateKRModal('${obj.id}','${kr.id}')" title="Click to update">${kr.current}/${kr.target}</div>
+                  <div class="kr-actions">
+                    <button title="Edit" onclick="showEditKRModal('${obj.id}','${kr.id}')">&#9998;</button>
+                    <button title="Delete" onclick="deleteKR('${obj.id}','${kr.id}')">&#10005;</button>
+                  </div>
+                </div>
+              `;
+            }).join('')}
+            <button class="add-kr-btn" onclick="showAddKRModal('${obj.id}')">+ Add Key Result</button>
+          </div>
+        ` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+function escHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// Trend chart
+let trendChartInstance = null;
+
+function renderTrendChart() {
+  const ctx = document.getElementById('trendChart').getContext('2d');
+  const snapshots = currentQ().snapshots || [];
+  const labels = snapshots.map(s => s.date);
+  const values = snapshots.map(s => s.pct);
+
+  if (trendChartInstance) trendChartInstance.destroy();
+
+  trendChartInstance = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Overall Completion %',
+        data: values,
+        borderColor: '#0071e3',
+        backgroundColor: 'rgba(0,113,227,0.08)',
+        fill: true,
+        tension: 0.35,
+        pointRadius: 4,
+        pointBackgroundColor: '#0071e3',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        y: {
+          min: 0, max: 100,
+          ticks: { callback: v => v + '%', font: { family: 'Inter', size: 11 } },
+          grid: { color: 'rgba(0,0,0,0.04)' }
+        },
+        x: {
+          ticks: { font: { family: 'Inter', size: 11 } },
+          grid: { display: false }
+        }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: { label: ctx => ctx.parsed.y + '% completion' },
+          backgroundColor: 'rgba(26,26,46,0.9)',
+          titleFont: { family: 'Inter' },
+          bodyFont: { family: 'Inter' }
+        }
+      }
+    }
+  });
+}
+
+// Actions
+function toggleObjective(id) {
+  const obj = currentQ().objectives.find(o => o.id === id);
+  if (obj) { obj.expanded = !obj.expanded; save(); renderObjectives(); }
+}
+
+function deleteObjective(id) {
+  if (!confirm('Delete this objective and all its key results?')) return;
+  currentQ().objectives = currentQ().objectives.filter(o => o.id !== id);
+  save(); render();
+}
+
+function deleteKR(objId, krId) {
+  const obj = currentQ().objectives.find(o => o.id === objId);
+  if (!obj) return;
+  obj.keyResults = obj.keyResults.filter(kr => kr.id !== krId);
+  save(); render();
+}
+
+function takeSnapshot() {
+  const today = new Date().toISOString().slice(0,10);
+  const snaps = currentQ().snapshots;
+  // Replace if same date exists
+  const existing = snaps.findIndex(s => s.date === today);
+  const entry = { date: today, pct: overallPct() };
+  if (existing >= 0) snaps[existing] = entry;
+  else snaps.push(entry);
+  snaps.sort((a,b) => a.date.localeCompare(b.date));
+  save(); renderTrendChart();
+}
+
+function exportMarkdown() {
+  const q = data.currentQuarter;
+  const objs = currentQ().objectives;
+  let md = `# OKR Report - ${q}\n\n`;
+  md += `**Overall Completion:** ${overallPct()}%  \n`;
+  md += `**Days Left:** ${daysLeftInQuarter()}  \n\n`;
+
+  objs.forEach((obj, i) => {
+    const pct = objPct(obj);
+    md += `## Objective ${i+1}: ${obj.title} (${pct}%)\n\n`;
+    obj.keyResults.forEach(kr => {
+      const kp = krPct(kr);
+      const bar = kp >= 100 ? ' [DONE]' : '';
+      md += `- **${kr.label}**: ${kr.current}/${kr.target} (${kp}%)${bar}\n`;
+    });
+    md += '\n';
+  });
+
+  md += `---\n*Exported ${new Date().toISOString().slice(0,10)} from Lumen OKR Tracker*\n`;
+
+  const blob = new Blob([md], { type: 'text/markdown' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `okr-${q.replace(/\s/g,'-').toLowerCase()}.md`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+// Modals
+function openModal(html) {
+  document.getElementById('modalContent').innerHTML = html;
+  document.getElementById('modalOverlay').classList.add('active');
+  setTimeout(() => {
+    const first = document.querySelector('.modal input, .modal select');
+    if (first) first.focus();
+  }, 100);
+}
+
+function closeModal() {
+  document.getElementById('modalOverlay').classList.remove('active');
+}
+
+function showAddObjectiveModal() {
+  openModal(`
+    <h3>Add Objective</h3>
+    <div class="form-group">
+      <label>Objective title</label>
+      <input type="text" id="newObjTitle" placeholder="e.g. Launch MVP by end of quarter">
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="addObjective()">Add</button>
+    </div>
+  `);
+}
+
+function addObjective() {
+  const title = document.getElementById('newObjTitle').value.trim();
+  if (!title) return;
+  currentQ().objectives.push({
+    id: uid(), title, expanded: true, keyResults: []
+  });
+  save(); closeModal(); render();
+}
+
+function showEditObjectiveModal(id) {
+  const obj = currentQ().objectives.find(o => o.id === id);
+  if (!obj) return;
+  openModal(`
+    <h3>Edit Objective</h3>
+    <div class="form-group">
+      <label>Objective title</label>
+      <input type="text" id="editObjTitle" value="${escHtml(obj.title)}">
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEditObjective('${id}')">Save</button>
+    </div>
+  `);
+}
+
+function saveEditObjective(id) {
+  const obj = currentQ().objectives.find(o => o.id === id);
+  if (!obj) return;
+  const title = document.getElementById('editObjTitle').value.trim();
+  if (!title) return;
+  obj.title = title;
+  save(); closeModal(); render();
+}
+
+function showAddKRModal(objId) {
+  openModal(`
+    <h3>Add Key Result</h3>
+    <div class="form-group">
+      <label>Description</label>
+      <input type="text" id="newKRLabel" placeholder="e.g. Ship 5 features">
+    </div>
+    <div class="form-group">
+      <label>Target value</label>
+      <input type="number" id="newKRTarget" min="1" value="1">
+    </div>
+    <div class="form-group">
+      <label>Current value</label>
+      <input type="number" id="newKRCurrent" min="0" value="0">
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="addKR('${objId}')">Add</button>
+    </div>
+  `);
+}
+
+function addKR(objId) {
+  const obj = currentQ().objectives.find(o => o.id === objId);
+  if (!obj) return;
+  const label = document.getElementById('newKRLabel').value.trim();
+  const target = parseInt(document.getElementById('newKRTarget').value) || 1;
+  const current = parseInt(document.getElementById('newKRCurrent').value) || 0;
+  if (!label) return;
+  obj.keyResults.push({ id: uid(), label, current, target });
+  save(); closeModal(); render();
+}
+
+function showEditKRModal(objId, krId) {
+  const obj = currentQ().objectives.find(o => o.id === objId);
+  if (!obj) return;
+  const kr = obj.keyResults.find(k => k.id === krId);
+  if (!kr) return;
+  openModal(`
+    <h3>Edit Key Result</h3>
+    <div class="form-group">
+      <label>Description</label>
+      <input type="text" id="editKRLabel" value="${escHtml(kr.label)}">
+    </div>
+    <div class="form-group">
+      <label>Target value</label>
+      <input type="number" id="editKRTarget" min="1" value="${kr.target}">
+    </div>
+    <div class="form-group">
+      <label>Current value</label>
+      <input type="number" id="editKRCurrent" min="0" value="${kr.current}">
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveEditKR('${objId}','${krId}')">Save</button>
+    </div>
+  `);
+}
+
+function saveEditKR(objId, krId) {
+  const obj = currentQ().objectives.find(o => o.id === objId);
+  if (!obj) return;
+  const kr = obj.keyResults.find(k => k.id === krId);
+  if (!kr) return;
+  kr.label = document.getElementById('editKRLabel').value.trim() || kr.label;
+  kr.target = parseInt(document.getElementById('editKRTarget').value) || 1;
+  kr.current = parseInt(document.getElementById('editKRCurrent').value) || 0;
+  save(); closeModal(); render();
+}
+
+function showUpdateKRModal(objId, krId) {
+  const obj = currentQ().objectives.find(o => o.id === objId);
+  if (!obj) return;
+  const kr = obj.keyResults.find(k => k.id === krId);
+  if (!kr) return;
+  openModal(`
+    <h3>Update Progress</h3>
+    <p style="color:#6b7280;font-size:0.875rem;margin-bottom:1rem;">${escHtml(kr.label)}</p>
+    <div class="form-group">
+      <label>Current value (target: ${kr.target})</label>
+      <input type="number" id="updateKRVal" min="0" value="${kr.current}" autofocus>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="updateKRValue('${objId}','${krId}')">Update</button>
+    </div>
+  `);
+}
+
+function updateKRValue(objId, krId) {
+  const obj = currentQ().objectives.find(o => o.id === objId);
+  if (!obj) return;
+  const kr = obj.keyResults.find(k => k.id === krId);
+  if (!kr) return;
+  kr.current = parseInt(document.getElementById('updateKRVal').value) || 0;
+  save(); closeModal(); render();
+}
+
+// Keyboard
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeModal();
+  if (e.key === 'Enter' && document.getElementById('modalOverlay').classList.contains('active')) {
+    const primary = document.querySelector('.modal .btn-primary');
+    if (primary) primary.click();
+  }
+});
+
+// Render all
+function render() {
+  renderQuarterTabs();
+  renderStats();
+  renderObjectives();
+  renderTrendChart();
+}
+
+load();
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,1350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Daily Journal - Lumen Analytics</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #f8f9fc;
+  --glass: rgba(255,255,255,0.72);
+  --glass-border: rgba(255,255,255,0.6);
+  --text: #1a1a2e;
+  --text-secondary: #6b7280;
+  --text-tertiary: #9ca3af;
+  --accent: #6366f1;
+  --accent-light: rgba(99,102,241,0.1);
+  --border: rgba(0,0,0,0.06);
+  --shadow: 0 4px 24px rgba(0,0,0,0.06);
+  --radius: 16px;
+  --radius-sm: 10px;
+}
+
+.dark {
+  --bg: #1a1a2e;
+  --glass: rgba(40,40,60,0.72);
+  --glass-border: rgba(60,60,80,0.5);
+  --text: #e8e8f0;
+  --text-secondary: #9ca3b8;
+  --text-tertiary: #6b7290;
+  --accent: #818cf8;
+  --accent-light: rgba(129,140,248,0.15);
+  --border: rgba(255,255,255,0.06);
+  --shadow: 0 4px 24px rgba(0,0,0,0.2);
+}
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  transition: background 0.3s, color 0.3s;
+}
+
+.app {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  min-height: 100vh;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+
+@media (max-width: 900px) {
+  .app { grid-template-columns: 1fr; }
+  .sidebar { display: none; }
+  .sidebar.open { display: block; position: fixed; left: 0; top: 0; z-index: 100; width: 300px; height: 100vh; }
+  .mobile-toggle { display: flex !important; }
+}
+
+/* Sidebar */
+.sidebar {
+  padding: 1.5rem;
+  border-right: 1px solid var(--border);
+  overflow-y: auto;
+  height: 100vh;
+  position: sticky;
+  top: 0;
+}
+
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.sidebar-header svg { color: var(--accent); }
+
+.sidebar-header h1 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--text-secondary);
+  text-decoration: none;
+  font-size: 0.8rem;
+  margin-bottom: 1rem;
+  transition: color 0.2s;
+}
+.back-link:hover { color: var(--accent); }
+
+/* Search */
+.search-box {
+  position: relative;
+  margin-bottom: 1.25rem;
+}
+
+.search-box input {
+  width: 100%;
+  padding: 0.6rem 0.75rem 0.6rem 2.25rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  font-family: inherit;
+  font-size: 0.85rem;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.search-box input:focus { border-color: var(--accent); }
+
+.search-box svg {
+  position: absolute;
+  left: 0.65rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-tertiary);
+}
+
+/* Calendar */
+.mini-calendar {
+  background: var(--glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.cal-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+
+.cal-nav span {
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.cal-nav button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-secondary);
+  padding: 0.25rem;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+.cal-nav button:hover { background: var(--accent-light); }
+
+.cal-grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 2px;
+  text-align: center;
+}
+
+.cal-grid .day-label {
+  font-size: 0.65rem;
+  color: var(--text-tertiary);
+  font-weight: 500;
+  padding: 0.25rem 0;
+}
+
+.cal-grid .day {
+  font-size: 0.75rem;
+  padding: 0.3rem 0;
+  border-radius: 6px;
+  cursor: pointer;
+  position: relative;
+  transition: background 0.2s;
+}
+
+.cal-grid .day:hover { background: var(--accent-light); }
+.cal-grid .day.today { font-weight: 700; color: var(--accent); }
+.cal-grid .day.selected { background: var(--accent); color: white; }
+.cal-grid .day.has-entry::after {
+  content: '';
+  position: absolute;
+  bottom: 2px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--accent);
+}
+.cal-grid .day.selected.has-entry::after { background: white; }
+.cal-grid .day.empty { cursor: default; }
+
+/* Stats panel */
+.stats-panel {
+  background: var(--glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+.stats-panel h3 {
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.35rem 0;
+  font-size: 0.82rem;
+}
+
+.stat-row .label { color: var(--text-secondary); }
+.stat-row .value { font-weight: 600; }
+
+/* Archive */
+.archive-section {
+  margin-bottom: 1.25rem;
+}
+
+.archive-section h3 {
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-secondary);
+}
+
+.archive-month {
+  padding: 0.4rem 0.6rem;
+  font-size: 0.82rem;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  display: flex;
+  justify-content: space-between;
+  transition: background 0.2s;
+}
+.archive-month:hover { background: var(--accent-light); }
+.archive-month .count {
+  color: var(--text-tertiary);
+  font-size: 0.75rem;
+}
+
+/* Actions */
+.sidebar-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.sidebar-actions button, .sidebar-actions select {
+  background: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 0.75rem;
+  font-family: inherit;
+  font-size: 0.8rem;
+  color: var(--text);
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.2s;
+}
+.sidebar-actions button:hover { background: var(--accent-light); }
+
+.dark-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Main content */
+.main {
+  padding: 2rem;
+  overflow-y: auto;
+  height: 100vh;
+}
+
+.mobile-toggle {
+  display: none;
+  position: fixed;
+  bottom: 1.5rem;
+  left: 1.5rem;
+  z-index: 90;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: white;
+  border: none;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 16px rgba(99,102,241,0.3);
+  cursor: pointer;
+}
+
+/* Editor */
+.editor-card {
+  background: var(--glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+  padding: 2rem;
+  box-shadow: var(--shadow);
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.editor-topbar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+  flex-wrap: wrap;
+}
+
+.editor-topbar input[type="date"] {
+  background: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 0.45rem 0.65rem;
+  font-family: inherit;
+  font-size: 0.85rem;
+  color: var(--text);
+  outline: none;
+}
+
+.editor-topbar input[type="text"] {
+  flex: 1;
+  min-width: 200px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  padding: 0.45rem 0;
+  font-family: inherit;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s;
+}
+.editor-topbar input[type="text"]:focus { border-color: var(--accent); }
+.editor-topbar input[type="text"]::placeholder { color: var(--text-tertiary); }
+
+.prompt-bar {
+  background: var(--accent-light);
+  border-radius: var(--radius-sm);
+  padding: 0.65rem 1rem;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.prompt-bar .prompt-text {
+  font-size: 0.85rem;
+  color: var(--accent);
+  font-style: italic;
+}
+
+.prompt-bar button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--accent);
+  font-size: 0.75rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.editor-textarea {
+  width: 100%;
+  min-height: 360px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 1rem;
+  font-family: inherit;
+  font-size: 0.95rem;
+  line-height: 1.7;
+  color: var(--text);
+  resize: vertical;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.editor-textarea:focus { border-color: var(--accent); }
+.editor-textarea::placeholder { color: var(--text-tertiary); }
+
+.editor-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 1rem;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.mood-tags {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.mood-tag {
+  padding: 0.3rem 0.7rem;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+.mood-tag:hover { border-color: var(--accent); color: var(--accent); }
+.mood-tag.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+.custom-tags {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 0.75rem;
+}
+
+.custom-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.25rem 0.55rem;
+  border-radius: 14px;
+  font-size: 0.72rem;
+  background: var(--accent-light);
+  color: var(--accent);
+}
+
+.custom-tag .remove-tag {
+  cursor: pointer;
+  font-size: 0.85rem;
+  line-height: 1;
+  opacity: 0.6;
+}
+.custom-tag .remove-tag:hover { opacity: 1; }
+
+.tag-input {
+  border: 1px dashed var(--border);
+  border-radius: 14px;
+  padding: 0.25rem 0.55rem;
+  font-size: 0.72rem;
+  background: transparent;
+  color: var(--text);
+  outline: none;
+  font-family: inherit;
+  width: 80px;
+}
+.tag-input::placeholder { color: var(--text-tertiary); }
+
+.editor-meta {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  font-size: 0.78rem;
+  color: var(--text-tertiary);
+}
+
+.save-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.save-indicator .dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #10b981;
+}
+.save-indicator.unsaved .dot { background: #f59e0b; }
+
+.btn-save {
+  background: var(--accent);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 0.5rem 1.25rem;
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+.btn-save:hover { opacity: 0.9; }
+
+.btn-new {
+  background: transparent;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  padding: 0.45rem 1rem;
+  font-family: inherit;
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.btn-new:hover { background: var(--accent-light); }
+
+/* Entry list (search results / archive) */
+.entry-list {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.entry-list-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.entry-list-header h2 {
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.entry-list-header button {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--accent);
+  font-size: 0.82rem;
+  font-weight: 500;
+}
+
+.entry-item {
+  background: var(--glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  margin-bottom: 0.75rem;
+  cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.entry-item:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+
+.entry-item-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.4rem;
+}
+
+.entry-item-date {
+  font-size: 0.78rem;
+  color: var(--text-tertiary);
+}
+
+.entry-item-mood {
+  font-size: 0.72rem;
+  padding: 0.15rem 0.5rem;
+  border-radius: 10px;
+  background: var(--accent-light);
+  color: var(--accent);
+}
+
+.entry-item h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: 0.3rem;
+}
+
+.entry-item .preview {
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.entry-item .entry-tags {
+  display: flex;
+  gap: 0.3rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.entry-item .entry-tags span {
+  font-size: 0.68rem;
+  padding: 0.15rem 0.45rem;
+  border-radius: 10px;
+  background: var(--accent-light);
+  color: var(--accent);
+}
+
+.entry-item .delete-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: var(--text-tertiary);
+  font-size: 0.75rem;
+  padding: 0.2rem 0.4rem;
+  border-radius: 4px;
+  transition: color 0.2s, background 0.2s;
+}
+.entry-item .delete-btn:hover { color: #ef4444; background: rgba(239,68,68,0.1); }
+
+/* Export modal */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.3);
+  backdrop-filter: blur(4px);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+
+.modal {
+  background: var(--glass);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--glass-border);
+  border-radius: var(--radius);
+  padding: 2rem;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+}
+
+.modal h3 {
+  font-size: 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.modal button {
+  display: block;
+  width: 100%;
+  padding: 0.65rem;
+  margin-bottom: 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.2s;
+}
+.modal button:hover { background: var(--accent-light); }
+
+.modal .close-modal {
+  margin-top: 0.5rem;
+  text-align: center;
+  color: var(--text-tertiary);
+  border: none;
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- Sidebar -->
+  <aside class="sidebar" id="sidebar">
+    <a href="index.html" class="back-link">
+      <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 1L4 7l5 6"/></svg>
+      Back to Analytics
+    </a>
+    <div class="sidebar-header">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M17 3a2.85 2.85 0 114 4L7.5 20.5 2 22l1.5-5.5L17 3z"/>
+      </svg>
+      <h1>Daily Journal</h1>
+    </div>
+
+    <div class="search-box">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input type="text" id="searchInput" placeholder="Search entries...">
+    </div>
+
+    <div class="mini-calendar" id="calendarWidget"></div>
+
+    <div class="stats-panel" id="statsPanel"></div>
+
+    <div class="archive-section" id="archiveSection"></div>
+
+    <div class="sidebar-actions">
+      <button class="dark-toggle" id="darkToggle">
+        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 10.79A7 7 0 115.21 2 5.5 5.5 0 0014 10.79z"/></svg>
+        <span>Dark Mode</span>
+      </button>
+      <button id="exportBtn">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="vertical-align:-2px;margin-right:4px"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+        Export Entries
+      </button>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main" id="mainArea">
+    <!-- Editor and list rendered by JS -->
+  </main>
+</div>
+
+<button class="mobile-toggle" id="mobileToggle">
+  <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="19" y2="6"/><line x1="3" y1="12" x2="19" y2="12"/><line x1="3" y1="18" x2="19" y2="18"/></svg>
+</button>
+
+<!-- Export modal -->
+<div class="modal-overlay" id="exportModal">
+  <div class="modal">
+    <h3>Export Journal</h3>
+    <button onclick="exportJSON()">Export as JSON</button>
+    <button onclick="exportMarkdown()">Export as Markdown</button>
+    <button onclick="exportCurrentEntry()">Export Current Entry as Text</button>
+    <button class="close-modal" onclick="closeExportModal()">Cancel</button>
+  </div>
+</div>
+
+<script>
+// --- Data layer ---
+const STORAGE_KEY = 'lumen_journal_entries';
+const PREFS_KEY = 'lumen_journal_prefs';
+
+const PROMPTS = [
+  "What's on your mind?",
+  "What did you learn today?",
+  "What are you grateful for?",
+  "What challenge did you face?",
+  "What's your intention for tomorrow?"
+];
+
+const MOODS = ['Energized','Focused','Calm','Stressed','Tired','Inspired'];
+
+function loadEntries() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+  catch { return []; }
+}
+
+function saveEntries(entries) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+}
+
+function loadPrefs() {
+  try { return JSON.parse(localStorage.getItem(PREFS_KEY)) || {}; }
+  catch { return {}; }
+}
+
+function savePrefs(prefs) {
+  localStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
+}
+
+function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+
+function wordCount(text) { return text.trim() ? text.trim().split(/\s+/).length : 0; }
+
+function formatDate(d) {
+  const dt = new Date(d + 'T12:00:00');
+  return dt.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function toDateStr(dt) {
+  const y = dt.getFullYear(), m = String(dt.getMonth()+1).padStart(2,'0'), d = String(dt.getDate()).padStart(2,'0');
+  return `${y}-${m}-${d}`;
+}
+
+// --- State ---
+let entries = loadEntries();
+let currentId = null;
+let viewMode = 'editor'; // 'editor' | 'list'
+let listFilter = null; // { type: 'search', q } | { type: 'month', year, month } | null
+let calYear, calMonth;
+let promptIndex = 0;
+let autoSaveTimer = null;
+let isDirty = false;
+
+const prefs = loadPrefs();
+
+// Init calendar to current month
+const now = new Date();
+calYear = now.getFullYear();
+calMonth = now.getMonth();
+
+// Dark mode
+if (prefs.dark) document.body.classList.add('dark');
+
+// Seed sample entries if empty
+if (entries.length === 0) {
+  const samples = [
+    {
+      id: genId(), date: '2026-04-05', title: 'Scoper Launch Day',
+      content: 'Today was the official soft launch of Scoper. After weeks of building the 9-agent estimation pipeline, it felt surreal to finally push it live. The architecture held up beautifully under initial testing -- each agent contributes its perspective and the consensus mechanism produces surprisingly nuanced estimates.\n\nI spent the morning writing documentation and preparing the landing page. The afternoon was all about monitoring the first few real requests flowing through the system. No crashes, no weird edge cases. Just clean, fast estimates.\n\nThe hardest part was deciding on pricing. Went with a free tier to build trust. Will iterate based on early feedback. Feeling cautiously optimistic about this one.',
+      mood: 'Energized', tags: ['scoper','launch','milestone'], created: '2026-04-05T09:30:00Z'
+    },
+    {
+      id: genId(), date: '2026-04-10', title: 'Deep Work on Smara Teams',
+      content: 'Blocked off the whole morning for deep work on the Smara Teams feature. The core challenge is the permission model -- team memories need to be visible to all members while personal preferences stay private. Spent two hours sketching the database schema before writing a single line of code.\n\nThe Ebbinghaus decay scoring adds another dimension. Team memories should decay slower than individual ones since they represent shared decisions. Implemented a multiplier based on team size and access frequency.\n\nHad a breakthrough moment around 11 AM when I realized the vector search can be scoped per-team without any index changes. Just filter by team_id in the WHERE clause. Simple but powerful.',
+      mood: 'Focused', tags: ['smara','architecture','deep-work'], created: '2026-04-10T14:20:00Z'
+    },
+    {
+      id: genId(), date: '2026-04-15', title: 'System Audit Reflections',
+      content: 'Ran a full system audit today. Found some interesting things -- the cron jobs had accumulated duplicates over the past month, log rotation was not set up properly for three services, and the TCC permissions on the Mac mini needed a refresh.\n\nFixed everything in a single afternoon session. The satisfaction of cleaning house is underrated. Freed up 22 GB by removing old Gemma model files that were no longer needed after the migration.\n\nAlso rewrote the mission control script. The old one was a mess of nested if-statements. The new version uses a clean dispatch pattern. Much easier to extend when we add new services.',
+      mood: 'Calm', tags: ['maintenance','infrastructure','cleanup'], created: '2026-04-15T18:00:00Z'
+    },
+    {
+      id: genId(), date: '2026-04-22', title: 'Etsy Product Strategy',
+      content: 'Spent the day researching the Etsy digital products space. The "Investment Wisdom" concept has legs -- three listings are ready to go. The market research shows similar products doing $2.7-8.9K per month, which is a solid side income stream.\n\nThe key insight is that the products need to feel premium and handcrafted, even though they are digital. Invested time in the typography and layout. Each product has a consistent design language with clean minimalist aesthetics.\n\nStressed about spreading too thin across projects. Need to stay disciplined about the 30-day revenue plan. One paid customer by May 13 is the goal. Everything else is secondary.',
+      mood: 'Stressed', tags: ['etsy','revenue','products'], created: '2026-04-22T20:15:00Z'
+    },
+    {
+      id: genId(), date: '2026-04-28', title: 'Morning Routine Reset',
+      content: 'Decided to reset my morning routine after noticing I had been starting the day by checking messages instead of doing focused work. The new plan: wake up, 10 minutes of breathing, coffee, then 90 minutes of deep work before opening any communication channels.\n\nTested it today and the difference was remarkable. By 9 AM I had already shipped a fix for the Lumen dashboard deployment bug and written the first draft of the Smara blog post.\n\nThe energy tracker data backs this up -- my most productive hours are consistently between 7-10 AM. Need to protect that window ruthlessly. Also inspired by a podcast on creative routines of writers. They all guard their morning hours.',
+      mood: 'Inspired', tags: ['routine','productivity','health'], created: '2026-04-28T08:45:00Z'
+    }
+  ];
+  entries = samples;
+  saveEntries(entries);
+}
+
+// --- Prompt rotation ---
+function getDailyPrompt() {
+  const dayOfYear = Math.floor((now - new Date(now.getFullYear(),0,0)) / 86400000);
+  return PROMPTS[(dayOfYear + promptIndex) % PROMPTS.length];
+}
+
+// --- Rendering ---
+function render() {
+  renderCalendar();
+  renderStats();
+  renderArchive();
+
+  if (viewMode === 'editor') {
+    renderEditor();
+  } else {
+    renderList();
+  }
+}
+
+function renderEditor() {
+  const entry = currentId ? entries.find(e => e.id === currentId) : null;
+  const dateVal = entry ? entry.date : toDateStr(now);
+  const titleVal = entry ? entry.title : '';
+  const contentVal = entry ? entry.content : '';
+  const moodVal = entry ? entry.mood : '';
+  const tagsVal = entry ? (entry.tags || []) : [];
+  const wc = wordCount(contentVal);
+
+  const main = document.getElementById('mainArea');
+  main.innerHTML = `
+    <div class="editor-card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0.5rem;">
+        <button class="btn-new" onclick="newEntry()">+ New Entry</button>
+        ${currentId ? `<button class="btn-new" style="color:#ef4444;border-color:#ef4444;" onclick="deleteEntry('${currentId}')">Delete</button>` : ''}
+      </div>
+      <div class="editor-topbar">
+        <input type="date" id="entryDate" value="${dateVal}">
+        <input type="text" id="entryTitle" placeholder="Entry title (optional)" value="${escHtml(titleVal)}">
+      </div>
+      <div class="prompt-bar">
+        <span class="prompt-text">${getDailyPrompt()}</span>
+        <button onclick="cyclePrompt()">Next prompt</button>
+      </div>
+      <textarea class="editor-textarea" id="entryContent" placeholder="Start writing...">${escHtml(contentVal)}</textarea>
+      <div class="custom-tags" id="customTags">
+        ${tagsVal.map(t => `<span class="custom-tag">${escHtml(t)}<span class="remove-tag" onclick="removeTag('${escHtml(t)}')">&times;</span></span>`).join('')}
+        <input type="text" class="tag-input" id="tagInput" placeholder="+ tag" onkeydown="handleTagKey(event)">
+      </div>
+      <div class="editor-footer">
+        <div class="mood-tags">
+          ${MOODS.map(m => `<button class="mood-tag ${moodVal === m ? 'active' : ''}" onclick="setMood('${m}')">${m}</button>`).join('')}
+        </div>
+        <div class="editor-meta">
+          <span>${wc} word${wc !== 1 ? 's' : ''}</span>
+          <span class="save-indicator ${isDirty ? 'unsaved' : ''}" id="saveIndicator">
+            <span class="dot"></span>
+            ${isDirty ? 'Unsaved' : 'Saved'}
+          </span>
+          <button class="btn-save" onclick="saveCurrentEntry()">Save</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Attach auto-save listeners
+  const textarea = document.getElementById('entryContent');
+  const titleInput = document.getElementById('entryTitle');
+  const dateInput = document.getElementById('entryDate');
+
+  [textarea, titleInput].forEach(el => {
+    el.addEventListener('input', () => {
+      isDirty = true;
+      updateWordCount();
+      scheduleAutoSave();
+    });
+  });
+
+  dateInput.addEventListener('change', () => {
+    isDirty = true;
+    scheduleAutoSave();
+  });
+
+  // Update word count live
+  textarea.addEventListener('input', updateWordCount);
+}
+
+function updateWordCount() {
+  const textarea = document.getElementById('entryContent');
+  if (!textarea) return;
+  const wc = wordCount(textarea.value);
+  const meta = document.querySelector('.editor-meta span:first-child');
+  if (meta) meta.textContent = `${wc} word${wc !== 1 ? 's' : ''}`;
+  const indicator = document.getElementById('saveIndicator');
+  if (indicator && isDirty) {
+    indicator.className = 'save-indicator unsaved';
+    indicator.innerHTML = '<span class="dot"></span> Unsaved';
+  }
+}
+
+function scheduleAutoSave() {
+  if (autoSaveTimer) clearTimeout(autoSaveTimer);
+  autoSaveTimer = setTimeout(() => {
+    saveCurrentEntry(true);
+  }, 5000);
+}
+
+function saveCurrentEntry(silent) {
+  const dateInput = document.getElementById('entryDate');
+  const titleInput = document.getElementById('entryTitle');
+  const contentInput = document.getElementById('entryContent');
+  if (!contentInput || !contentInput.value.trim()) return;
+
+  const dateVal = dateInput.value;
+  const titleVal = titleInput.value.trim();
+  const contentVal = contentInput.value;
+
+  if (currentId) {
+    const idx = entries.findIndex(e => e.id === currentId);
+    if (idx !== -1) {
+      entries[idx].date = dateVal;
+      entries[idx].title = titleVal;
+      entries[idx].content = contentVal;
+    }
+  } else {
+    const newEntry = {
+      id: genId(),
+      date: dateVal,
+      title: titleVal,
+      content: contentVal,
+      mood: '',
+      tags: [],
+      created: new Date().toISOString()
+    };
+    entries.unshift(newEntry);
+    currentId = newEntry.id;
+  }
+
+  saveEntries(entries);
+  isDirty = false;
+
+  const indicator = document.getElementById('saveIndicator');
+  if (indicator) {
+    indicator.className = 'save-indicator';
+    indicator.innerHTML = '<span class="dot"></span> Saved';
+  }
+
+  renderCalendar();
+  renderStats();
+  renderArchive();
+}
+
+function setMood(mood) {
+  if (!currentId) saveCurrentEntry(true);
+  if (!currentId) return;
+  const entry = entries.find(e => e.id === currentId);
+  if (entry) {
+    entry.mood = entry.mood === mood ? '' : mood;
+    saveEntries(entries);
+    render();
+  }
+}
+
+function handleTagKey(e) {
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    const input = document.getElementById('tagInput');
+    const tag = input.value.trim().toLowerCase();
+    if (!tag) return;
+    if (!currentId) saveCurrentEntry(true);
+    if (!currentId) return;
+    const entry = entries.find(e2 => e2.id === currentId);
+    if (entry && !entry.tags.includes(tag)) {
+      entry.tags.push(tag);
+      saveEntries(entries);
+      render();
+    }
+  }
+}
+
+function removeTag(tag) {
+  if (!currentId) return;
+  const entry = entries.find(e => e.id === currentId);
+  if (entry) {
+    entry.tags = entry.tags.filter(t => t !== tag);
+    saveEntries(entries);
+    render();
+  }
+}
+
+function newEntry() {
+  currentId = null;
+  isDirty = false;
+  viewMode = 'editor';
+  render();
+}
+
+function deleteEntry(id) {
+  if (!confirm('Delete this entry?')) return;
+  entries = entries.filter(e => e.id !== id);
+  saveEntries(entries);
+  currentId = null;
+  isDirty = false;
+  render();
+}
+
+function openEntry(id) {
+  currentId = id;
+  isDirty = false;
+  viewMode = 'editor';
+  render();
+}
+
+function cyclePrompt() {
+  promptIndex++;
+  const bar = document.querySelector('.prompt-text');
+  if (bar) bar.textContent = getDailyPrompt();
+}
+
+// --- List view ---
+function renderList() {
+  const main = document.getElementById('mainArea');
+  let filtered = [...entries];
+  let heading = 'All Entries';
+
+  if (listFilter) {
+    if (listFilter.type === 'search') {
+      const q = listFilter.q.toLowerCase();
+      filtered = entries.filter(e =>
+        (e.title && e.title.toLowerCase().includes(q)) ||
+        e.content.toLowerCase().includes(q) ||
+        (e.tags && e.tags.some(t => t.includes(q)))
+      );
+      heading = `Search: "${listFilter.q}" (${filtered.length} result${filtered.length !== 1 ? 's' : ''})`;
+    } else if (listFilter.type === 'month') {
+      filtered = entries.filter(e => {
+        const d = new Date(e.date + 'T12:00:00');
+        return d.getFullYear() === listFilter.year && d.getMonth() === listFilter.month;
+      });
+      const monthName = new Date(listFilter.year, listFilter.month).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+      heading = monthName;
+    }
+  }
+
+  filtered.sort((a, b) => b.date.localeCompare(a.date));
+
+  main.innerHTML = `
+    <div class="entry-list">
+      <div class="entry-list-header">
+        <h2>${heading}</h2>
+        <button onclick="newEntry()">+ New Entry</button>
+      </div>
+      ${filtered.length === 0 ? '<p style="color:var(--text-tertiary);text-align:center;padding:3rem;">No entries found.</p>' : ''}
+      ${filtered.map(e => `
+        <div class="entry-item" onclick="openEntry('${e.id}')">
+          <div class="entry-item-header">
+            <span class="entry-item-date">${formatDate(e.date)}</span>
+            <div style="display:flex;gap:0.5rem;align-items:center;">
+              ${e.mood ? `<span class="entry-item-mood">${e.mood}</span>` : ''}
+              <button class="delete-btn" onclick="event.stopPropagation();deleteEntry('${e.id}')">&#x2715;</button>
+            </div>
+          </div>
+          <h3>${e.title || 'Untitled'}</h3>
+          <p class="preview">${escHtml(e.content)}</p>
+          ${e.tags && e.tags.length ? `<div class="entry-tags">${e.tags.map(t => `<span>${escHtml(t)}</span>`).join('')}</div>` : ''}
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+// --- Calendar ---
+function renderCalendar() {
+  const container = document.getElementById('calendarWidget');
+  const firstDay = new Date(calYear, calMonth, 1).getDay();
+  const daysInMonth = new Date(calYear, calMonth + 1, 0).getDate();
+  const monthLabel = new Date(calYear, calMonth).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+
+  const entryDates = new Set(entries.map(e => e.date));
+  const todayStr = toDateStr(now);
+  const selectedEntry = currentId ? entries.find(e => e.id === currentId) : null;
+  const selectedDate = selectedEntry ? selectedEntry.date : null;
+
+  let html = `
+    <div class="cal-nav">
+      <button onclick="calPrev()">&larr;</button>
+      <span>${monthLabel}</span>
+      <button onclick="calNext()">&rarr;</button>
+    </div>
+    <div class="cal-grid">
+      ${['Su','Mo','Tu','We','Th','Fr','Sa'].map(d => `<span class="day-label">${d}</span>`).join('')}
+      ${Array(firstDay).fill('<span class="day empty"></span>').join('')}
+  `;
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const ds = `${calYear}-${String(calMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const classes = ['day'];
+    if (ds === todayStr) classes.push('today');
+    if (ds === selectedDate) classes.push('selected');
+    if (entryDates.has(ds)) classes.push('has-entry');
+    html += `<span class="${classes.join(' ')}" onclick="calDayClick('${ds}')">${d}</span>`;
+  }
+
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+function calPrev() { calMonth--; if (calMonth < 0) { calMonth = 11; calYear--; } renderCalendar(); }
+function calNext() { calMonth++; if (calMonth > 11) { calMonth = 0; calYear++; } renderCalendar(); }
+
+function calDayClick(dateStr) {
+  const entry = entries.find(e => e.date === dateStr);
+  if (entry) {
+    openEntry(entry.id);
+  } else {
+    currentId = null;
+    isDirty = false;
+    viewMode = 'editor';
+    render();
+    setTimeout(() => {
+      const dateInput = document.getElementById('entryDate');
+      if (dateInput) dateInput.value = dateStr;
+    }, 10);
+  }
+}
+
+// --- Stats ---
+function renderStats() {
+  const panel = document.getElementById('statsPanel');
+  const totalEntries = entries.length;
+  const totalWords = entries.reduce((s, e) => s + wordCount(e.content), 0);
+  const avgWords = totalEntries ? Math.round(totalWords / totalEntries) : 0;
+
+  // Current streak
+  const sortedDates = [...new Set(entries.map(e => e.date))].sort().reverse();
+  let streak = 0;
+  let check = new Date(now);
+  for (let i = 0; i < 365; i++) {
+    const ds = toDateStr(check);
+    if (sortedDates.includes(ds)) {
+      streak++;
+    } else if (i > 0) {
+      break;
+    }
+    check.setDate(check.getDate() - 1);
+  }
+
+  // Longest streak
+  const allDates = [...new Set(entries.map(e => e.date))].sort();
+  let longest = 0, run = 1;
+  for (let i = 1; i < allDates.length; i++) {
+    const prev = new Date(allDates[i-1] + 'T12:00:00');
+    const curr = new Date(allDates[i] + 'T12:00:00');
+    const diff = (curr - prev) / 86400000;
+    if (diff === 1) { run++; } else { run = 1; }
+    longest = Math.max(longest, run);
+  }
+  if (allDates.length === 1) longest = 1;
+  longest = Math.max(longest, streak);
+
+  // This month
+  const thisMonthEntries = entries.filter(e => {
+    const d = new Date(e.date + 'T12:00:00');
+    return d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth();
+  }).length;
+
+  panel.innerHTML = `
+    <h3>Stats</h3>
+    <div class="stat-row"><span class="label">Total entries</span><span class="value">${totalEntries}</span></div>
+    <div class="stat-row"><span class="label">Words written</span><span class="value">${totalWords.toLocaleString()}</span></div>
+    <div class="stat-row"><span class="label">Current streak</span><span class="value">${streak} day${streak !== 1 ? 's' : ''}</span></div>
+    <div class="stat-row"><span class="label">Longest streak</span><span class="value">${longest} day${longest !== 1 ? 's' : ''}</span></div>
+    <div class="stat-row"><span class="label">This month</span><span class="value">${thisMonthEntries}</span></div>
+    <div class="stat-row"><span class="label">Avg words/entry</span><span class="value">${avgWords}</span></div>
+  `;
+}
+
+// --- Archive ---
+function renderArchive() {
+  const section = document.getElementById('archiveSection');
+  const months = {};
+  entries.forEach(e => {
+    const d = new Date(e.date + 'T12:00:00');
+    const key = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+    months[key] = (months[key] || 0) + 1;
+  });
+
+  const sorted = Object.keys(months).sort().reverse();
+
+  section.innerHTML = `
+    <h3>Archive</h3>
+    ${sorted.map(k => {
+      const [y, m] = k.split('-').map(Number);
+      const label = new Date(y, m-1).toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+      return `<div class="archive-month" onclick="showMonth(${y},${m-1})">${label}<span class="count">${months[k]}</span></div>`;
+    }).join('')}
+  `;
+}
+
+function showMonth(year, month) {
+  listFilter = { type: 'month', year, month };
+  viewMode = 'list';
+  calYear = year;
+  calMonth = month;
+  render();
+}
+
+// --- Search ---
+document.getElementById('searchInput').addEventListener('input', function(e) {
+  const q = e.target.value.trim();
+  if (q.length >= 2) {
+    listFilter = { type: 'search', q };
+    viewMode = 'list';
+    render();
+  } else if (q.length === 0) {
+    viewMode = 'editor';
+    listFilter = null;
+    render();
+  }
+});
+
+// --- Dark mode ---
+document.getElementById('darkToggle').addEventListener('click', () => {
+  document.body.classList.toggle('dark');
+  prefs.dark = document.body.classList.contains('dark');
+  savePrefs(prefs);
+  const label = document.querySelector('#darkToggle span');
+  label.textContent = prefs.dark ? 'Light Mode' : 'Dark Mode';
+});
+
+// --- Mobile ---
+document.getElementById('mobileToggle').addEventListener('click', () => {
+  document.getElementById('sidebar').classList.toggle('open');
+});
+
+// --- Export ---
+document.getElementById('exportBtn').addEventListener('click', () => {
+  document.getElementById('exportModal').classList.add('open');
+});
+
+function closeExportModal() {
+  document.getElementById('exportModal').classList.remove('open');
+}
+
+function exportJSON() {
+  download('journal-export.json', JSON.stringify(entries, null, 2), 'application/json');
+  closeExportModal();
+}
+
+function exportMarkdown() {
+  const sorted = [...entries].sort((a, b) => a.date.localeCompare(b.date));
+  let md = '# Daily Journal\n\n';
+  sorted.forEach(e => {
+    md += `## ${formatDate(e.date)}${e.title ? ' - ' + e.title : ''}\n\n`;
+    if (e.mood) md += `**Mood:** ${e.mood}\n\n`;
+    md += e.content + '\n\n';
+    if (e.tags && e.tags.length) md += `*Tags: ${e.tags.join(', ')}*\n\n`;
+    md += '---\n\n';
+  });
+  download('journal-export.md', md, 'text/markdown');
+  closeExportModal();
+}
+
+function exportCurrentEntry() {
+  if (!currentId) { alert('No entry selected.'); return; }
+  const e = entries.find(x => x.id === currentId);
+  if (!e) return;
+  let txt = `${formatDate(e.date)}${e.title ? ' - ' + e.title : ''}\n`;
+  if (e.mood) txt += `Mood: ${e.mood}\n`;
+  txt += '\n' + e.content + '\n';
+  if (e.tags && e.tags.length) txt += `\nTags: ${e.tags.join(', ')}\n`;
+  download(`journal-${e.date}.txt`, txt, 'text/plain');
+  closeExportModal();
+}
+
+function download(name, content, type) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = name; a.click();
+  URL.revokeObjectURL(url);
+}
+
+// --- Helpers ---
+function escHtml(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// --- Init ---
+// Open the most recent entry or show editor
+const sorted = [...entries].sort((a, b) => b.date.localeCompare(a.date));
+if (sorted.length > 0) {
+  currentId = sorted[0].id;
+}
+render();
+</script>
+</body>
+</html>

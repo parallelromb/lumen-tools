@@ -1,0 +1,996 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Expense Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #f8f9fc;
+    color: #1a1a2e;
+    min-height: 100vh;
+    padding: 1.5rem;
+    line-height: 1.5;
+  }
+
+  .container { max-width: 1200px; margin: 0 auto; }
+
+  .page-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  .page-header h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+  .page-header .subtitle {
+    color: #6b7280;
+    font-size: 0.85rem;
+  }
+  .header-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+
+  .glass {
+    background: rgba(255,255,255,0.72);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.6);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+
+  .glass h2 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+
+  @media (max-width: 900px) {
+    .grid-2 { grid-template-columns: 1fr; }
+    .grid-4 { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 500px) {
+    .grid-4 { grid-template-columns: 1fr; }
+  }
+
+  /* Buttons */
+  .btn {
+    padding: 0.5rem 1rem;
+    border-radius: 10px;
+    border: 1px solid rgba(0,0,0,0.08);
+    background: rgba(255,255,255,0.9);
+    font-family: inherit;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+    color: #1a1a2e;
+  }
+  .btn:hover { background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .btn-primary {
+    background: #3b82f6;
+    color: #fff;
+    border-color: #3b82f6;
+  }
+  .btn-primary:hover { background: #2563eb; }
+  .btn-danger { background: #ef4444; color: #fff; border-color: #ef4444; }
+  .btn-danger:hover { background: #dc2626; }
+  .btn-sm { padding: 0.3rem 0.6rem; font-size: 0.75rem; }
+
+  /* Month nav */
+  .month-nav {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .month-nav .month-label {
+    font-size: 1.1rem;
+    font-weight: 600;
+    min-width: 160px;
+    text-align: center;
+  }
+
+  /* Form */
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 0.75rem;
+    align-items: end;
+  }
+  .form-group label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #6b7280;
+    margin-bottom: 0.25rem;
+  }
+  .form-group input, .form-group select {
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 0.85rem;
+    background: rgba(255,255,255,0.8);
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .form-group input:focus, .form-group select:focus {
+    border-color: #3b82f6;
+  }
+  .form-group .checkbox-row {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    padding-top: 0.3rem;
+  }
+  .form-group .checkbox-row input[type="checkbox"] { width: auto; }
+
+  /* Stat cards */
+  .stat-card {
+    background: rgba(255,255,255,0.72);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.6);
+    border-radius: 14px;
+    padding: 1.25rem;
+    text-align: center;
+  }
+  .stat-card .stat-value {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+  }
+  .stat-card .stat-label {
+    font-size: 0.75rem;
+    color: #6b7280;
+    font-weight: 500;
+  }
+
+  /* Table */
+  .expense-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+  }
+  .expense-table th {
+    text-align: left;
+    padding: 0.6rem 0.5rem;
+    font-weight: 600;
+    font-size: 0.75rem;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    border-bottom: 2px solid rgba(0,0,0,0.06);
+  }
+  .expense-table td {
+    padding: 0.6rem 0.5rem;
+    border-bottom: 1px solid rgba(0,0,0,0.04);
+  }
+  .expense-table tr:hover td { background: rgba(59,130,246,0.03); }
+  .expense-table .amount { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .cat-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 99px;
+    font-size: 0.72rem;
+    font-weight: 500;
+  }
+
+  /* Progress bars */
+  .budget-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+  .budget-row .budget-cat { min-width: 100px; font-size: 0.82rem; font-weight: 500; }
+  .budget-bar-wrap {
+    flex: 1;
+    height: 10px;
+    background: rgba(0,0,0,0.05);
+    border-radius: 99px;
+    overflow: hidden;
+  }
+  .budget-bar {
+    height: 100%;
+    border-radius: 99px;
+    transition: width 0.4s;
+  }
+  .budget-row .budget-nums { font-size: 0.75rem; color: #6b7280; min-width: 120px; text-align: right; font-variant-numeric: tabular-nums; }
+  .budget-input {
+    width: 70px;
+    padding: 0.3rem 0.5rem;
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.78rem;
+    text-align: right;
+    outline: none;
+  }
+  .budget-input:focus { border-color: #3b82f6; }
+
+  /* Filter bar */
+  .filter-bar {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    align-items: end;
+  }
+
+  /* Recurring badge */
+  .recurring-badge {
+    display: inline-block;
+    font-size: 0.65rem;
+    font-weight: 600;
+    background: rgba(139,92,246,0.12);
+    color: #8b5cf6;
+    padding: 1px 6px;
+    border-radius: 99px;
+    margin-left: 4px;
+  }
+
+  /* Chart containers */
+  .chart-wrap { position: relative; max-height: 300px; }
+
+  /* Scrollable table */
+  .table-scroll { max-height: 400px; overflow-y: auto; }
+
+  /* Totals row */
+  .totals-row td { font-weight: 700; border-top: 2px solid rgba(0,0,0,0.1); background: rgba(59,130,246,0.03); }
+
+  /* Back link */
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    color: #3b82f6;
+    text-decoration: none;
+    font-size: 0.82rem;
+    font-weight: 500;
+    margin-bottom: 1rem;
+  }
+  .back-link:hover { text-decoration: underline; }
+
+  /* Suggestions dropdown */
+  .suggestions {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    background: #fff;
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
+    z-index: 100;
+    max-height: 200px;
+    overflow-y: auto;
+  }
+  .suggestions .sug-item {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.82rem;
+    cursor: pointer;
+    border-bottom: 1px solid rgba(0,0,0,0.04);
+  }
+  .suggestions .sug-item:hover { background: rgba(59,130,246,0.06); }
+  .sug-wrap { position: relative; }
+
+  .hidden { display: none !important; }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 2rem;
+    right: 2rem;
+    background: #1a1a2e;
+    color: #fff;
+    padding: 0.75rem 1.25rem;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    z-index: 9999;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: all 0.3s;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+</style>
+</head>
+<body>
+<div class="container">
+  <a href="index.html" class="back-link">&larr; Back to Analytics</a>
+
+  <div class="page-header">
+    <div>
+      <h1>Expense Tracker</h1>
+      <div class="subtitle">Track spending, set budgets, spot trends</div>
+    </div>
+    <div class="header-actions">
+      <div class="month-nav">
+        <button class="btn" onclick="changeMonth(-1)">&larr; Prev</button>
+        <span class="month-label" id="monthLabel"></span>
+        <button class="btn" onclick="changeMonth(1)">Next &rarr;</button>
+      </div>
+      <button class="btn" onclick="exportCSV()">Export CSV</button>
+      <button class="btn" onclick="exportJSON()">Export JSON</button>
+    </div>
+  </div>
+
+  <!-- Quick Stats -->
+  <div class="grid-4" id="statsGrid">
+    <div class="stat-card"><div class="stat-value" id="statTotal">$0</div><div class="stat-label">Total This Month</div></div>
+    <div class="stat-card"><div class="stat-value" id="statDaily">$0</div><div class="stat-label">Daily Average</div></div>
+    <div class="stat-card"><div class="stat-value" id="statBiggest">$0</div><div class="stat-label">Biggest Expense</div></div>
+    <div class="stat-card"><div class="stat-value" id="statFreqCat">-</div><div class="stat-label">Most Frequent Category</div></div>
+  </div>
+
+  <!-- Add Expense Form -->
+  <div class="glass" style="margin-top:1.5rem">
+    <h2 id="formTitle">Add Expense</h2>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Date</label>
+        <input type="date" id="expDate">
+      </div>
+      <div class="form-group">
+        <label>Amount (CAD)</label>
+        <input type="number" id="expAmount" step="0.01" min="0" placeholder="0.00">
+      </div>
+      <div class="form-group">
+        <label>Category</label>
+        <select id="expCategory">
+          <option value="Food">Food</option>
+          <option value="Transport">Transport</option>
+          <option value="Subscriptions">Subscriptions</option>
+          <option value="Shopping">Shopping</option>
+          <option value="Bills">Bills</option>
+          <option value="Entertainment">Entertainment</option>
+          <option value="Education">Education</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="form-group sug-wrap">
+        <label>Description</label>
+        <input type="text" id="expDesc" placeholder="e.g. Groceries" autocomplete="off">
+        <div class="suggestions hidden" id="suggestionsBox"></div>
+      </div>
+      <div class="form-group">
+        <label>Payment</label>
+        <select id="expPayment">
+          <option value="Credit">Credit</option>
+          <option value="Debit">Debit</option>
+          <option value="Cash">Cash</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>&nbsp;</label>
+        <div class="checkbox-row">
+          <input type="checkbox" id="expRecurring">
+          <label for="expRecurring" style="margin:0;font-size:0.82rem;color:#1a1a2e">Recurring (monthly)</label>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>&nbsp;</label>
+        <button class="btn btn-primary" id="addBtn" onclick="addExpense()" style="width:100%">Add Expense</button>
+      </div>
+    </div>
+    <input type="hidden" id="editId" value="">
+  </div>
+
+  <!-- Recurring suggestions banner -->
+  <div class="glass hidden" id="recurringBanner" style="background:rgba(139,92,246,0.06);border-color:rgba(139,92,246,0.15)">
+    <h2>Recurring Expenses Due</h2>
+    <p style="font-size:0.85rem;color:#6b7280;margin-bottom:0.75rem">These recurring expenses haven't been logged this month yet:</p>
+    <div id="recurringList"></div>
+  </div>
+
+  <!-- Search & Filter -->
+  <div class="glass">
+    <h2>Search & Filter</h2>
+    <div class="filter-bar">
+      <div class="form-group">
+        <label>Search</label>
+        <input type="text" id="filterSearch" placeholder="Description..." oninput="renderExpenses()">
+      </div>
+      <div class="form-group">
+        <label>Category</label>
+        <select id="filterCategory" onchange="renderExpenses()">
+          <option value="">All</option>
+          <option value="Food">Food</option>
+          <option value="Transport">Transport</option>
+          <option value="Subscriptions">Subscriptions</option>
+          <option value="Shopping">Shopping</option>
+          <option value="Bills">Bills</option>
+          <option value="Entertainment">Entertainment</option>
+          <option value="Education">Education</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>From</label>
+        <input type="date" id="filterFrom" onchange="renderExpenses()">
+      </div>
+      <div class="form-group">
+        <label>To</label>
+        <input type="date" id="filterTo" onchange="renderExpenses()">
+      </div>
+      <div class="form-group">
+        <label>&nbsp;</label>
+        <button class="btn" onclick="clearFilters()">Clear</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Expenses Table -->
+  <div class="glass">
+    <h2>Expenses <span style="font-size:0.8rem;font-weight:400;color:#6b7280" id="expCount"></span></h2>
+    <div class="table-scroll">
+      <table class="expense-table" id="expTable">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Description</th>
+            <th>Category</th>
+            <th>Payment</th>
+            <th style="text-align:right">Amount</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="expBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Charts -->
+  <div class="grid-2">
+    <div class="glass">
+      <h2>Category Breakdown</h2>
+      <div class="chart-wrap"><canvas id="doughnutChart"></canvas></div>
+    </div>
+    <div class="glass">
+      <h2>Monthly Trend (Last 6 Months)</h2>
+      <div class="chart-wrap"><canvas id="lineChart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Budget vs Actual -->
+  <div class="glass">
+    <h2>Budget vs Actual</h2>
+    <div id="budgetSection"></div>
+  </div>
+
+  <div style="text-align:center;margin-top:2rem;color:#9ca3af;font-size:0.78rem">
+    Expense Tracker &middot; Lumen Analytics &middot; Data stored in localStorage
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const CATEGORIES = ['Food','Transport','Subscriptions','Shopping','Bills','Entertainment','Education','Other'];
+const CAT_COLORS = {
+  Food:'#22c55e', Transport:'#3b82f6', Subscriptions:'#8b5cf6', Shopping:'#f59e0b',
+  Bills:'#ef4444', Entertainment:'#ec4899', Education:'#06b6d4', Other:'#6b7280'
+};
+const CAT_BG = {
+  Food:'rgba(34,197,94,0.12)', Transport:'rgba(59,130,246,0.12)', Subscriptions:'rgba(139,92,246,0.12)',
+  Shopping:'rgba(245,158,11,0.12)', Bills:'rgba(239,68,68,0.12)', Entertainment:'rgba(236,72,153,0.12)',
+  Education:'rgba(6,182,212,0.12)', Other:'rgba(107,114,128,0.12)'
+};
+
+let currentYear = 2026;
+let currentMonth = 3; // 0-indexed, so 3 = April
+let doughnutChart = null;
+let lineChart = null;
+
+// --- Storage ---
+function getExpenses() {
+  return JSON.parse(localStorage.getItem('lumen_expenses') || '[]');
+}
+function saveExpenses(data) {
+  localStorage.setItem('lumen_expenses', JSON.stringify(data));
+}
+function getBudgets() {
+  return JSON.parse(localStorage.getItem('lumen_expense_budgets') || '{}');
+}
+function saveBudgets(data) {
+  localStorage.setItem('lumen_expense_budgets', JSON.stringify(data));
+}
+
+// --- Month helpers ---
+function monthKey(y, m) { return `${y}-${String(m+1).padStart(2,'0')}`; }
+function monthName(y, m) {
+  return new Date(y, m).toLocaleString('en-US', { month: 'long', year: 'numeric' });
+}
+function changeMonth(delta) {
+  currentMonth += delta;
+  if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+  if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+  refreshAll();
+}
+function daysInMonth(y, m) { return new Date(y, m+1, 0).getDate(); }
+
+// --- Filter current month expenses ---
+function getMonthExpenses() {
+  const key = monthKey(currentYear, currentMonth);
+  return getExpenses().filter(e => e.date.startsWith(key));
+}
+
+function getFilteredExpenses() {
+  let exps = getMonthExpenses();
+  const search = document.getElementById('filterSearch').value.toLowerCase();
+  const cat = document.getElementById('filterCategory').value;
+  const from = document.getElementById('filterFrom').value;
+  const to = document.getElementById('filterTo').value;
+  if (search) exps = exps.filter(e => e.description.toLowerCase().includes(search));
+  if (cat) exps = exps.filter(e => e.category === cat);
+  if (from) exps = exps.filter(e => e.date >= from);
+  if (to) exps = exps.filter(e => e.date <= to);
+  return exps.sort((a,b) => b.date.localeCompare(a.date) || b.id - a.id);
+}
+
+// --- Add / Edit ---
+function addExpense() {
+  const date = document.getElementById('expDate').value;
+  const amount = parseFloat(document.getElementById('expAmount').value);
+  const category = document.getElementById('expCategory').value;
+  const description = document.getElementById('expDesc').value.trim();
+  const payment = document.getElementById('expPayment').value;
+  const recurring = document.getElementById('expRecurring').checked;
+  const editId = document.getElementById('editId').value;
+
+  if (!date || isNaN(amount) || amount <= 0 || !description) {
+    showToast('Please fill in all fields');
+    return;
+  }
+
+  const all = getExpenses();
+
+  if (editId) {
+    const idx = all.findIndex(e => e.id === parseInt(editId));
+    if (idx >= 0) {
+      all[idx] = { ...all[idx], date, amount, category, description, payment, recurring };
+    }
+    document.getElementById('editId').value = '';
+    document.getElementById('addBtn').textContent = 'Add Expense';
+    document.getElementById('formTitle').textContent = 'Add Expense';
+  } else {
+    all.push({ id: Date.now(), date, amount, category, description, payment, recurring });
+  }
+
+  saveExpenses(all);
+  clearForm();
+  refreshAll();
+  showToast(editId ? 'Expense updated' : 'Expense added');
+}
+
+function editExpense(id) {
+  const exp = getExpenses().find(e => e.id === id);
+  if (!exp) return;
+  document.getElementById('expDate').value = exp.date;
+  document.getElementById('expAmount').value = exp.amount;
+  document.getElementById('expCategory').value = exp.category;
+  document.getElementById('expDesc').value = exp.description;
+  document.getElementById('expPayment').value = exp.payment;
+  document.getElementById('expRecurring').checked = exp.recurring || false;
+  document.getElementById('editId').value = id;
+  document.getElementById('addBtn').textContent = 'Update Expense';
+  document.getElementById('formTitle').textContent = 'Edit Expense';
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function deleteExpense(id) {
+  if (!confirm('Delete this expense?')) return;
+  const all = getExpenses().filter(e => e.id !== id);
+  saveExpenses(all);
+  refreshAll();
+  showToast('Expense deleted');
+}
+
+function clearForm() {
+  document.getElementById('expDate').value = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(new Date().getDate()).padStart(2,'0')}`;
+  document.getElementById('expAmount').value = '';
+  document.getElementById('expDesc').value = '';
+  document.getElementById('expRecurring').checked = false;
+  document.getElementById('editId').value = '';
+  document.getElementById('addBtn').textContent = 'Add Expense';
+  document.getElementById('formTitle').textContent = 'Add Expense';
+}
+
+function clearFilters() {
+  document.getElementById('filterSearch').value = '';
+  document.getElementById('filterCategory').value = '';
+  document.getElementById('filterFrom').value = '';
+  document.getElementById('filterTo').value = '';
+  renderExpenses();
+}
+
+// --- Render expenses table ---
+function renderExpenses() {
+  const exps = getFilteredExpenses();
+  const body = document.getElementById('expBody');
+  document.getElementById('expCount').textContent = `(${exps.length} entries)`;
+
+  if (exps.length === 0) {
+    body.innerHTML = '<tr><td colspan="6" style="text-align:center;padding:2rem;color:#9ca3af">No expenses found</td></tr>';
+    return;
+  }
+
+  // Category totals
+  const catTotals = {};
+  exps.forEach(e => { catTotals[e.category] = (catTotals[e.category] || 0) + e.amount; });
+
+  let html = exps.map(e => `
+    <tr>
+      <td>${formatDate(e.date)}</td>
+      <td>${esc(e.description)}${e.recurring ? '<span class="recurring-badge">recurring</span>' : ''}</td>
+      <td><span class="cat-badge" style="background:${CAT_BG[e.category]};color:${CAT_COLORS[e.category]}">${e.category}</span></td>
+      <td>${e.payment}</td>
+      <td class="amount" style="text-align:right">$${e.amount.toFixed(2)}</td>
+      <td style="text-align:right;white-space:nowrap">
+        <button class="btn btn-sm" onclick="editExpense(${e.id})">Edit</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteExpense(${e.id})">Del</button>
+      </td>
+    </tr>
+  `).join('');
+
+  // Totals row
+  const total = exps.reduce((s, e) => s + e.amount, 0);
+  html += `<tr class="totals-row"><td colspan="4" style="text-align:right;font-weight:700">Total</td><td class="amount" style="text-align:right">$${total.toFixed(2)}</td><td></td></tr>`;
+
+  body.innerHTML = html;
+}
+
+// --- Quick Stats ---
+function renderStats() {
+  const exps = getMonthExpenses();
+  const total = exps.reduce((s, e) => s + e.amount, 0);
+  const days = Math.min(new Date().getDate(), daysInMonth(currentYear, currentMonth));
+  const daily = days > 0 ? total / days : 0;
+  const biggest = exps.length > 0 ? Math.max(...exps.map(e => e.amount)) : 0;
+
+  // Most frequent category
+  const catCount = {};
+  exps.forEach(e => { catCount[e.category] = (catCount[e.category] || 0) + 1; });
+  const freqCat = Object.entries(catCount).sort((a,b) => b[1] - a[1])[0];
+
+  document.getElementById('statTotal').textContent = `$${total.toFixed(2)}`;
+  document.getElementById('statDaily').textContent = `$${daily.toFixed(2)}`;
+  document.getElementById('statBiggest').textContent = `$${biggest.toFixed(2)}`;
+  document.getElementById('statFreqCat').textContent = freqCat ? freqCat[0] : '-';
+}
+
+// --- Charts ---
+function renderDoughnut() {
+  const exps = getMonthExpenses();
+  const catTotals = {};
+  exps.forEach(e => { catTotals[e.category] = (catTotals[e.category] || 0) + e.amount; });
+
+  const labels = Object.keys(catTotals);
+  const data = Object.values(catTotals);
+  const colors = labels.map(c => CAT_COLORS[c] || '#6b7280');
+
+  const ctx = document.getElementById('doughnutChart').getContext('2d');
+  if (doughnutChart) doughnutChart.destroy();
+  doughnutChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels,
+      datasets: [{ data, backgroundColor: colors, borderWidth: 0, hoverOffset: 8 }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      cutout: '60%',
+      plugins: {
+        legend: { position: 'bottom', labels: { padding: 16, font: { family: 'Inter', size: 12 } } },
+        tooltip: {
+          callbacks: {
+            label: ctx => `${ctx.label}: $${ctx.parsed.toFixed(2)} (${((ctx.parsed / data.reduce((a,b)=>a+b,0)) * 100).toFixed(0)}%)`
+          }
+        }
+      }
+    }
+  });
+}
+
+function renderLineChart() {
+  const allExps = getExpenses();
+  const months = [];
+  for (let i = 5; i >= 0; i--) {
+    let m = currentMonth - i;
+    let y = currentYear;
+    while (m < 0) { m += 12; y--; }
+    months.push({ y, m, key: monthKey(y, m), label: new Date(y, m).toLocaleString('en-US', { month: 'short' }) });
+  }
+
+  const data = months.map(mo => {
+    return allExps.filter(e => e.date.startsWith(mo.key)).reduce((s, e) => s + e.amount, 0);
+  });
+
+  const ctx = document.getElementById('lineChart').getContext('2d');
+  if (lineChart) lineChart.destroy();
+  lineChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: months.map(m => m.label),
+      datasets: [{
+        label: 'Total Spend',
+        data,
+        borderColor: '#3b82f6',
+        backgroundColor: 'rgba(59,130,246,0.08)',
+        fill: true,
+        tension: 0.35,
+        pointBackgroundColor: '#3b82f6',
+        pointRadius: 5
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      scales: {
+        y: {
+          beginAtZero: true,
+          ticks: { callback: v => '$' + v, font: { family: 'Inter', size: 11 } },
+          grid: { color: 'rgba(0,0,0,0.04)' }
+        },
+        x: { ticks: { font: { family: 'Inter', size: 11 } }, grid: { display: false } }
+      },
+      plugins: {
+        legend: { display: false },
+        tooltip: { callbacks: { label: ctx => '$' + ctx.parsed.y.toFixed(2) } }
+      }
+    }
+  });
+}
+
+// --- Budget ---
+function renderBudget() {
+  const exps = getMonthExpenses();
+  const catTotals = {};
+  exps.forEach(e => { catTotals[e.category] = (catTotals[e.category] || 0) + e.amount; });
+
+  const budgets = getBudgets();
+  const section = document.getElementById('budgetSection');
+
+  let html = CATEGORIES.map(cat => {
+    const spent = catTotals[cat] || 0;
+    const budget = budgets[cat] || 0;
+    const pct = budget > 0 ? Math.min((spent / budget) * 100, 100) : 0;
+    const over = budget > 0 && spent > budget;
+    const barColor = over ? '#ef4444' : '#22c55e';
+
+    return `
+      <div class="budget-row">
+        <span class="budget-cat">${cat}</span>
+        <div class="budget-bar-wrap">
+          <div class="budget-bar" style="width:${budget > 0 ? pct : 0}%;background:${barColor}"></div>
+        </div>
+        <span class="budget-nums" style="${over ? 'color:#ef4444;font-weight:600' : ''}">$${spent.toFixed(0)} / $<input class="budget-input" type="number" value="${budget || ''}" placeholder="0" onchange="setBudget('${cat}', this.value)"></span>
+      </div>`;
+  }).join('');
+
+  section.innerHTML = html;
+}
+
+function setBudget(cat, val) {
+  const budgets = getBudgets();
+  budgets[cat] = parseFloat(val) || 0;
+  saveBudgets(budgets);
+  renderBudget();
+}
+
+// --- Recurring suggestions ---
+function renderRecurring() {
+  const all = getExpenses();
+  const key = monthKey(currentYear, currentMonth);
+  const recurringTemplates = all.filter(e => e.recurring);
+
+  // Unique by description + category
+  const seen = new Set();
+  const unique = [];
+  recurringTemplates.forEach(e => {
+    const k = e.description + '|' + e.category;
+    if (!seen.has(k)) { seen.add(k); unique.push(e); }
+  });
+
+  // Check which haven't been added this month
+  const thisMonth = getMonthExpenses();
+  const missing = unique.filter(t => {
+    return !thisMonth.some(e => e.description === t.description && e.category === t.category);
+  });
+
+  const banner = document.getElementById('recurringBanner');
+  const list = document.getElementById('recurringList');
+
+  if (missing.length === 0) {
+    banner.classList.add('hidden');
+    return;
+  }
+
+  banner.classList.remove('hidden');
+  list.innerHTML = missing.map(t => `
+    <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:0.5rem">
+      <span class="cat-badge" style="background:${CAT_BG[t.category]};color:${CAT_COLORS[t.category]}">${t.category}</span>
+      <span style="font-size:0.85rem;font-weight:500">${esc(t.description)}</span>
+      <span style="font-size:0.85rem;color:#6b7280">$${t.amount.toFixed(2)}</span>
+      <button class="btn btn-sm btn-primary" onclick="addRecurring('${esc(t.description)}','${t.category}',${t.amount},'${t.payment}')">Add</button>
+    </div>
+  `).join('');
+}
+
+function addRecurring(desc, cat, amount, payment) {
+  const day = String(Math.min(new Date().getDate(), daysInMonth(currentYear, currentMonth))).padStart(2, '0');
+  const date = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${day}`;
+  const all = getExpenses();
+  all.push({ id: Date.now(), date, amount, category: cat, description: desc, payment, recurring: true });
+  saveExpenses(all);
+  refreshAll();
+  showToast('Recurring expense added');
+}
+
+// --- Description suggestions ---
+document.getElementById('expDesc').addEventListener('input', function() {
+  const val = this.value.toLowerCase();
+  const box = document.getElementById('suggestionsBox');
+  if (val.length < 2) { box.classList.add('hidden'); return; }
+
+  const all = getExpenses();
+  const seen = new Set();
+  const matches = [];
+  all.forEach(e => {
+    if (e.description.toLowerCase().includes(val) && !seen.has(e.description)) {
+      seen.add(e.description);
+      matches.push(e);
+    }
+  });
+
+  if (matches.length === 0) { box.classList.add('hidden'); return; }
+
+  box.classList.remove('hidden');
+  box.innerHTML = matches.slice(0, 8).map(m => `
+    <div class="sug-item" onclick="applySuggestion('${esc(m.description)}','${m.category}','${m.payment}',${m.recurring || false})">${esc(m.description)} <span style="color:#9ca3af">($${m.amount.toFixed(2)}, ${m.category})</span></div>
+  `).join('');
+});
+
+document.addEventListener('click', (e) => {
+  if (!e.target.closest('.sug-wrap')) document.getElementById('suggestionsBox').classList.add('hidden');
+});
+
+function applySuggestion(desc, cat, payment, recurring) {
+  document.getElementById('expDesc').value = desc;
+  document.getElementById('expCategory').value = cat;
+  document.getElementById('expPayment').value = payment;
+  document.getElementById('expRecurring').checked = recurring;
+  document.getElementById('suggestionsBox').classList.add('hidden');
+}
+
+// --- Export ---
+function exportCSV() {
+  const exps = getFilteredExpenses();
+  if (exps.length === 0) { showToast('No expenses to export'); return; }
+  let csv = 'Date,Description,Category,Payment,Amount,Recurring\n';
+  exps.forEach(e => {
+    csv += `${e.date},"${e.description}",${e.category},${e.payment},${e.amount.toFixed(2)},${e.recurring ? 'Yes' : 'No'}\n`;
+  });
+  download(csv, `expenses-${monthKey(currentYear, currentMonth)}.csv`, 'text/csv');
+  showToast('CSV exported');
+}
+
+function exportJSON() {
+  const exps = getFilteredExpenses();
+  if (exps.length === 0) { showToast('No expenses to export'); return; }
+  download(JSON.stringify(exps, null, 2), `expenses-${monthKey(currentYear, currentMonth)}.json`, 'application/json');
+  showToast('JSON exported');
+}
+
+function download(content, filename, type) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+}
+
+// --- Helpers ---
+function formatDate(d) {
+  const [y,m,day] = d.split('-');
+  return `${new Date(y,m-1,day).toLocaleString('en-US',{month:'short'})} ${parseInt(day)}`;
+}
+function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// --- Sample Data ---
+function loadSampleData() {
+  if (getExpenses().length > 0) return;
+  const samples = [
+    { id: 1, date: '2026-04-02', amount: 87.50, category: 'Food', description: 'Costco grocery run', payment: 'Credit', recurring: false },
+    { id: 2, date: '2026-04-03', amount: 15.99, category: 'Subscriptions', description: 'Netflix', payment: 'Credit', recurring: true },
+    { id: 3, date: '2026-04-03', amount: 6.99, category: 'Subscriptions', description: 'Spotify', payment: 'Credit', recurring: true },
+    { id: 4, date: '2026-04-04', amount: 42.00, category: 'Transport', description: 'Gas fill-up', payment: 'Debit', recurring: false },
+    { id: 5, date: '2026-04-05', amount: 120.00, category: 'Bills', description: 'Hydro bill', payment: 'Debit', recurring: true },
+    { id: 6, date: '2026-04-06', amount: 34.95, category: 'Shopping', description: 'Amazon - USB-C hub', payment: 'Credit', recurring: false },
+    { id: 7, date: '2026-04-07', amount: 22.50, category: 'Food', description: 'Uber Eats dinner', payment: 'Credit', recurring: false },
+    { id: 8, date: '2026-04-08', amount: 55.00, category: 'Entertainment', description: 'Movie night + snacks', payment: 'Cash', recurring: false },
+    { id: 9, date: '2026-04-09', amount: 200.00, category: 'Bills', description: 'Internet bill', payment: 'Debit', recurring: true },
+    { id: 10, date: '2026-04-10', amount: 29.99, category: 'Education', description: 'Udemy course - Rust', payment: 'Credit', recurring: false },
+    { id: 11, date: '2026-04-12', amount: 63.40, category: 'Food', description: 'Metro groceries', payment: 'Debit', recurring: false },
+    { id: 12, date: '2026-04-13', amount: 18.75, category: 'Food', description: 'Tim Hortons family', payment: 'Debit', recurring: false },
+    { id: 13, date: '2026-04-14', amount: 45.00, category: 'Transport', description: 'Presto reload', payment: 'Credit', recurring: true },
+    { id: 14, date: '2026-04-15', amount: 89.99, category: 'Shopping', description: 'Running shoes (sale)', payment: 'Credit', recurring: false },
+    { id: 15, date: '2026-04-17', amount: 12.50, category: 'Food', description: 'Shawarma lunch', payment: 'Cash', recurring: false },
+    { id: 16, date: '2026-04-18', amount: 24.99, category: 'Subscriptions', description: 'Claude Max plan', payment: 'Credit', recurring: true },
+    { id: 17, date: '2026-04-19', amount: 38.00, category: 'Entertainment', description: 'Board game cafe', payment: 'Debit', recurring: false },
+    { id: 18, date: '2026-04-20', amount: 75.00, category: 'Food', description: 'Weekend BBQ supplies', payment: 'Credit', recurring: false },
+    { id: 19, date: '2026-04-22', amount: 150.00, category: 'Bills', description: 'Phone plans (family)', payment: 'Credit', recurring: true },
+    { id: 20, date: '2026-04-24', amount: 19.99, category: 'Subscriptions', description: 'Railway hosting', payment: 'Credit', recurring: true },
+    { id: 21, date: '2026-04-25', amount: 32.00, category: 'Transport', description: 'Parking downtown', payment: 'Cash', recurring: false },
+    { id: 22, date: '2026-04-26', amount: 95.00, category: 'Food', description: 'No Frills big shop', payment: 'Debit', recurring: false },
+    { id: 23, date: '2026-04-27', amount: 49.99, category: 'Education', description: 'O\'Reilly subscription', payment: 'Credit', recurring: true },
+    { id: 24, date: '2026-04-28', amount: 28.00, category: 'Entertainment', description: 'Bowling night', payment: 'Debit', recurring: false },
+    // Some older months for trend chart
+    { id: 100, date: '2026-03-05', amount: 850, category: 'Bills', description: 'March bills', payment: 'Debit', recurring: false },
+    { id: 101, date: '2026-03-15', amount: 420, category: 'Food', description: 'March groceries', payment: 'Credit', recurring: false },
+    { id: 102, date: '2026-03-20', amount: 180, category: 'Shopping', description: 'March shopping', payment: 'Credit', recurring: false },
+    { id: 103, date: '2026-02-10', amount: 780, category: 'Bills', description: 'Feb bills', payment: 'Debit', recurring: false },
+    { id: 104, date: '2026-02-18', amount: 350, category: 'Food', description: 'Feb groceries', payment: 'Credit', recurring: false },
+    { id: 105, date: '2026-01-08', amount: 920, category: 'Bills', description: 'Jan bills', payment: 'Debit', recurring: false },
+    { id: 106, date: '2026-01-22', amount: 510, category: 'Food', description: 'Jan groceries', payment: 'Credit', recurring: false },
+    { id: 107, date: '2025-12-12', amount: 1200, category: 'Shopping', description: 'Christmas gifts', payment: 'Credit', recurring: false },
+    { id: 108, date: '2025-12-20', amount: 600, category: 'Food', description: 'Dec groceries', payment: 'Debit', recurring: false },
+    { id: 109, date: '2025-11-15', amount: 700, category: 'Bills', description: 'Nov bills', payment: 'Debit', recurring: false },
+    { id: 110, date: '2025-11-25', amount: 380, category: 'Food', description: 'Nov groceries', payment: 'Credit', recurring: false },
+  ];
+  saveExpenses(samples);
+}
+
+// --- Default budgets ---
+function loadDefaultBudgets() {
+  if (Object.keys(getBudgets()).length > 0) return;
+  saveBudgets({
+    Food: 500, Transport: 150, Subscriptions: 100, Shopping: 200,
+    Bills: 600, Entertainment: 150, Education: 100, Other: 50
+  });
+}
+
+// --- Refresh all ---
+function refreshAll() {
+  document.getElementById('monthLabel').textContent = monthName(currentYear, currentMonth);
+  clearForm();
+  renderStats();
+  renderExpenses();
+  renderDoughnut();
+  renderLineChart();
+  renderBudget();
+  renderRecurring();
+}
+
+// --- Init ---
+loadSampleData();
+loadDefaultBudgets();
+refreshAll();
+</script>
+</body>
+</html>

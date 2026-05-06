@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>System Health Monitor - Lumen</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #f8f9fc;
+    color: #1a1a2e;
+    min-height: 100vh;
+    padding: 1.5rem;
+  }
+  .header {
+    text-align: center;
+    margin-bottom: 1.5rem;
+  }
+  .header h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.25rem;
+  }
+  .header p { color: #6b7280; font-size: 0.9rem; }
+  .back-link {
+    position: absolute;
+    top: 1.5rem;
+    left: 1.5rem;
+    color: #3b82f6;
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+  .back-link:hover { text-decoration: underline; }
+
+  /* Summary bar */
+  .summary-bar {
+    max-width: 1200px;
+    margin: 0 auto 1.5rem;
+    background: rgba(255,255,255,0.72);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.6);
+    border-radius: 16px;
+    padding: 1rem 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+  .summary-left {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .health-badge {
+    padding: 0.35rem 1rem;
+    border-radius: 99px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+  .health-badge.healthy { background: rgba(34,197,94,0.12); color: #16a34a; }
+  .health-badge.degraded { background: rgba(245,158,11,0.12); color: #d97706; }
+  .health-badge.critical { background: rgba(239,68,68,0.12); color: #dc2626; }
+  .summary-stats {
+    font-size: 0.9rem;
+    color: #374151;
+    font-weight: 500;
+  }
+  .summary-right {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+  .btn {
+    padding: 0.45rem 1rem;
+    border-radius: 10px;
+    border: 1px solid rgba(0,0,0,0.08);
+    background: rgba(255,255,255,0.9);
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.15s;
+  }
+  .btn:hover { background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .btn-primary {
+    background: #3b82f6;
+    color: #fff;
+    border-color: #3b82f6;
+  }
+  .btn-primary:hover { background: #2563eb; }
+
+  /* Service grid */
+  .services-grid {
+    max-width: 1200px;
+    margin: 0 auto 2rem;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+  }
+  .service-card {
+    background: rgba(255,255,255,0.72);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.6);
+    border-radius: 16px;
+    padding: 1.25rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .service-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(0,0,0,0.06);
+  }
+  .service-card.selected {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
+  }
+  .service-card.status-down {
+    border-color: rgba(239,68,68,0.3);
+    animation: flash-red 1.5s ease-in-out infinite;
+  }
+  @keyframes flash-red {
+    0%, 100% { background: rgba(255,255,255,0.72); }
+    50% { background: rgba(239,68,68,0.08); }
+  }
+  .service-card.status-down.selected {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 2px rgba(239,68,68,0.2);
+  }
+  .service-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 0.75rem;
+  }
+  .service-name {
+    font-weight: 600;
+    font-size: 0.95rem;
+  }
+  .service-url {
+    font-size: 0.7rem;
+    color: #9ca3af;
+    word-break: break-all;
+    margin-bottom: 0.75rem;
+  }
+  .status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 4px;
+  }
+  .status-dot.up { background: #22c55e; box-shadow: 0 0 6px rgba(34,197,94,0.4); }
+  .status-dot.down { background: #ef4444; box-shadow: 0 0 6px rgba(239,68,68,0.4); }
+  .status-dot.cors { background: #f59e0b; box-shadow: 0 0 6px rgba(245,158,11,0.4); }
+  .status-dot.unknown { background: #9ca3af; }
+  .service-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.75rem;
+    color: #6b7280;
+  }
+  .response-time {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+  }
+  .response-time.fast { color: #16a34a; }
+  .response-time.medium { color: #d97706; }
+  .response-time.slow { color: #dc2626; }
+  .uptime-bar {
+    margin-top: 0.75rem;
+    height: 4px;
+    background: #e5e7eb;
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .uptime-fill {
+    height: 100%;
+    border-radius: 2px;
+    transition: width 0.3s;
+  }
+  .uptime-fill.good { background: #22c55e; }
+  .uptime-fill.warn { background: #f59e0b; }
+  .uptime-fill.bad { background: #ef4444; }
+  .uptime-label {
+    font-size: 0.7rem;
+    color: #9ca3af;
+    margin-top: 0.25rem;
+    text-align: right;
+  }
+  .delete-btn {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: none;
+    border: none;
+    color: #d1d5db;
+    cursor: pointer;
+    font-size: 1rem;
+    line-height: 1;
+    padding: 4px;
+    border-radius: 4px;
+    display: none;
+  }
+  .service-card:hover .delete-btn.custom { display: block; }
+  .delete-btn:hover { color: #ef4444; background: rgba(239,68,68,0.08); }
+
+  /* Chart section */
+  .chart-section {
+    max-width: 1200px;
+    margin: 0 auto 2rem;
+    background: rgba(255,255,255,0.72);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.6);
+    border-radius: 16px;
+    padding: 1.5rem;
+  }
+  .chart-section h3 {
+    font-size: 0.95rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+  }
+  .chart-container {
+    position: relative;
+    height: 250px;
+  }
+
+  /* Add service modal */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.3);
+    backdrop-filter: blur(4px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+  }
+  .modal-overlay.active { display: flex; }
+  .modal {
+    background: #fff;
+    border-radius: 20px;
+    padding: 2rem;
+    width: 90%;
+    max-width: 420px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+  }
+  .modal h3 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 1.25rem;
+  }
+  .modal label {
+    display: block;
+    font-size: 0.8rem;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 0.3rem;
+  }
+  .modal input {
+    width: 100%;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 10px;
+    font-size: 0.875rem;
+    font-family: inherit;
+    margin-bottom: 1rem;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  .modal input:focus { border-color: #3b82f6; }
+  .modal-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+  }
+
+  /* Notification */
+  .notification {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    background: #dc2626;
+    color: #fff;
+    padding: 0.75rem 1.25rem;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    box-shadow: 0 8px 30px rgba(220,38,38,0.3);
+    transform: translateX(120%);
+    transition: transform 0.3s;
+    z-index: 200;
+  }
+  .notification.show { transform: translateX(0); }
+
+  .auto-refresh-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.8rem;
+    color: #6b7280;
+  }
+  .auto-refresh-toggle input { accent-color: #3b82f6; }
+
+  .footer {
+    text-align: center;
+    color: #9ca3af;
+    font-size: 0.75rem;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+</style>
+</head>
+<body>
+  <a href="index.html" class="back-link">&larr; Analytics</a>
+
+  <div class="header">
+    <h1>System Health Monitor</h1>
+    <p>Real-time status of all Lumen services</p>
+  </div>
+
+  <div class="summary-bar">
+    <div class="summary-left">
+      <span class="health-badge healthy" id="healthBadge">HEALTHY</span>
+      <span class="summary-stats" id="summaryStats">Checking...</span>
+    </div>
+    <div class="summary-right">
+      <label class="auto-refresh-toggle">
+        <input type="checkbox" id="autoRefreshToggle" checked>
+        Auto-refresh 30s
+      </label>
+      <button class="btn btn-primary" onclick="checkAll()">Check All</button>
+      <button class="btn" onclick="openAddModal()">+ Add Service</button>
+      <button class="btn" onclick="exportLogs()">Export JSON</button>
+    </div>
+  </div>
+
+  <div class="services-grid" id="servicesGrid"></div>
+
+  <div class="chart-section">
+    <h3 id="chartTitle">Response Time - select a service</h3>
+    <div class="chart-container">
+      <canvas id="responseChart"></canvas>
+    </div>
+  </div>
+
+  <div class="footer">Last full check: <span id="lastCheckTime">never</span></div>
+
+  <!-- Add Service Modal -->
+  <div class="modal-overlay" id="addModal">
+    <div class="modal">
+      <h3>Add Custom Service</h3>
+      <label for="svcName">Service Name</label>
+      <input id="svcName" placeholder="My Service">
+      <label for="svcUrl">URL</label>
+      <input id="svcUrl" placeholder="https://example.com/health">
+      <div class="modal-actions">
+        <button class="btn" onclick="closeAddModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="addService()">Add</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification -->
+  <div class="notification" id="notification"></div>
+
+<script>
+// Replace these with your own services. Click "+ Add Service" to manage.
+const DEFAULT_SERVICES = [
+  { id: 'cloudflare', name: 'Cloudflare', url: 'https://www.cloudflare.com/cdn-cgi/trace' },
+  { id: 'github', name: 'GitHub Status', url: 'https://www.githubstatus.com/api/v2/status.json' },
+  { id: 'npm', name: 'npm Registry', url: 'https://registry.npmjs.org/-/ping' },
+  { id: 'localhost-dev', name: 'Local Dev (3000)', url: 'http://localhost:3000' },
+  { id: 'localhost-api', name: 'Local API (8000)', url: 'http://localhost:8000' },
+];
+
+const STORAGE_KEY = 'lumen-health-services';
+const HISTORY_KEY = 'lumen-health-history';
+const CUSTOM_KEY = 'lumen-health-custom';
+
+let services = [];
+let history = {};  // { serviceId: [ { ts, status, responseTime } ] }
+let selectedService = null;
+let autoRefreshInterval = null;
+let chart = null;
+
+function loadState() {
+  const custom = JSON.parse(localStorage.getItem(CUSTOM_KEY) || '[]');
+  services = [...DEFAULT_SERVICES, ...custom];
+  history = JSON.parse(localStorage.getItem(HISTORY_KEY) || '{}');
+  // Initialize history for any service without it
+  services.forEach(s => {
+    if (!history[s.id]) history[s.id] = [];
+  });
+}
+
+function saveHistory() {
+  // Keep last 100 per service
+  for (const id in history) {
+    if (history[id].length > 100) {
+      history[id] = history[id].slice(-100);
+    }
+  }
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(history));
+}
+
+function saveCustom() {
+  const defaultIds = DEFAULT_SERVICES.map(s => s.id);
+  const custom = services.filter(s => !defaultIds.includes(s.id));
+  localStorage.setItem(CUSTOM_KEY, JSON.stringify(custom));
+}
+
+async function checkService(service) {
+  const start = performance.now();
+  let status = 'unknown';
+  let responseTime = null;
+
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 8000);
+    const resp = await fetch(service.url, {
+      mode: 'cors',
+      signal: controller.signal,
+      cache: 'no-store',
+    });
+    clearTimeout(timeout);
+    responseTime = Math.round(performance.now() - start);
+    status = resp.ok ? 'up' : 'down';
+  } catch (e) {
+    responseTime = Math.round(performance.now() - start);
+    if (e.name === 'AbortError') {
+      status = 'down';
+    } else if (e.message && (e.message.includes('Failed to fetch') || e.message.includes('NetworkError') || e.message.includes('CORS'))) {
+      // Could be CORS or actually down - if response time is very fast, likely CORS
+      status = responseTime < 2000 ? 'cors' : 'down';
+    } else {
+      status = 'down';
+    }
+  }
+
+  const entry = { ts: Date.now(), status, responseTime };
+  if (!history[service.id]) history[service.id] = [];
+  history[service.id].push(entry);
+
+  return { ...service, lastCheck: entry };
+}
+
+async function checkAll() {
+  const grid = document.getElementById('servicesGrid');
+  // Set all to checking state
+  document.querySelectorAll('.status-dot').forEach(d => d.className = 'status-dot unknown');
+
+  const results = await Promise.allSettled(services.map(s => checkService(s)));
+  saveHistory();
+
+  // Check for newly down services
+  results.forEach(r => {
+    if (r.status === 'fulfilled') {
+      const svc = r.value;
+      if (svc.lastCheck.status === 'down') {
+        const hist = history[svc.id];
+        if (hist.length >= 2 && hist[hist.length - 2].status !== 'down') {
+          showNotification(`${svc.name} is DOWN!`);
+        }
+      }
+    }
+  });
+
+  renderCards();
+  updateSummary();
+  if (selectedService) updateChart(selectedService);
+  document.getElementById('lastCheckTime').textContent = new Date().toLocaleTimeString();
+}
+
+function getLastCheck(serviceId) {
+  const hist = history[serviceId];
+  if (!hist || hist.length === 0) return null;
+  return hist[hist.length - 1];
+}
+
+function getUptime24h(serviceId) {
+  const hist = history[serviceId];
+  if (!hist || hist.length === 0) return null;
+  const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+  const recent = hist.filter(h => h.ts >= cutoff);
+  if (recent.length === 0) return null;
+  const up = recent.filter(h => h.status === 'up' || h.status === 'cors').length;
+  return Math.round((up / recent.length) * 100);
+}
+
+function renderCards() {
+  const grid = document.getElementById('servicesGrid');
+  const defaultIds = DEFAULT_SERVICES.map(s => s.id);
+  grid.innerHTML = services.map(svc => {
+    const lc = getLastCheck(svc.id);
+    const status = lc ? lc.status : 'unknown';
+    const rt = lc ? lc.responseTime : null;
+    const uptime = getUptime24h(svc.id);
+    const isCustom = !defaultIds.includes(svc.id);
+    const isSelected = selectedService === svc.id;
+
+    let rtClass = '';
+    if (rt !== null) {
+      if (rt < 300) rtClass = 'fast';
+      else if (rt < 1000) rtClass = 'medium';
+      else rtClass = 'slow';
+    }
+
+    let uptimeClass = 'good';
+    if (uptime !== null) {
+      if (uptime < 90) uptimeClass = 'bad';
+      else if (uptime < 99) uptimeClass = 'warn';
+    }
+
+    const statusLabel = {
+      up: 'UP',
+      down: 'DOWN',
+      cors: 'CORS BLOCKED',
+      unknown: 'UNKNOWN'
+    }[status] || 'UNKNOWN';
+
+    return `
+      <div class="service-card status-${status} ${isSelected ? 'selected' : ''}"
+           onclick="selectService('${svc.id}')" data-id="${svc.id}">
+        ${isCustom ? `<button class="delete-btn custom" onclick="event.stopPropagation();removeService('${svc.id}')" title="Remove">&times;</button>` : ''}
+        <div class="service-card-header">
+          <div class="service-name">${svc.name}</div>
+          <div class="status-dot ${status}" title="${statusLabel}"></div>
+        </div>
+        <div class="service-url">${svc.url}</div>
+        <div class="service-meta">
+          <span>${lc ? new Date(lc.ts).toLocaleTimeString() : 'Not checked'}</span>
+          <span class="response-time ${rtClass}">${rt !== null ? rt + ' ms' : '--'}</span>
+        </div>
+        ${uptime !== null ? `
+          <div class="uptime-bar"><div class="uptime-fill ${uptimeClass}" style="width:${uptime}%"></div></div>
+          <div class="uptime-label">${uptime}% uptime (24h)</div>
+        ` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+function updateSummary() {
+  const counts = { up: 0, down: 0, cors: 0, unknown: 0 };
+  services.forEach(svc => {
+    const lc = getLastCheck(svc.id);
+    const status = lc ? lc.status : 'unknown';
+    counts[status] = (counts[status] || 0) + 1;
+  });
+  const total = services.length;
+  const operational = counts.up + counts.cors;
+  document.getElementById('summaryStats').textContent =
+    `${operational}/${total} services operational` +
+    (counts.cors > 0 ? ` (${counts.cors} CORS)` : '') +
+    (counts.down > 0 ? ` / ${counts.down} DOWN` : '');
+
+  const badge = document.getElementById('healthBadge');
+  if (counts.down === 0 && counts.unknown === 0) {
+    badge.className = 'health-badge healthy';
+    badge.textContent = 'HEALTHY';
+  } else if (counts.down > 0) {
+    badge.className = 'health-badge critical';
+    badge.textContent = 'CRITICAL';
+  } else {
+    badge.className = 'health-badge degraded';
+    badge.textContent = 'DEGRADED';
+  }
+}
+
+function selectService(id) {
+  selectedService = id;
+  renderCards();
+  updateChart(id);
+}
+
+function updateChart(serviceId) {
+  const svc = services.find(s => s.id === serviceId);
+  if (!svc) return;
+
+  document.getElementById('chartTitle').textContent = `Response Time - ${svc.name}`;
+
+  const hist = history[serviceId] || [];
+  const cutoff = Date.now() - 60 * 60 * 1000; // last hour
+  const recent = hist.filter(h => h.ts >= cutoff);
+
+  const labels = recent.map(h => new Date(h.ts).toLocaleTimeString());
+  const data = recent.map(h => h.responseTime);
+  const colors = recent.map(h => {
+    if (h.status === 'up') return '#22c55e';
+    if (h.status === 'cors') return '#f59e0b';
+    return '#ef4444';
+  });
+
+  if (chart) chart.destroy();
+  const ctx = document.getElementById('responseChart').getContext('2d');
+  chart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Response Time (ms)',
+        data,
+        borderColor: '#3b82f6',
+        backgroundColor: 'rgba(59,130,246,0.08)',
+        fill: true,
+        tension: 0.3,
+        pointRadius: 4,
+        pointBackgroundColor: colors,
+        pointBorderColor: colors,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            afterLabel: (ctx) => {
+              const entry = recent[ctx.dataIndex];
+              return `Status: ${entry.status.toUpperCase()}`;
+            }
+          }
+        }
+      },
+      scales: {
+        x: {
+          ticks: { maxTicksToShow: 10, font: { size: 10 } },
+          grid: { display: false }
+        },
+        y: {
+          beginAtZero: true,
+          title: { display: true, text: 'ms', font: { size: 11 } },
+          grid: { color: 'rgba(0,0,0,0.04)' }
+        }
+      }
+    }
+  });
+}
+
+function showNotification(msg) {
+  const el = document.getElementById('notification');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 5000);
+
+  // Browser notification
+  if (Notification.permission === 'granted') {
+    new Notification('Lumen Health', { body: msg, icon: '🔴' });
+  } else if (Notification.permission !== 'denied') {
+    Notification.requestPermission();
+  }
+}
+
+function openAddModal() {
+  document.getElementById('addModal').classList.add('active');
+  document.getElementById('svcName').focus();
+}
+
+function closeAddModal() {
+  document.getElementById('addModal').classList.remove('active');
+  document.getElementById('svcName').value = '';
+  document.getElementById('svcUrl').value = '';
+}
+
+function addService() {
+  const name = document.getElementById('svcName').value.trim();
+  const url = document.getElementById('svcUrl').value.trim();
+  if (!name || !url) return;
+
+  const id = 'custom-' + Date.now();
+  const svc = { id, name, url };
+  services.push(svc);
+  history[id] = [];
+  saveCustom();
+  closeAddModal();
+  renderCards();
+  // Immediately check the new service
+  checkService(svc).then(() => {
+    saveHistory();
+    renderCards();
+    updateSummary();
+  });
+}
+
+function removeService(id) {
+  if (!confirm('Remove this service?')) return;
+  services = services.filter(s => s.id !== id);
+  delete history[id];
+  saveCustom();
+  saveHistory();
+  if (selectedService === id) selectedService = null;
+  renderCards();
+  updateSummary();
+}
+
+function exportLogs() {
+  const data = {
+    exported: new Date().toISOString(),
+    services: services.map(s => ({
+      ...s,
+      history: history[s.id] || [],
+      uptime24h: getUptime24h(s.id),
+    })),
+  };
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `health-log-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function toggleAutoRefresh() {
+  const on = document.getElementById('autoRefreshToggle').checked;
+  if (on) {
+    autoRefreshInterval = setInterval(checkAll, 30000);
+  } else {
+    clearInterval(autoRefreshInterval);
+    autoRefreshInterval = null;
+  }
+}
+
+// Init
+loadState();
+renderCards();
+updateSummary();
+checkAll();
+autoRefreshInterval = setInterval(checkAll, 30000);
+document.getElementById('autoRefreshToggle').addEventListener('change', toggleAutoRefresh);
+
+// Request notification permission
+if ('Notification' in window && Notification.permission === 'default') {
+  Notification.requestPermission();
+}
+
+// Keyboard shortcut
+document.addEventListener('keydown', e => {
+  if (e.key === 'r' && !e.ctrlKey && !e.metaKey && document.activeElement.tagName !== 'INPUT') {
+    checkAll();
+  }
+});
+</script>
+</body>
+</html>

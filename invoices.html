@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Freelance Invoice & Client Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #f8f9fc;
+    color: #1a1a2e;
+    min-height: 100vh;
+    padding: 1.5rem;
+  }
+  .back { display: inline-flex; align-items: center; gap: 6px; color: #6b7280; text-decoration: none; font-size: 0.85rem; margin-bottom: 1rem; }
+  .back:hover { color: #3b82f6; }
+  h1 { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.25rem; }
+  .subtitle { color: #6b7280; font-size: 0.9rem; margin-bottom: 1.5rem; }
+  .glass {
+    background: rgba(255,255,255,0.72);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.6);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1.25rem;
+  }
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .stat-card {
+    background: rgba(255,255,255,0.72);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.6);
+    border-radius: 14px;
+    padding: 1.25rem;
+    text-align: center;
+  }
+  .stat-card .label { font-size: 0.75rem; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.35rem; }
+  .stat-card .value { font-size: 1.6rem; font-weight: 700; }
+  .stat-card .value.green { color: #10b981; }
+  .stat-card .value.blue { color: #3b82f6; }
+  .stat-card .value.amber { color: #f59e0b; }
+  .stat-card .value.purple { color: #8b5cf6; }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    gap: 0.25rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+  .tab {
+    padding: 0.5rem 1rem;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.5);
+    border: 1px solid rgba(0,0,0,0.06);
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #6b7280;
+    transition: all 0.15s;
+  }
+  .tab:hover { background: rgba(255,255,255,0.8); color: #1a1a2e; }
+  .tab.active { background: #1a1a2e; color: #fff; border-color: #1a1a2e; }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* Charts */
+  .charts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    gap: 1.25rem;
+  }
+  .chart-box { min-height: 280px; }
+
+  /* Forms */
+  .form-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+  }
+  label { display: block; font-size: 0.8rem; font-weight: 500; color: #374151; margin-bottom: 0.25rem; }
+  input, select, textarea {
+    width: 100%;
+    padding: 0.55rem 0.75rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 0.875rem;
+    background: rgba(255,255,255,0.8);
+    transition: border-color 0.15s;
+  }
+  input:focus, select:focus, textarea:focus { outline: none; border-color: #3b82f6; }
+  textarea { resize: vertical; min-height: 60px; }
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .btn-primary { background: #1a1a2e; color: #fff; }
+  .btn-primary:hover { background: #2d2d4a; }
+  .btn-secondary { background: rgba(59,130,246,0.1); color: #3b82f6; }
+  .btn-secondary:hover { background: rgba(59,130,246,0.2); }
+  .btn-danger { background: rgba(239,68,68,0.1); color: #ef4444; }
+  .btn-danger:hover { background: rgba(239,68,68,0.2); }
+  .btn-success { background: rgba(16,185,129,0.1); color: #10b981; }
+  .btn-success:hover { background: rgba(16,185,129,0.2); }
+  .btn-sm { padding: 0.35rem 0.65rem; font-size: 0.8rem; }
+  .btn-group { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-top: 0.75rem; }
+
+  /* Tables */
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  th { text-align: left; font-weight: 600; color: #6b7280; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; padding: 0.6rem 0.75rem; border-bottom: 1px solid #e5e7eb; }
+  td { padding: 0.6rem 0.75rem; border-bottom: 1px solid #f3f4f6; vertical-align: middle; }
+  tr:hover td { background: rgba(59,130,246,0.03); }
+
+  /* Status badges */
+  .badge {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+  .badge-draft { background: rgba(107,114,128,0.12); color: #6b7280; }
+  .badge-sent { background: rgba(59,130,246,0.12); color: #3b82f6; }
+  .badge-paid { background: rgba(16,185,129,0.12); color: #10b981; }
+  .badge-overdue { background: rgba(239,68,68,0.12); color: #ef4444; }
+  .badge-active { background: rgba(16,185,129,0.12); color: #10b981; }
+  .badge-completed { background: rgba(107,114,128,0.12); color: #6b7280; }
+  .badge-onhold { background: rgba(245,158,11,0.12); color: #f59e0b; }
+
+  .empty { text-align: center; color: #9ca3af; padding: 2rem; font-size: 0.9rem; }
+
+  /* Modal */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.3);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: #fff;
+    border-radius: 18px;
+    padding: 2rem;
+    max-width: 700px;
+    width: 95%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+  }
+  .modal h2 { font-size: 1.15rem; margin-bottom: 1rem; }
+
+  /* Invoice preview */
+  .invoice-preview {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 2rem;
+    font-size: 0.85rem;
+  }
+  .invoice-preview .inv-header { display: flex; justify-content: space-between; margin-bottom: 1.5rem; }
+  .invoice-preview .inv-number { font-size: 1.3rem; font-weight: 700; color: #1a1a2e; }
+  .invoice-preview .inv-meta { color: #6b7280; font-size: 0.8rem; }
+  .invoice-preview table th { background: #f9fafb; }
+  .invoice-preview .inv-totals { text-align: right; margin-top: 1rem; }
+  .invoice-preview .inv-totals div { margin-bottom: 0.3rem; }
+  .invoice-preview .inv-total-final { font-size: 1.1rem; font-weight: 700; color: #10b981; }
+
+  .tax-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1rem;
+  }
+  .tax-card {
+    background: rgba(255,255,255,0.5);
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 1.25rem;
+  }
+  .tax-card h3 { font-size: 0.9rem; margin-bottom: 0.5rem; }
+  .tax-card .amount { font-size: 1.3rem; font-weight: 700; color: #8b5cf6; }
+  .tax-card .detail { font-size: 0.8rem; color: #6b7280; margin-top: 0.35rem; }
+
+  @media (max-width: 640px) {
+    body { padding: 1rem; }
+    .form-row { grid-template-columns: 1fr; }
+    .stats-grid { grid-template-columns: repeat(2, 1fr); }
+    .charts-grid { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+<a href="index.html" class="back">&larr; Analytics</a>
+<h1>Freelance Invoice & Client Tracker</h1>
+<p class="subtitle">Track clients, projects, time, and invoices. All data in localStorage.</p>
+
+<!-- Quick Stats -->
+<div class="stats-grid" id="statsGrid"></div>
+
+<!-- Tabs -->
+<div class="tabs">
+  <div class="tab active" data-tab="dashboard">Dashboard</div>
+  <div class="tab" data-tab="clients">Clients</div>
+  <div class="tab" data-tab="projects">Projects</div>
+  <div class="tab" data-tab="time">Time Log</div>
+  <div class="tab" data-tab="invoices">Invoices</div>
+  <div class="tab" data-tab="tax">Tax Summary</div>
+</div>
+
+<!-- Dashboard Tab -->
+<div class="tab-content active" id="tab-dashboard">
+  <div class="charts-grid">
+    <div class="glass chart-box"><canvas id="chartMonthlyRevenue"></canvas></div>
+    <div class="glass chart-box"><canvas id="chartByClient"></canvas></div>
+    <div class="glass chart-box"><canvas id="chartOutstanding"></canvas></div>
+  </div>
+</div>
+
+<!-- Clients Tab -->
+<div class="tab-content" id="tab-clients">
+  <div class="glass">
+    <h2 style="font-size:1rem;margin-bottom:1rem">Add Client</h2>
+    <div class="form-row">
+      <div><label>Name</label><input id="cName" placeholder="Full name"></div>
+      <div><label>Company</label><input id="cCompany" placeholder="Company name"></div>
+      <div><label>Email</label><input id="cEmail" type="email" placeholder="email@example.com"></div>
+    </div>
+    <div class="form-row">
+      <div><label>Hourly Rate (CAD)</label><input id="cRate" type="number" step="0.01" placeholder="150"></div>
+      <div><label>Notes</label><input id="cNotes" placeholder="Optional notes"></div>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-primary" onclick="addClient()">Add Client</button>
+    </div>
+  </div>
+  <div class="glass">
+    <table>
+      <thead><tr><th>Name</th><th>Company</th><th>Email</th><th>Rate</th><th>Notes</th><th></th></tr></thead>
+      <tbody id="clientsTable"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Projects Tab -->
+<div class="tab-content" id="tab-projects">
+  <div class="glass">
+    <h2 style="font-size:1rem;margin-bottom:1rem">Add Project</h2>
+    <div class="form-row">
+      <div><label>Client</label><select id="pClient"></select></div>
+      <div><label>Project Name</label><input id="pName" placeholder="Project name"></div>
+      <div><label>Status</label>
+        <select id="pStatus">
+          <option value="Active">Active</option>
+          <option value="Completed">Completed</option>
+          <option value="On Hold">On Hold</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div><label>Start Date</label><input id="pStart" type="date"></div>
+      <div><label>Rate Override (CAD, optional)</label><input id="pRate" type="number" step="0.01" placeholder="Leave blank for client rate"></div>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-primary" onclick="addProject()">Add Project</button>
+    </div>
+  </div>
+  <div class="glass">
+    <table>
+      <thead><tr><th>Project</th><th>Client</th><th>Status</th><th>Start</th><th>Rate</th><th>Hours</th><th></th></tr></thead>
+      <tbody id="projectsTable"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Time Log Tab -->
+<div class="tab-content" id="tab-time">
+  <div class="glass">
+    <h2 style="font-size:1rem;margin-bottom:1rem">Log Time</h2>
+    <div class="form-row">
+      <div><label>Project</label><select id="tProject"></select></div>
+      <div><label>Date</label><input id="tDate" type="date"></div>
+      <div><label>Hours</label><input id="tHours" type="number" step="0.25" min="0" placeholder="2.5"></div>
+    </div>
+    <div class="form-row">
+      <div style="grid-column:1/-1"><label>Description</label><input id="tDesc" placeholder="What did you work on?"></div>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-primary" onclick="addTimeEntry()">Log Hours</button>
+    </div>
+  </div>
+  <div class="glass">
+    <table>
+      <thead><tr><th>Date</th><th>Project</th><th>Hours</th><th>Description</th><th></th></tr></thead>
+      <tbody id="timeTable"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Invoices Tab -->
+<div class="tab-content" id="tab-invoices">
+  <div class="glass">
+    <h2 style="font-size:1rem;margin-bottom:1rem">Generate Invoice</h2>
+    <div class="form-row">
+      <div><label>Client</label><select id="iClient"></select></div>
+      <div><label>From Date</label><input id="iFrom" type="date"></div>
+      <div><label>To Date</label><input id="iTo" type="date"></div>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-primary" onclick="generateInvoice()">Generate Invoice</button>
+      <button class="btn btn-secondary" onclick="exportCSV()">Export CSV</button>
+      <button class="btn btn-secondary" onclick="exportJSON()">Export JSON Backup</button>
+      <button class="btn btn-success" onclick="importJSON()">Import JSON</button>
+    </div>
+  </div>
+  <div class="glass">
+    <table>
+      <thead><tr><th>#</th><th>Client</th><th>Date</th><th>Subtotal</th><th>HST</th><th>Total</th><th>Status</th><th></th></tr></thead>
+      <tbody id="invoicesTable"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Tax Summary Tab -->
+<div class="tab-content" id="tab-tax">
+  <div class="glass">
+    <h2 style="font-size:1rem;margin-bottom:1rem">HST Tax Summary (13%) &mdash; For CRA Filing</h2>
+    <div class="tax-grid" id="taxGrid"></div>
+  </div>
+</div>
+
+<!-- Invoice Preview Modal -->
+<div class="modal-overlay" id="invoiceModal">
+  <div class="modal">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem">
+      <h2 style="font-size:1.1rem">Invoice Preview</h2>
+      <button class="btn btn-sm btn-secondary" onclick="closeModal()">&times; Close</button>
+    </div>
+    <div id="invoicePreviewContent"></div>
+    <div class="btn-group" style="margin-top:1rem">
+      <button class="btn btn-primary" onclick="copyInvoiceText()">Copy as Text</button>
+      <button class="btn btn-secondary" onclick="closeModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+<!-- Hidden file input for import -->
+<input type="file" id="importFileInput" accept=".json" style="display:none">
+
+<script>
+// ---- Data Store ----
+const STORAGE_KEY = 'freelance_tracker';
+let data = loadData();
+
+function defaultData() {
+  return { clients: [], projects: [], timeEntries: [], invoices: [], nextInvoiceNum: 1001 };
+}
+
+function loadData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch(e) {}
+  return seedData();
+}
+
+function save() {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+}
+
+function seedData() {
+  const d = defaultData();
+  const c1 = genId(), c2 = genId();
+  d.clients = [
+    { id: c1, name: 'Anika Sharma', company: 'TechNova Labs', email: 'anika@technova.io', rate: 175, notes: 'AI/ML consulting' },
+    { id: c2, name: 'Marcus Chen', company: 'GreenPath Analytics', email: 'marcus@greenpath.ca', rate: 150, notes: 'Data pipeline work' }
+  ];
+  const p1 = genId(), p2 = genId(), p3 = genId();
+  d.projects = [
+    { id: p1, clientId: c1, name: 'LLM Integration', status: 'Active', startDate: '2026-03-01', rateOverride: null },
+    { id: p2, clientId: c1, name: 'RAG Pipeline Audit', status: 'Completed', startDate: '2026-02-15', rateOverride: 200 },
+    { id: p3, clientId: c2, name: 'ETL Modernization', status: 'Active', startDate: '2026-03-15', rateOverride: null }
+  ];
+  d.timeEntries = [
+    { id: genId(), projectId: p1, date: '2026-03-05', hours: 4, desc: 'Architecture review and LLM model selection' },
+    { id: genId(), projectId: p1, date: '2026-03-12', hours: 6, desc: 'Prompt engineering and evaluation harness' },
+    { id: genId(), projectId: p1, date: '2026-03-19', hours: 3.5, desc: 'Integration testing with production data' },
+    { id: genId(), projectId: p2, date: '2026-02-20', hours: 5, desc: 'Existing pipeline review and documentation' },
+    { id: genId(), projectId: p2, date: '2026-02-25', hours: 8, desc: 'Chunk strategy optimization and benchmarks' },
+    { id: genId(), projectId: p2, date: '2026-03-01', hours: 3, desc: 'Final report and recommendations' },
+    { id: genId(), projectId: p3, date: '2026-03-20', hours: 4, desc: 'Current ETL assessment' },
+    { id: genId(), projectId: p3, date: '2026-03-27', hours: 6, desc: 'Airflow DAG design and prototyping' },
+    { id: genId(), projectId: p3, date: '2026-04-03', hours: 5, desc: 'Data validation framework setup' },
+    { id: genId(), projectId: p3, date: '2026-04-10', hours: 7, desc: 'Migration scripts and testing' }
+  ];
+  // Sample invoices
+  d.invoices = [
+    {
+      id: genId(), number: 1001, clientId: c1, date: '2026-03-05', fromDate: '2026-02-15', toDate: '2026-03-01',
+      lineItems: [
+        { projectName: 'RAG Pipeline Audit', hours: 16, rate: 200, desc: 'Pipeline review, optimization, report' }
+      ],
+      subtotal: 3200, hst: 416, total: 3616, status: 'Paid'
+    },
+    {
+      id: genId(), number: 1002, clientId: c1, date: '2026-03-25', fromDate: '2026-03-01', toDate: '2026-03-25',
+      lineItems: [
+        { projectName: 'LLM Integration', hours: 13.5, rate: 175, desc: 'Architecture, prompt eng, testing' }
+      ],
+      subtotal: 2362.50, hst: 307.13, total: 2669.63, status: 'Sent'
+    },
+    {
+      id: genId(), number: 1003, clientId: c2, date: '2026-04-12', fromDate: '2026-03-15', toDate: '2026-04-12',
+      lineItems: [
+        { projectName: 'ETL Modernization', hours: 22, rate: 150, desc: 'Assessment, DAG design, validation, migration' }
+      ],
+      subtotal: 3300, hst: 429, total: 3729, status: 'Draft'
+    }
+  ];
+  d.nextInvoiceNum = 1004;
+  return d;
+}
+
+function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+
+// ---- Tab Navigation ----
+document.querySelectorAll('.tab').forEach(tab => {
+  tab.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(tc => tc.classList.remove('active'));
+    tab.classList.add('active');
+    document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+  });
+});
+
+// ---- Utility ----
+function fmt(n) { return '$' + Number(n).toLocaleString('en-CA', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+function getClient(id) { return data.clients.find(c => c.id === id); }
+function getProject(id) { return data.projects.find(p => p.id === id); }
+function getProjectRate(proj) {
+  if (proj.rateOverride) return proj.rateOverride;
+  const c = getClient(proj.clientId);
+  return c ? c.rate : 0;
+}
+function projectHours(projId) {
+  return data.timeEntries.filter(t => t.projectId === projId).reduce((s, t) => s + t.hours, 0);
+}
+
+// ---- Render Stats ----
+function renderStats() {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth();
+
+  const paidInvoices = data.invoices.filter(i => i.status === 'Paid');
+  const ytdPaid = paidInvoices.filter(i => new Date(i.date).getFullYear() === year);
+  const totalRevenueYTD = ytdPaid.reduce((s, i) => s + i.subtotal, 0);
+
+  const outstanding = data.invoices.filter(i => i.status === 'Sent' || i.status === 'Overdue');
+  const outstandingTotal = outstanding.reduce((s, i) => s + i.total, 0);
+
+  const allRates = data.projects.map(p => getProjectRate(p)).filter(r => r > 0);
+  const avgRate = allRates.length ? allRates.reduce((s, r) => s + r, 0) / allRates.length : 0;
+
+  const monthEntries = data.timeEntries.filter(t => {
+    const d = new Date(t.date);
+    return d.getFullYear() === year && d.getMonth() === month;
+  });
+  const hoursThisMonth = monthEntries.reduce((s, t) => s + t.hours, 0);
+
+  document.getElementById('statsGrid').innerHTML = `
+    <div class="stat-card"><div class="label">Revenue YTD</div><div class="value green">${fmt(totalRevenueYTD)}</div></div>
+    <div class="stat-card"><div class="label">Outstanding</div><div class="value amber">${fmt(outstandingTotal)}</div></div>
+    <div class="stat-card"><div class="label">Avg Hourly Rate</div><div class="value blue">${fmt(avgRate)}</div></div>
+    <div class="stat-card"><div class="label">Hours This Month</div><div class="value purple">${hoursThisMonth.toFixed(1)}h</div></div>
+  `;
+}
+
+// ---- Render Clients ----
+function renderClients() {
+  const tb = document.getElementById('clientsTable');
+  if (!data.clients.length) { tb.innerHTML = '<tr><td colspan="6" class="empty">No clients yet</td></tr>'; return; }
+  tb.innerHTML = data.clients.map(c => `
+    <tr>
+      <td><strong>${esc(c.name)}</strong></td>
+      <td>${esc(c.company)}</td>
+      <td>${esc(c.email)}</td>
+      <td>${fmt(c.rate)}/hr</td>
+      <td style="color:#6b7280;font-size:0.8rem">${esc(c.notes || '')}</td>
+      <td><button class="btn btn-sm btn-danger" onclick="deleteClient('${c.id}')">Delete</button></td>
+    </tr>
+  `).join('');
+}
+
+function addClient() {
+  const name = document.getElementById('cName').value.trim();
+  const company = document.getElementById('cCompany').value.trim();
+  const email = document.getElementById('cEmail').value.trim();
+  const rate = parseFloat(document.getElementById('cRate').value) || 0;
+  const notes = document.getElementById('cNotes').value.trim();
+  if (!name) return alert('Name is required');
+  data.clients.push({ id: genId(), name, company, email, rate, notes });
+  save(); renderAll();
+  ['cName','cCompany','cEmail','cRate','cNotes'].forEach(id => document.getElementById(id).value = '');
+}
+
+function deleteClient(id) {
+  if (!confirm('Delete this client? Related projects and time entries will remain.')) return;
+  data.clients = data.clients.filter(c => c.id !== id);
+  save(); renderAll();
+}
+
+// ---- Render Projects ----
+function populateClientSelects() {
+  const html = '<option value="">Select client...</option>' + data.clients.map(c => `<option value="${c.id}">${esc(c.name)} (${esc(c.company)})</option>`).join('');
+  ['pClient','iClient'].forEach(id => { const el = document.getElementById(id); if (el) el.innerHTML = html; });
+}
+
+function populateProjectSelect() {
+  const active = data.projects.filter(p => p.status === 'Active');
+  document.getElementById('tProject').innerHTML = '<option value="">Select project...</option>' + active.map(p => {
+    const c = getClient(p.clientId);
+    return `<option value="${p.id}">${esc(p.name)} (${c ? esc(c.company) : 'Unknown'})</option>`;
+  }).join('');
+}
+
+function renderProjects() {
+  const tb = document.getElementById('projectsTable');
+  if (!data.projects.length) { tb.innerHTML = '<tr><td colspan="7" class="empty">No projects yet</td></tr>'; return; }
+  tb.innerHTML = data.projects.map(p => {
+    const c = getClient(p.clientId);
+    const badge = p.status === 'Active' ? 'badge-active' : p.status === 'Completed' ? 'badge-completed' : 'badge-onhold';
+    const rate = getProjectRate(p);
+    const hours = projectHours(p.id);
+    return `<tr>
+      <td><strong>${esc(p.name)}</strong></td>
+      <td>${c ? esc(c.name) : '<em>Unknown</em>'}</td>
+      <td><span class="badge ${badge}">${p.status}</span></td>
+      <td>${p.startDate}</td>
+      <td>${fmt(rate)}/hr${p.rateOverride ? ' <em style="color:#6b7280;font-size:0.75rem">(override)</em>' : ''}</td>
+      <td>${hours.toFixed(1)}h</td>
+      <td><button class="btn btn-sm btn-danger" onclick="deleteProject('${p.id}')">Delete</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function addProject() {
+  const clientId = document.getElementById('pClient').value;
+  const name = document.getElementById('pName').value.trim();
+  const status = document.getElementById('pStatus').value;
+  const startDate = document.getElementById('pStart').value;
+  const rateStr = document.getElementById('pRate').value;
+  const rateOverride = rateStr ? parseFloat(rateStr) : null;
+  if (!clientId || !name) return alert('Client and project name are required');
+  data.projects.push({ id: genId(), clientId, name, status, startDate: startDate || new Date().toISOString().slice(0,10), rateOverride });
+  save(); renderAll();
+  ['pName','pRate'].forEach(id => document.getElementById(id).value = '');
+}
+
+function deleteProject(id) {
+  if (!confirm('Delete this project?')) return;
+  data.projects = data.projects.filter(p => p.id !== id);
+  save(); renderAll();
+}
+
+// ---- Time Entries ----
+function renderTimeEntries() {
+  const tb = document.getElementById('timeTable');
+  const sorted = [...data.timeEntries].sort((a,b) => b.date.localeCompare(a.date));
+  if (!sorted.length) { tb.innerHTML = '<tr><td colspan="5" class="empty">No time entries yet</td></tr>'; return; }
+  tb.innerHTML = sorted.map(t => {
+    const p = getProject(t.projectId);
+    return `<tr>
+      <td>${t.date}</td>
+      <td>${p ? esc(p.name) : '<em>Unknown</em>'}</td>
+      <td><strong>${t.hours}h</strong></td>
+      <td style="color:#6b7280">${esc(t.desc)}</td>
+      <td><button class="btn btn-sm btn-danger" onclick="deleteTimeEntry('${t.id}')">Delete</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function addTimeEntry() {
+  const projectId = document.getElementById('tProject').value;
+  const date = document.getElementById('tDate').value;
+  const hours = parseFloat(document.getElementById('tHours').value) || 0;
+  const desc = document.getElementById('tDesc').value.trim();
+  if (!projectId || !date || !hours) return alert('Project, date, and hours are required');
+  data.timeEntries.push({ id: genId(), projectId, date, hours, desc });
+  save(); renderAll();
+  ['tHours','tDesc'].forEach(id => document.getElementById(id).value = '');
+}
+
+function deleteTimeEntry(id) {
+  data.timeEntries = data.timeEntries.filter(t => t.id !== id);
+  save(); renderAll();
+}
+
+// ---- Invoices ----
+function renderInvoices() {
+  const tb = document.getElementById('invoicesTable');
+  const sorted = [...data.invoices].sort((a,b) => b.number - a.number);
+  if (!sorted.length) { tb.innerHTML = '<tr><td colspan="8" class="empty">No invoices yet</td></tr>'; return; }
+  tb.innerHTML = sorted.map(inv => {
+    const c = getClient(inv.clientId);
+    const badgeClass = 'badge-' + inv.status.toLowerCase();
+    return `<tr>
+      <td><strong>INV-${inv.number}</strong></td>
+      <td>${c ? esc(c.name) : 'Unknown'}</td>
+      <td>${inv.date}</td>
+      <td>${fmt(inv.subtotal)}</td>
+      <td>${fmt(inv.hst)}</td>
+      <td><strong>${fmt(inv.total)}</strong></td>
+      <td><span class="badge ${badgeClass}">${inv.status}</span></td>
+      <td style="white-space:nowrap">
+        <button class="btn btn-sm btn-secondary" onclick="viewInvoice('${inv.id}')">View</button>
+        <select onchange="updateInvoiceStatus('${inv.id}', this.value)" style="padding:0.25rem 0.4rem;border-radius:8px;border:1px solid #e5e7eb;font-size:0.75rem">
+          ${['Draft','Sent','Paid','Overdue'].map(s => `<option value="${s}" ${inv.status===s?'selected':''}>${s}</option>`).join('')}
+        </select>
+        <button class="btn btn-sm btn-danger" onclick="deleteInvoice('${inv.id}')">Del</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function generateInvoice() {
+  const clientId = document.getElementById('iClient').value;
+  const fromDate = document.getElementById('iFrom').value;
+  const toDate = document.getElementById('iTo').value;
+  if (!clientId || !fromDate || !toDate) return alert('Select client and date range');
+  const client = getClient(clientId);
+  const clientProjects = data.projects.filter(p => p.clientId === clientId);
+  const lineItems = [];
+  clientProjects.forEach(proj => {
+    const entries = data.timeEntries.filter(t => t.projectId === proj.id && t.date >= fromDate && t.date <= toDate);
+    if (!entries.length) return;
+    const hours = entries.reduce((s, e) => s + e.hours, 0);
+    const rate = getProjectRate(proj);
+    const descs = entries.map(e => e.desc).filter(Boolean).join('; ');
+    lineItems.push({ projectName: proj.name, hours, rate, desc: descs });
+  });
+  if (!lineItems.length) return alert('No time entries found for this client in the selected date range');
+  const subtotal = lineItems.reduce((s, li) => s + li.hours * li.rate, 0);
+  const hst = Math.round(subtotal * 0.13 * 100) / 100;
+  const total = Math.round((subtotal + hst) * 100) / 100;
+  const inv = {
+    id: genId(), number: data.nextInvoiceNum++, clientId, date: new Date().toISOString().slice(0,10),
+    fromDate, toDate, lineItems, subtotal, hst, total, status: 'Draft'
+  };
+  data.invoices.push(inv);
+  save(); renderAll();
+  viewInvoice(inv.id);
+}
+
+function updateInvoiceStatus(id, status) {
+  const inv = data.invoices.find(i => i.id === id);
+  if (inv) { inv.status = status; save(); renderAll(); }
+}
+
+function deleteInvoice(id) {
+  if (!confirm('Delete this invoice?')) return;
+  data.invoices = data.invoices.filter(i => i.id !== id);
+  save(); renderAll();
+}
+
+let currentPreviewInvoice = null;
+
+function viewInvoice(id) {
+  const inv = data.invoices.find(i => i.id === id);
+  if (!inv) return;
+  currentPreviewInvoice = inv;
+  const c = getClient(inv.clientId);
+  const container = document.getElementById('invoicePreviewContent');
+  container.innerHTML = `
+    <div class="invoice-preview">
+      <div class="inv-header">
+        <div>
+          <div class="inv-number">INV-${inv.number}</div>
+          <div class="inv-meta">Date: ${inv.date}<br>Period: ${inv.fromDate} to ${inv.toDate}</div>
+        </div>
+        <div style="text-align:right">
+          <strong>Bill To:</strong><br>
+          ${c ? esc(c.name) : 'Unknown'}<br>
+          ${c ? esc(c.company) : ''}<br>
+          ${c ? esc(c.email) : ''}
+        </div>
+      </div>
+      <table>
+        <thead><tr><th>Project</th><th>Description</th><th>Hours</th><th>Rate</th><th style="text-align:right">Amount</th></tr></thead>
+        <tbody>
+          ${inv.lineItems.map(li => `<tr>
+            <td>${esc(li.projectName)}</td>
+            <td style="color:#6b7280;font-size:0.8rem;max-width:200px">${esc(li.desc)}</td>
+            <td>${li.hours}</td>
+            <td>${fmt(li.rate)}</td>
+            <td style="text-align:right">${fmt(li.hours * li.rate)}</td>
+          </tr>`).join('')}
+        </tbody>
+      </table>
+      <div class="inv-totals">
+        <div>Subtotal: <strong>${fmt(inv.subtotal)}</strong></div>
+        <div>HST (13%): <strong>${fmt(inv.hst)}</strong></div>
+        <div class="inv-total-final" style="margin-top:0.5rem">Total: ${fmt(inv.total)} CAD</div>
+      </div>
+    </div>
+  `;
+  document.getElementById('invoiceModal').classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('invoiceModal').classList.remove('open');
+}
+
+function copyInvoiceText() {
+  const inv = currentPreviewInvoice;
+  if (!inv) return;
+  const c = getClient(inv.clientId);
+  let text = `INVOICE INV-${inv.number}\n`;
+  text += `Date: ${inv.date}\n`;
+  text += `Period: ${inv.fromDate} to ${inv.toDate}\n\n`;
+  text += `Bill To:\n${c ? c.name : 'Unknown'}\n${c ? c.company : ''}\n${c ? c.email : ''}\n\n`;
+  text += `${'Project'.padEnd(25)} ${'Hours'.padEnd(8)} ${'Rate'.padEnd(12)} Amount\n`;
+  text += '-'.repeat(60) + '\n';
+  inv.lineItems.forEach(li => {
+    text += `${li.projectName.padEnd(25)} ${String(li.hours).padEnd(8)} ${fmt(li.rate).padEnd(12)} ${fmt(li.hours * li.rate)}\n`;
+  });
+  text += '-'.repeat(60) + '\n';
+  text += `${''.padEnd(45)} Subtotal: ${fmt(inv.subtotal)}\n`;
+  text += `${''.padEnd(45)} HST 13%:  ${fmt(inv.hst)}\n`;
+  text += `${''.padEnd(45)} TOTAL:    ${fmt(inv.total)} CAD\n`;
+  navigator.clipboard.writeText(text).then(() => alert('Invoice copied to clipboard!')).catch(() => {
+    // Fallback
+    const ta = document.createElement('textarea');
+    ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove();
+    alert('Invoice copied to clipboard!');
+  });
+}
+
+// ---- Export / Import ----
+function exportCSV() {
+  if (!data.invoices.length) return alert('No invoices to export');
+  let csv = 'Invoice Number,Client,Company,Date,From,To,Subtotal,HST,Total,Status\n';
+  data.invoices.forEach(inv => {
+    const c = getClient(inv.clientId);
+    csv += `INV-${inv.number},"${c?c.name:''}","${c?c.company:''}",${inv.date},${inv.fromDate},${inv.toDate},${inv.subtotal},${inv.hst},${inv.total},${inv.status}\n`;
+  });
+  download('invoices.csv', csv, 'text/csv');
+}
+
+function exportJSON() {
+  download('freelance-tracker-backup.json', JSON.stringify(data, null, 2), 'application/json');
+}
+
+function importJSON() {
+  document.getElementById('importFileInput').click();
+}
+
+document.getElementById('importFileInput').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    try {
+      const imported = JSON.parse(ev.target.result);
+      if (imported.clients && imported.invoices) {
+        data = imported;
+        save(); renderAll();
+        alert('Data imported successfully!');
+      } else {
+        alert('Invalid backup file');
+      }
+    } catch(err) { alert('Error reading file: ' + err.message); }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+
+function download(filename, content, type) {
+  const blob = new Blob([content], { type });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// ---- Tax Summary ----
+function renderTaxSummary() {
+  const year = new Date().getFullYear();
+  const paidInvoices = data.invoices.filter(i => i.status === 'Paid' && new Date(i.date).getFullYear() === year);
+  const quarters = [
+    { label: 'Q1 (Jan-Mar)', months: [0,1,2] },
+    { label: 'Q2 (Apr-Jun)', months: [3,4,5] },
+    { label: 'Q3 (Jul-Sep)', months: [6,7,8] },
+    { label: 'Q4 (Oct-Dec)', months: [9,10,11] }
+  ];
+  const allInvoicesYear = data.invoices.filter(i => new Date(i.date).getFullYear() === year);
+  const grid = document.getElementById('taxGrid');
+  grid.innerHTML = quarters.map(q => {
+    const qInv = paidInvoices.filter(i => q.months.includes(new Date(i.date).getMonth()));
+    const hst = qInv.reduce((s, i) => s + i.hst, 0);
+    const revenue = qInv.reduce((s, i) => s + i.subtotal, 0);
+    return `<div class="tax-card">
+      <h3>${q.label}</h3>
+      <div class="amount">${fmt(hst)}</div>
+      <div class="detail">HST collected on ${fmt(revenue)} revenue</div>
+      <div class="detail">${qInv.length} paid invoice(s)</div>
+    </div>`;
+  }).join('') + `
+    <div class="tax-card" style="border-color:rgba(139,92,246,0.3)">
+      <h3>YTD Total (${year})</h3>
+      <div class="amount">${fmt(paidInvoices.reduce((s,i) => s+i.hst, 0))}</div>
+      <div class="detail">Total HST collected</div>
+      <div class="detail">${fmt(paidInvoices.reduce((s,i) => s+i.subtotal, 0))} total revenue (paid)</div>
+      <div class="detail">${fmt(allInvoicesYear.reduce((s,i) => s+i.total, 0))} total invoiced</div>
+    </div>
+  `;
+}
+
+// ---- Charts ----
+let chartMonthly, chartClient, chartOutstanding;
+
+function renderCharts() {
+  const year = new Date().getFullYear();
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  // Monthly revenue
+  const monthlyData = new Array(12).fill(0);
+  data.invoices.filter(i => i.status === 'Paid' && new Date(i.date).getFullYear() === year).forEach(i => {
+    monthlyData[new Date(i.date).getMonth()] += i.subtotal;
+  });
+  if (chartMonthly) chartMonthly.destroy();
+  chartMonthly = new Chart(document.getElementById('chartMonthlyRevenue'), {
+    type: 'bar',
+    data: {
+      labels: months,
+      datasets: [{ label: 'Revenue (CAD)', data: monthlyData, backgroundColor: 'rgba(16,185,129,0.6)', borderRadius: 8 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: `Monthly Revenue ${year}`, font: { family: 'Inter', weight: '600' } }, legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { callback: v => '$' + v.toLocaleString() } } } }
+  });
+
+  // Revenue by client
+  const clientRevenue = {};
+  data.invoices.filter(i => i.status === 'Paid').forEach(i => {
+    const c = getClient(i.clientId);
+    const name = c ? c.name : 'Unknown';
+    clientRevenue[name] = (clientRevenue[name] || 0) + i.subtotal;
+  });
+  const clientNames = Object.keys(clientRevenue);
+  const clientAmounts = Object.values(clientRevenue);
+  const colors = ['rgba(59,130,246,0.7)', 'rgba(16,185,129,0.7)', 'rgba(245,158,11,0.7)', 'rgba(139,92,246,0.7)', 'rgba(239,68,68,0.7)', 'rgba(236,72,153,0.7)'];
+  if (chartClient) chartClient.destroy();
+  chartClient = new Chart(document.getElementById('chartByClient'), {
+    type: 'doughnut',
+    data: {
+      labels: clientNames,
+      datasets: [{ data: clientAmounts, backgroundColor: colors.slice(0, clientNames.length), borderWidth: 0 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: 'Revenue by Client', font: { family: 'Inter', weight: '600' } } } }
+  });
+
+  // Outstanding vs Paid
+  const paidByMonth = new Array(12).fill(0);
+  const outByMonth = new Array(12).fill(0);
+  data.invoices.filter(i => new Date(i.date).getFullYear() === year).forEach(i => {
+    const m = new Date(i.date).getMonth();
+    if (i.status === 'Paid') paidByMonth[m] += i.total;
+    else outByMonth[m] += i.total;
+  });
+  if (chartOutstanding) chartOutstanding.destroy();
+  chartOutstanding = new Chart(document.getElementById('chartOutstanding'), {
+    type: 'bar',
+    data: {
+      labels: months,
+      datasets: [
+        { label: 'Paid', data: paidByMonth, backgroundColor: 'rgba(16,185,129,0.6)', borderRadius: 6 },
+        { label: 'Outstanding', data: outByMonth, backgroundColor: 'rgba(245,158,11,0.5)', borderRadius: 6 }
+      ]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { title: { display: true, text: 'Paid vs Outstanding', font: { family: 'Inter', weight: '600' } } }, scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true, ticks: { callback: v => '$' + v.toLocaleString() } } } }
+  });
+}
+
+// ---- Escape HTML ----
+function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+// ---- Render All ----
+function renderAll() {
+  renderStats();
+  renderClients();
+  populateClientSelects();
+  renderProjects();
+  populateProjectSelect();
+  renderTimeEntries();
+  renderInvoices();
+  renderTaxSummary();
+  renderCharts();
+}
+
+// Set default date inputs
+document.getElementById('tDate').value = new Date().toISOString().slice(0,10);
+document.getElementById('pStart').value = new Date().toISOString().slice(0,10);
+
+renderAll();
+</script>
+</body>
+</html>

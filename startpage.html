@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Start Page</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  @keyframes gradientShift {
+    0%   { background-position: 0% 50%; }
+    50%  { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: linear-gradient(135deg, #f8f9fc, #eef1f8, #f0f4ff, #f8f9fc);
+    background-size: 400% 400%;
+    animation: gradientShift 60s ease infinite;
+    color: #1a1a2e;
+    min-height: 100vh;
+    padding: 2rem;
+    overflow-x: hidden;
+  }
+
+  .container {
+    max-width: 960px;
+    margin: 0 auto;
+  }
+
+  /* Glass card base */
+  .glass {
+    background: rgba(255,255,255,0.72);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.6);
+    border-radius: 16px;
+  }
+
+  /* Header / Greeting */
+  .greeting-section {
+    text-align: center;
+    padding: 2.5rem 1rem 1rem;
+  }
+  .greeting {
+    font-size: 2.2rem;
+    font-weight: 300;
+    letter-spacing: -0.02em;
+    color: #1a1a2e;
+  }
+  .clock {
+    font-size: 4rem;
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    margin: 0.25rem 0;
+    color: #1a1a2e;
+  }
+  .date-display {
+    font-size: 1rem;
+    color: #6b7280;
+    font-weight: 400;
+  }
+
+  /* Layout grid */
+  .main-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+    margin-top: 1.5rem;
+  }
+  .full-width { grid-column: 1 / -1; }
+
+  /* Search bar */
+  .search-wrap {
+    position: relative;
+    margin-top: 1.5rem;
+  }
+  .search-wrap input {
+    width: 100%;
+    padding: 1rem 1.25rem 1rem 3rem;
+    border: none;
+    border-radius: 14px;
+    font-size: 1rem;
+    font-family: inherit;
+    outline: none;
+    color: #1a1a2e;
+    background: rgba(255,255,255,0.72);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.6);
+    transition: box-shadow 0.2s;
+  }
+  .search-wrap input:focus {
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+  }
+  .search-wrap input::placeholder { color: #9ca3af; }
+  .search-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #9ca3af;
+  }
+  .search-hint {
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(0,0,0,0.06);
+    color: #9ca3af;
+    font-size: 0.7rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 4px;
+    font-weight: 500;
+  }
+
+  /* Weather widget */
+  .weather-card {
+    padding: 1.25rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .weather-icon {
+    width: 48px;
+    height: 48px;
+    background: rgba(245,158,11,0.12);
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .weather-info h3 { font-size: 1.1rem; font-weight: 600; }
+  .weather-info p { font-size: 0.8rem; color: #6b7280; margin-top: 2px; }
+
+  /* Daily focus */
+  .focus-card {
+    padding: 1.25rem;
+  }
+  .focus-card label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #6b7280;
+    display: block;
+    margin-bottom: 0.5rem;
+  }
+  .focus-card input {
+    width: 100%;
+    border: none;
+    background: transparent;
+    font-size: 1.05rem;
+    font-family: inherit;
+    color: #1a1a2e;
+    outline: none;
+    padding: 0.35rem 0;
+    border-bottom: 1.5px solid rgba(0,0,0,0.06);
+    transition: border-color 0.2s;
+  }
+  .focus-card input:focus {
+    border-bottom-color: #3b82f6;
+  }
+  .focus-card input::placeholder { color: #c9cdd5; }
+
+  /* Quick links */
+  .links-section {
+    padding: 1.25rem;
+  }
+  .links-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+  }
+  .links-header h3 {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #6b7280;
+  }
+  .gear-btn {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #9ca3af;
+    padding: 4px;
+    border-radius: 6px;
+    transition: color 0.2s, background 0.2s;
+  }
+  .gear-btn:hover { color: #6b7280; background: rgba(0,0,0,0.04); }
+  .links-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 0.75rem;
+  }
+  .link-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.4rem;
+    text-decoration: none;
+    color: inherit;
+    padding: 0.6rem 0.25rem;
+    border-radius: 12px;
+    transition: background 0.15s;
+  }
+  .link-item:hover { background: rgba(0,0,0,0.03); }
+  .link-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .link-icon svg { width: 20px; height: 20px; }
+  .link-label {
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: #4b5563;
+    text-align: center;
+    line-height: 1.2;
+  }
+
+  /* Todo list */
+  .todo-card {
+    padding: 1.25rem;
+  }
+  .todo-card h3 {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #6b7280;
+    margin-bottom: 0.6rem;
+  }
+  .todo-input-wrap {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.6rem;
+  }
+  .todo-input-wrap input {
+    flex: 1;
+    border: none;
+    background: rgba(0,0,0,0.03);
+    border-radius: 8px;
+    padding: 0.5rem 0.75rem;
+    font-family: inherit;
+    font-size: 0.85rem;
+    outline: none;
+    color: #1a1a2e;
+  }
+  .todo-input-wrap input::placeholder { color: #c9cdd5; }
+  .todo-input-wrap button {
+    background: #3b82f6;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 0 0.75rem;
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .todo-input-wrap button:hover { background: #2563eb; }
+  .todo-list { list-style: none; }
+  .todo-list li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0;
+    font-size: 0.875rem;
+    border-bottom: 1px solid rgba(0,0,0,0.04);
+  }
+  .todo-list li:last-child { border-bottom: none; }
+  .todo-list li.done span { text-decoration: line-through; color: #9ca3af; }
+  .todo-list li input[type="checkbox"] {
+    accent-color: #3b82f6;
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+  }
+  .todo-list li span { flex: 1; }
+  .todo-remove {
+    background: none;
+    border: none;
+    color: #d1d5db;
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 0 2px;
+    transition: color 0.15s;
+    line-height: 1;
+  }
+  .todo-remove:hover { color: #ef4444; }
+
+  /* Quote */
+  .quote-card {
+    padding: 1.25rem;
+    text-align: center;
+  }
+  .quote-text {
+    font-size: 0.95rem;
+    font-style: italic;
+    color: #374151;
+    line-height: 1.6;
+  }
+  .quote-author {
+    font-size: 0.8rem;
+    color: #9ca3af;
+    margin-top: 0.5rem;
+    font-weight: 500;
+  }
+
+  /* Bookmarks section */
+  .bookmarks-card {
+    padding: 1.25rem;
+  }
+  .bookmarks-card h3 {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #6b7280;
+    margin-bottom: 0.6rem;
+  }
+  .bookmark-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+  }
+  .bookmark-tab {
+    font-size: 0.75rem;
+    padding: 0.3rem 0.7rem;
+    border-radius: 6px;
+    border: none;
+    background: rgba(0,0,0,0.04);
+    color: #6b7280;
+    cursor: pointer;
+    font-family: inherit;
+    font-weight: 500;
+    transition: all 0.15s;
+  }
+  .bookmark-tab.active { background: #3b82f6; color: #fff; }
+  .bookmark-add-row {
+    display: flex;
+    gap: 0.4rem;
+    margin-bottom: 0.5rem;
+  }
+  .bookmark-add-row input {
+    flex: 1;
+    border: none;
+    background: rgba(0,0,0,0.03);
+    border-radius: 6px;
+    padding: 0.4rem 0.6rem;
+    font-size: 0.8rem;
+    font-family: inherit;
+    outline: none;
+    color: #1a1a2e;
+  }
+  .bookmark-add-row input::placeholder { color: #c9cdd5; }
+  .bookmark-add-row button {
+    background: #10b981;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 0 0.6rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .bookmark-list { list-style: none; }
+  .bookmark-list li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.35rem 0;
+    font-size: 0.8rem;
+    border-bottom: 1px solid rgba(0,0,0,0.03);
+  }
+  .bookmark-list li:last-child { border-bottom: none; }
+  .bookmark-list a {
+    flex: 1;
+    color: #3b82f6;
+    text-decoration: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .bookmark-list a:hover { text-decoration: underline; }
+
+  /* Recent visits */
+  .recent-card {
+    padding: 1.25rem;
+  }
+  .recent-card h3 {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #6b7280;
+    margin-bottom: 0.6rem;
+  }
+  .recent-add-row {
+    display: flex;
+    gap: 0.4rem;
+    margin-bottom: 0.5rem;
+  }
+  .recent-add-row input {
+    flex: 1;
+    border: none;
+    background: rgba(0,0,0,0.03);
+    border-radius: 6px;
+    padding: 0.4rem 0.6rem;
+    font-size: 0.8rem;
+    font-family: inherit;
+    outline: none;
+    color: #1a1a2e;
+  }
+  .recent-add-row input::placeholder { color: #c9cdd5; }
+  .recent-add-row button {
+    background: #8b5cf6;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 0 0.6rem;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .recent-list { list-style: none; }
+  .recent-list li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.3rem 0;
+    font-size: 0.8rem;
+    border-bottom: 1px solid rgba(0,0,0,0.03);
+  }
+  .recent-list li:last-child { border-bottom: none; }
+  .recent-list a {
+    flex: 1;
+    color: #6366f1;
+    text-decoration: none;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .recent-list a:hover { text-decoration: underline; }
+  .recent-time {
+    font-size: 0.7rem;
+    color: #9ca3af;
+    white-space: nowrap;
+  }
+
+  /* Modal overlay */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.3);
+    backdrop-filter: blur(4px);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.active { display: flex; }
+  .modal {
+    background: #fff;
+    border-radius: 16px;
+    padding: 1.5rem;
+    width: 90%;
+    max-width: 520px;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.15);
+  }
+  .modal h2 {
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+  }
+  .modal-link-list { list-style: none; }
+  .modal-link-list li {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+    font-size: 0.85rem;
+  }
+  .modal-link-list li .drag-handle {
+    cursor: grab;
+    color: #d1d5db;
+    user-select: none;
+  }
+  .modal-link-list li .link-title-edit { flex: 1; font-weight: 500; }
+  .modal-add-form {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+    margin-top: 1rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid rgba(0,0,0,0.06);
+  }
+  .modal-add-form input {
+    flex: 1;
+    min-width: 100px;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    padding: 0.5rem 0.6rem;
+    font-size: 0.85rem;
+    font-family: inherit;
+    outline: none;
+  }
+  .modal-add-form input:focus { border-color: #3b82f6; }
+  .modal-add-form button {
+    background: #3b82f6;
+    color: #fff;
+    border: none;
+    border-radius: 8px;
+    padding: 0.5rem 1rem;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .modal-close {
+    float: right;
+    background: none;
+    border: none;
+    font-size: 1.2rem;
+    cursor: pointer;
+    color: #9ca3af;
+    padding: 0;
+    line-height: 1;
+  }
+  .modal-close:hover { color: #374151; }
+
+  .footer-note {
+    text-align: center;
+    margin-top: 2rem;
+    color: #c9cdd5;
+    font-size: 0.7rem;
+  }
+
+  @media (max-width: 700px) {
+    .main-grid { grid-template-columns: 1fr; }
+    .links-grid { grid-template-columns: repeat(4, 1fr); }
+    .clock { font-size: 3rem; }
+    .greeting { font-size: 1.6rem; }
+    body { padding: 1rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <!-- Greeting + Clock -->
+  <div class="greeting-section">
+    <div class="greeting" id="greeting"></div>
+    <div class="clock" id="clock"></div>
+    <div class="date-display" id="dateDisplay"></div>
+  </div>
+
+  <!-- Search -->
+  <div class="search-wrap">
+    <svg class="search-icon" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="6"/><line x1="18" y1="18" x2="12.65" y2="12.65"/></svg>
+    <input type="text" id="searchInput" placeholder="Search Google..." autocomplete="off">
+    <span class="search-hint">/</span>
+  </div>
+
+  <div class="main-grid">
+    <!-- Weather -->
+    <div class="weather-card glass">
+      <div class="weather-icon">
+        <svg width="24" height="24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      </div>
+      <div class="weather-info">
+        <h3>18°C &mdash; Sunny</h3>
+        <p>Toronto, ON &middot; Feels like 16°C</p>
+      </div>
+    </div>
+
+    <!-- Daily focus -->
+    <div class="focus-card glass">
+      <label>Daily Focus</label>
+      <input type="text" id="focusInput" placeholder="What's your main priority today?">
+    </div>
+
+    <!-- Quick links -->
+    <div class="links-section glass full-width">
+      <div class="links-header">
+        <h3>Quick Links</h3>
+        <button class="gear-btn" id="editLinksBtn" title="Edit links">
+          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8" cy="8" r="2.5"/><path d="M13.73 9.2a1.2 1.2 0 00.24 1.32l.04.04a1.45 1.45 0 11-2.06 2.06l-.04-.04a1.2 1.2 0 00-1.32-.24 1.2 1.2 0 00-.73 1.1v.12a1.45 1.45 0 11-2.91 0v-.06a1.2 1.2 0 00-.79-1.1 1.2 1.2 0 00-1.32.24l-.04.04a1.45 1.45 0 11-2.06-2.06l.04-.04a1.2 1.2 0 00.24-1.32 1.2 1.2 0 00-1.1-.73H2.45a1.45 1.45 0 110-2.91h.06a1.2 1.2 0 001.1-.79 1.2 1.2 0 00-.24-1.32l-.04-.04A1.45 1.45 0 115.39 1.4l.04.04a1.2 1.2 0 001.32.24h.06a1.2 1.2 0 00.73-1.1V.45a1.45 1.45 0 112.91 0v.06a1.2 1.2 0 00.73 1.1 1.2 1.2 0 001.32-.24l.04-.04a1.45 1.45 0 112.06 2.06l-.04.04a1.2 1.2 0 00-.24 1.32v.06a1.2 1.2 0 001.1.73h.12a1.45 1.45 0 110 2.91h-.06a1.2 1.2 0 00-1.1.73z"/></svg>
+        </button>
+      </div>
+      <div class="links-grid" id="linksGrid"></div>
+    </div>
+
+    <!-- Todo -->
+    <div class="todo-card glass">
+      <h3>Quick Tasks</h3>
+      <div class="todo-input-wrap">
+        <input type="text" id="todoInput" placeholder="Add a task...">
+        <button id="todoAddBtn">Add</button>
+      </div>
+      <ul class="todo-list" id="todoList"></ul>
+    </div>
+
+    <!-- Quote -->
+    <div class="quote-card glass">
+      <div class="quote-text" id="quoteText"></div>
+      <div class="quote-author" id="quoteAuthor"></div>
+    </div>
+
+    <!-- Bookmarks -->
+    <div class="bookmarks-card glass">
+      <h3>Bookmarks</h3>
+      <div class="bookmark-tabs" id="bookmarkTabs"></div>
+      <div class="bookmark-add-row">
+        <input type="text" id="bmTitle" placeholder="Title">
+        <input type="text" id="bmUrl" placeholder="https://...">
+        <button id="bmAddBtn">+</button>
+      </div>
+      <ul class="bookmark-list" id="bookmarkList"></ul>
+    </div>
+
+    <!-- Recently visited -->
+    <div class="recent-card glass">
+      <h3>Recently Visited</h3>
+      <div class="recent-add-row">
+        <input type="text" id="recentTitle" placeholder="Title">
+        <input type="text" id="recentUrl" placeholder="https://...">
+        <button id="recentAddBtn">+</button>
+      </div>
+      <ul class="recent-list" id="recentList"></ul>
+    </div>
+  </div>
+
+  <div class="footer-note">Press / to search &middot; All data stored locally</div>
+</div>
+
+<!-- Edit Links Modal -->
+<div class="modal-overlay" id="linksModal">
+  <div class="modal">
+    <button class="modal-close" id="modalClose">&times;</button>
+    <h2>Edit Quick Links</h2>
+    <ul class="modal-link-list" id="modalLinkList"></ul>
+    <div class="modal-add-form">
+      <input type="text" id="newLinkTitle" placeholder="Title">
+      <input type="text" id="newLinkUrl" placeholder="https://...">
+      <input type="text" id="newLinkColor" placeholder="Color (#hex)" style="max-width:100px">
+      <button id="addLinkBtn">Add</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // ── Default quick links ──
+  const DEFAULT_LINKS = [
+    { title: 'Gmail',      url: 'https://mail.google.com',       color: '#ea4335' },
+    { title: 'GitHub',     url: 'https://github.com',            color: '#24292e' },
+    { title: 'Linear',     url: 'https://linear.app',            color: '#5e6ad2' },
+    { title: 'Vercel',     url: 'https://vercel.com/dashboard',  color: '#000000' },
+    { title: 'Railway',    url: 'https://railway.app/dashboard', color: '#7c3aed' },
+    { title: 'Cloudflare', url: 'https://dash.cloudflare.com',   color: '#f48120' },
+    { title: 'Claude',     url: 'https://claude.ai',             color: '#d97706' },
+    { title: 'ChatGPT',    url: 'https://chat.openai.com',       color: '#10a37f' },
+    { title: 'Notion',     url: 'https://notion.so',             color: '#000000' },
+    { title: 'Figma',      url: 'https://figma.com',             color: '#a259ff' },
+    { title: 'YouTube',    url: 'https://youtube.com',           color: '#ff0000' },
+    { title: 'Twitter',    url: 'https://x.com',                 color: '#1da1f2' },
+  ];
+
+  // ── Link SVG icons ──
+  const LINK_ICONS = {
+    Gmail:      '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><polyline points="22,4 12,13 2,4"/></svg>',
+    GitHub:     '<svg viewBox="0 0 24 24" fill="white"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>',
+    Linear:     '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="8" y1="12" x2="16" y2="12"/><line x1="12" y1="8" x2="12" y2="16"/></svg>',
+    Vercel:     '<svg viewBox="0 0 24 24" fill="white"><path d="M12 2L2 20h20L12 2z"/></svg>',
+    Railway:    '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="9" y1="12" x2="15" y2="12"/><line x1="9" y1="16" x2="15" y2="16"/></svg>',
+    Cloudflare: '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 16H6a4 4 0 01-.88-7.9A5.5 5.5 0 0116.9 8 3.5 3.5 0 0119 16z"/></svg>',
+    Claude:     '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>',
+    ChatGPT:    '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/></svg>',
+    Notion:     '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 4h16v16H4z" rx="2"/><line x1="8" y1="8" x2="16" y2="8"/><line x1="8" y1="12" x2="14" y2="12"/><line x1="8" y1="16" x2="12" y2="16"/></svg>',
+    Figma:      '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="14.5" cy="12" r="2.5"/><path d="M7 2h5v5H9.5A2.5 2.5 0 017 4.5v0A2.5 2.5 0 019.5 2z"/><path d="M12 2h2.5A2.5 2.5 0 0117 4.5v0A2.5 2.5 0 0114.5 7H12V2z"/><path d="M7 9.5A2.5 2.5 0 019.5 7H12v5H9.5A2.5 2.5 0 017 9.5z"/><path d="M7 17a2.5 2.5 0 012.5-2.5H12V17a2.5 2.5 0 11-5 0z"/></svg>',
+    YouTube:    '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="4"/><polygon points="10,8 16,12 10,16" fill="white" stroke="none"/></svg>',
+    Twitter:    '<svg viewBox="0 0 24 24" fill="white"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>',
+  };
+
+  const FALLBACK_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 014 10 15.3 15.3 0 01-4 10 15.3 15.3 0 01-4-10 15.3 15.3 0 014-10z"/></svg>';
+
+  // ── Quotes (50+) ──
+  const QUOTES = [
+    { text: "The only way to do great work is to love what you do.", author: "Steve Jobs" },
+    { text: "Simplicity is the ultimate sophistication.", author: "Leonardo da Vinci" },
+    { text: "Stay hungry, stay foolish.", author: "Steve Jobs" },
+    { text: "The best time to plant a tree was 20 years ago. The second best time is now.", author: "Chinese Proverb" },
+    { text: "Done is better than perfect.", author: "Sheryl Sandberg" },
+    { text: "First, solve the problem. Then, write the code.", author: "John Johnson" },
+    { text: "Make it work, make it right, make it fast.", author: "Kent Beck" },
+    { text: "Code is like humor. When you have to explain it, it's bad.", author: "Cory House" },
+    { text: "The impediment to action advances action. What stands in the way becomes the way.", author: "Marcus Aurelius" },
+    { text: "We are what we repeatedly do. Excellence, then, is not an act, but a habit.", author: "Aristotle" },
+    { text: "The mind is everything. What you think you become.", author: "Buddha" },
+    { text: "In the middle of difficulty lies opportunity.", author: "Albert Einstein" },
+    { text: "It does not matter how slowly you go as long as you do not stop.", author: "Confucius" },
+    { text: "The only impossible journey is the one you never begin.", author: "Tony Robbins" },
+    { text: "What you get by achieving your goals is not as important as what you become.", author: "Zig Ziglar" },
+    { text: "Believe you can and you're halfway there.", author: "Theodore Roosevelt" },
+    { text: "Act as if what you do makes a difference. It does.", author: "William James" },
+    { text: "Success is not final, failure is not fatal: it is the courage to continue that counts.", author: "Winston Churchill" },
+    { text: "The secret of getting ahead is getting started.", author: "Mark Twain" },
+    { text: "Don't watch the clock; do what it does. Keep going.", author: "Sam Levenson" },
+    { text: "Everything you've ever wanted is on the other side of fear.", author: "George Addair" },
+    { text: "Hardships often prepare ordinary people for an extraordinary destiny.", author: "C.S. Lewis" },
+    { text: "Knowing is not enough; we must apply. Willing is not enough; we must do.", author: "Johann Wolfgang von Goethe" },
+    { text: "You miss 100% of the shots you don't take.", author: "Wayne Gretzky" },
+    { text: "The way to get started is to quit talking and begin doing.", author: "Walt Disney" },
+    { text: "Your time is limited, don't waste it living someone else's life.", author: "Steve Jobs" },
+    { text: "If you want to lift yourself up, lift up someone else.", author: "Booker T. Washington" },
+    { text: "The future depends on what you do today.", author: "Mahatma Gandhi" },
+    { text: "The journey of a thousand miles begins with one step.", author: "Lao Tzu" },
+    { text: "What we think, we become.", author: "Buddha" },
+    { text: "Small daily improvements over time lead to stunning results.", author: "Robin Sharma" },
+    { text: "Dream big and dare to fail.", author: "Norman Vaughan" },
+    { text: "Try not to become a man of success. Rather become a man of value.", author: "Albert Einstein" },
+    { text: "The best revenge is massive success.", author: "Frank Sinatra" },
+    { text: "I have not failed. I've just found 10,000 ways that won't work.", author: "Thomas Edison" },
+    { text: "A person who never made a mistake never tried anything new.", author: "Albert Einstein" },
+    { text: "Great things never come from comfort zones.", author: "Ben Francia" },
+    { text: "The only limit to our realization of tomorrow is our doubts of today.", author: "Franklin D. Roosevelt" },
+    { text: "Do what you can, with what you have, where you are.", author: "Theodore Roosevelt" },
+    { text: "It always seems impossible until it's done.", author: "Nelson Mandela" },
+    { text: "Start where you are. Use what you have. Do what you can.", author: "Arthur Ashe" },
+    { text: "The harder I work, the luckier I get.", author: "Gary Player" },
+    { text: "Don't let yesterday take up too much of today.", author: "Will Rogers" },
+    { text: "You are never too old to set another goal or to dream a new dream.", author: "C.S. Lewis" },
+    { text: "If you're going through hell, keep going.", author: "Winston Churchill" },
+    { text: "Opportunities don't happen. You create them.", author: "Chris Grosser" },
+    { text: "The only person you are destined to become is the person you decide to be.", author: "Ralph Waldo Emerson" },
+    { text: "Go confidently in the direction of your dreams.", author: "Henry David Thoreau" },
+    { text: "Be yourself; everyone else is already taken.", author: "Oscar Wilde" },
+    { text: "What lies behind us and what lies before us are tiny matters compared to what lies within us.", author: "Ralph Waldo Emerson" },
+    { text: "In a gentle way, you can shake the world.", author: "Mahatma Gandhi" },
+    { text: "Perfection is achieved not when there is nothing more to add, but when there is nothing left to take away.", author: "Antoine de Saint-Exupery" },
+  ];
+
+  // ── Helpers ──
+  function ls(key, fallback) {
+    try { const v = localStorage.getItem('sp_' + key); return v ? JSON.parse(v) : fallback; }
+    catch { return fallback; }
+  }
+  function ss(key, val) { localStorage.setItem('sp_' + key, JSON.stringify(val)); }
+
+  // ── Clock & Greeting ──
+  function updateClock() {
+    const now = new Date();
+    const h = now.getHours();
+    let greet = 'Good morning';
+    if (h >= 12 && h < 17) greet = 'Good afternoon';
+    else if (h >= 17) greet = 'Good evening';
+    document.getElementById('greeting').textContent = greet + ', Sri';
+    document.getElementById('clock').textContent =
+      now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: true });
+    document.getElementById('dateDisplay').textContent =
+      now.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  }
+  updateClock();
+  setInterval(updateClock, 1000);
+
+  // ── Search ──
+  const searchInput = document.getElementById('searchInput');
+  searchInput.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && searchInput.value.trim()) {
+      window.location.href = 'https://www.google.com/search?q=' + encodeURIComponent(searchInput.value.trim());
+    }
+  });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === '/' && document.activeElement.tagName !== 'INPUT' && document.activeElement.tagName !== 'TEXTAREA') {
+      e.preventDefault();
+      searchInput.focus();
+    }
+  });
+
+  // ── Daily Focus ──
+  const focusInput = document.getElementById('focusInput');
+  const todayKey = new Date().toISOString().slice(0, 10);
+  focusInput.value = ls('focus_' + todayKey, '');
+  focusInput.addEventListener('input', () => ss('focus_' + todayKey, focusInput.value));
+
+  // ── Quick Links ──
+  let links = ls('links', DEFAULT_LINKS);
+
+  function renderLinks() {
+    const grid = document.getElementById('linksGrid');
+    grid.innerHTML = '';
+    links.forEach(link => {
+      const a = document.createElement('a');
+      a.className = 'link-item';
+      a.href = link.url;
+      a.target = '_blank';
+      a.rel = 'noopener';
+      const icon = LINK_ICONS[link.title] || FALLBACK_ICON;
+      a.innerHTML = `<div class="link-icon" style="background:${link.color}">${icon}</div><span class="link-label">${link.title}</span>`;
+      grid.appendChild(a);
+    });
+  }
+  renderLinks();
+
+  // ── Edit Links Modal ──
+  const linksModal = document.getElementById('linksModal');
+  document.getElementById('editLinksBtn').addEventListener('click', () => { openLinksModal(); });
+  document.getElementById('modalClose').addEventListener('click', () => { linksModal.classList.remove('active'); });
+  linksModal.addEventListener('click', (e) => { if (e.target === linksModal) linksModal.classList.remove('active'); });
+
+  function openLinksModal() {
+    linksModal.classList.add('active');
+    renderModalLinks();
+  }
+
+  function renderModalLinks() {
+    const list = document.getElementById('modalLinkList');
+    list.innerHTML = '';
+    links.forEach((link, i) => {
+      const li = document.createElement('li');
+      li.innerHTML = `
+        <span class="drag-handle" draggable="true" data-idx="${i}">::</span>
+        <span class="link-title-edit">${link.title}</span>
+        <span style="color:#9ca3af;font-size:0.75rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:160px">${link.url}</span>
+        <span style="display:inline-block;width:14px;height:14px;border-radius:4px;background:${link.color}"></span>
+        <button onclick="removeLink(${i})" style="background:none;border:none;color:#d1d5db;cursor:pointer;font-size:1rem" title="Remove">&times;</button>
+        <button onclick="moveLink(${i},-1)" style="background:none;border:none;color:#d1d5db;cursor:pointer;font-size:0.8rem" title="Move up">&uarr;</button>
+        <button onclick="moveLink(${i},1)" style="background:none;border:none;color:#d1d5db;cursor:pointer;font-size:0.8rem" title="Move down">&darr;</button>
+      `;
+      list.appendChild(li);
+    });
+  }
+
+  window.removeLink = function(i) {
+    links.splice(i, 1);
+    ss('links', links);
+    renderLinks();
+    renderModalLinks();
+  };
+
+  window.moveLink = function(i, dir) {
+    const j = i + dir;
+    if (j < 0 || j >= links.length) return;
+    [links[i], links[j]] = [links[j], links[i]];
+    ss('links', links);
+    renderLinks();
+    renderModalLinks();
+  };
+
+  document.getElementById('addLinkBtn').addEventListener('click', () => {
+    const title = document.getElementById('newLinkTitle').value.trim();
+    const url = document.getElementById('newLinkUrl').value.trim();
+    const color = document.getElementById('newLinkColor').value.trim() || '#6b7280';
+    if (!title || !url) return;
+    links.push({ title, url, color });
+    ss('links', links);
+    renderLinks();
+    renderModalLinks();
+    document.getElementById('newLinkTitle').value = '';
+    document.getElementById('newLinkUrl').value = '';
+    document.getElementById('newLinkColor').value = '';
+  });
+
+  // ── Todos ──
+  let todos = ls('todos', []);
+
+  function renderTodos() {
+    const list = document.getElementById('todoList');
+    list.innerHTML = '';
+    todos.forEach((t, i) => {
+      const li = document.createElement('li');
+      if (t.done) li.classList.add('done');
+      li.innerHTML = `<input type="checkbox" ${t.done ? 'checked' : ''} onchange="toggleTodo(${i})"><span>${escHtml(t.text)}</span><button class="todo-remove" onclick="removeTodo(${i})">&times;</button>`;
+      list.appendChild(li);
+    });
+  }
+
+  function escHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+  window.toggleTodo = function(i) { todos[i].done = !todos[i].done; ss('todos', todos); renderTodos(); };
+  window.removeTodo = function(i) { todos.splice(i, 1); ss('todos', todos); renderTodos(); };
+
+  document.getElementById('todoAddBtn').addEventListener('click', addTodo);
+  document.getElementById('todoInput').addEventListener('keydown', (e) => { if (e.key === 'Enter') addTodo(); });
+
+  function addTodo() {
+    const input = document.getElementById('todoInput');
+    const text = input.value.trim();
+    if (!text) return;
+    todos.push({ text, done: false });
+    ss('todos', todos);
+    input.value = '';
+    renderTodos();
+  }
+  renderTodos();
+
+  // ── Quote of the Day ──
+  const dayOfYear = Math.floor((new Date() - new Date(new Date().getFullYear(), 0, 0)) / 86400000);
+  const q = QUOTES[dayOfYear % QUOTES.length];
+  document.getElementById('quoteText').textContent = '"' + q.text + '"';
+  document.getElementById('quoteAuthor').textContent = '-- ' + q.author;
+
+  // ── Bookmarks ──
+  const BM_FOLDERS = ['Work', 'Personal', 'Learning', 'Entertainment'];
+  let bookmarks = ls('bookmarks', {});
+  BM_FOLDERS.forEach(f => { if (!bookmarks[f]) bookmarks[f] = []; });
+  let activeFolder = BM_FOLDERS[0];
+
+  function renderBookmarkTabs() {
+    const tabs = document.getElementById('bookmarkTabs');
+    tabs.innerHTML = '';
+    BM_FOLDERS.forEach(f => {
+      const btn = document.createElement('button');
+      btn.className = 'bookmark-tab' + (f === activeFolder ? ' active' : '');
+      btn.textContent = f + ' (' + (bookmarks[f] || []).length + ')';
+      btn.addEventListener('click', () => { activeFolder = f; renderBookmarkTabs(); renderBookmarks(); });
+      tabs.appendChild(btn);
+    });
+  }
+
+  function renderBookmarks() {
+    const list = document.getElementById('bookmarkList');
+    list.innerHTML = '';
+    (bookmarks[activeFolder] || []).forEach((bm, i) => {
+      const li = document.createElement('li');
+      li.innerHTML = `<a href="${escHtml(bm.url)}" target="_blank">${escHtml(bm.title)}</a><button class="todo-remove" onclick="removeBookmark('${activeFolder}',${i})">&times;</button>`;
+      list.appendChild(li);
+    });
+    if (!(bookmarks[activeFolder] || []).length) {
+      list.innerHTML = '<li style="color:#c9cdd5;font-size:0.8rem">No bookmarks yet</li>';
+    }
+  }
+
+  window.removeBookmark = function(folder, i) {
+    bookmarks[folder].splice(i, 1);
+    ss('bookmarks', bookmarks);
+    renderBookmarkTabs();
+    renderBookmarks();
+  };
+
+  document.getElementById('bmAddBtn').addEventListener('click', () => {
+    const title = document.getElementById('bmTitle').value.trim();
+    const url = document.getElementById('bmUrl').value.trim();
+    if (!title || !url) return;
+    bookmarks[activeFolder].push({ title, url });
+    ss('bookmarks', bookmarks);
+    document.getElementById('bmTitle').value = '';
+    document.getElementById('bmUrl').value = '';
+    renderBookmarkTabs();
+    renderBookmarks();
+  });
+
+  renderBookmarkTabs();
+  renderBookmarks();
+
+  // ── Recently Visited ──
+  let recent = ls('recent', []);
+
+  function renderRecent() {
+    const list = document.getElementById('recentList');
+    list.innerHTML = '';
+    recent.slice(0, 10).forEach((r, i) => {
+      const li = document.createElement('li');
+      li.innerHTML = `<a href="${escHtml(r.url)}" target="_blank">${escHtml(r.title)}</a><span class="recent-time">${r.time}</span><button class="todo-remove" onclick="removeRecent(${i})">&times;</button>`;
+      list.appendChild(li);
+    });
+    if (!recent.length) {
+      list.innerHTML = '<li style="color:#c9cdd5;font-size:0.8rem">No entries yet</li>';
+    }
+  }
+
+  window.removeRecent = function(i) {
+    recent.splice(i, 1);
+    ss('recent', recent);
+    renderRecent();
+  };
+
+  document.getElementById('recentAddBtn').addEventListener('click', () => {
+    const title = document.getElementById('recentTitle').value.trim();
+    const url = document.getElementById('recentUrl').value.trim();
+    if (!title || !url) return;
+    const now = new Date();
+    recent.unshift({ title, url, time: now.toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) });
+    ss('recent', recent);
+    document.getElementById('recentTitle').value = '';
+    document.getElementById('recentUrl').value = '';
+    renderRecent();
+  });
+
+  renderRecent();
+
+})();
+</script>
+</body>
+</html>

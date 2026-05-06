@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reading List - Lumen Analytics</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #f8f9fc;
+  color: #1a1a2e;
+  min-height: 100vh;
+  padding: 1.5rem;
+}
+a { color: #3b82f6; text-decoration: none; }
+a:hover { text-decoration: underline; }
+button { cursor: pointer; font-family: inherit; }
+input, select, textarea { font-family: inherit; }
+
+/* Layout */
+.top-bar { display: flex; align-items: center; justify-content: space-between; max-width: 1200px; margin: 0 auto 1.5rem; }
+.top-bar h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; }
+.top-bar .back { font-size: 0.85rem; color: #6b7280; }
+.top-bar .actions { display: flex; gap: 0.5rem; }
+
+/* Glass card mixin */
+.glass {
+  background: rgba(255,255,255,0.72);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.6);
+  border-radius: 16px;
+}
+
+/* Stats row */
+.stats-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 1rem;
+  max-width: 1200px;
+  margin: 0 auto 1.5rem;
+}
+.stat-card {
+  padding: 1.25rem;
+  text-align: center;
+}
+.stat-card .val { font-size: 1.75rem; font-weight: 700; }
+.stat-card .label { font-size: 0.75rem; color: #6b7280; margin-top: 0.25rem; }
+
+/* Doughnut */
+.chart-card {
+  padding: 1.25rem;
+  max-width: 1200px;
+  margin: 0 auto 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+}
+.chart-card canvas { width: 140px !important; height: 140px !important; }
+.chart-legend { display: flex; flex-wrap: wrap; gap: 0.5rem 1.25rem; }
+.chart-legend span { font-size: 0.8rem; display: flex; align-items: center; gap: 0.35rem; }
+.chart-legend .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+
+/* Controls */
+.controls {
+  max-width: 1200px;
+  margin: 0 auto 1rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+.search-box {
+  flex: 1;
+  min-width: 200px;
+  padding: 0.6rem 1rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  background: rgba(255,255,255,0.8);
+  outline: none;
+  transition: border 0.2s;
+}
+.search-box:focus { border-color: #3b82f6; }
+.sort-select {
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  background: #fff;
+  outline: none;
+}
+.tab-bar {
+  display: flex;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+.tab-bar button {
+  padding: 0.45rem 0.85rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 500;
+  background: #fff;
+  color: #6b7280;
+  transition: all 0.15s;
+}
+.tab-bar button.active {
+  background: #1a1a2e;
+  color: #fff;
+  border-color: #1a1a2e;
+}
+.view-toggle { display: flex; gap: 0.25rem; }
+.view-toggle button {
+  padding: 0.45rem 0.6rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+  color: #6b7280;
+  font-size: 0.78rem;
+}
+.view-toggle button.active { background: #1a1a2e; color: #fff; border-color: #1a1a2e; }
+
+/* Bookmark list */
+.bookmark-list {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.bm-card {
+  padding: 1.15rem 1.35rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  transition: transform 0.15s, box-shadow 0.15s;
+  position: relative;
+}
+.bm-card:hover { transform: translateY(-2px); box-shadow: 0 8px 28px rgba(0,0,0,0.06); }
+.bm-card.read { opacity: 0.6; }
+.bm-card.read .bm-title { font-weight: 500; }
+.bm-check {
+  margin-top: 0.2rem;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: 2px solid #d1d5db;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  background: #fff;
+}
+.bm-check:hover { border-color: #3b82f6; }
+.bm-card.read .bm-check { border-color: #10b981; background: #10b981; }
+.bm-card.read .bm-check::after { content: '\2713'; color: #fff; font-size: 11px; font-weight: 700; }
+.bm-body { flex: 1; min-width: 0; }
+.bm-title { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.2rem; word-break: break-word; }
+.bm-url { font-size: 0.75rem; color: #9ca3af; display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 500px; margin-bottom: 0.4rem; }
+.bm-meta { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; }
+.badge {
+  font-size: 0.68rem;
+  font-weight: 600;
+  padding: 0.2rem 0.55rem;
+  border-radius: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+.badge-ai { background: rgba(99,102,241,0.12); color: #6366f1; }
+.badge-arch { background: rgba(245,158,11,0.12); color: #d97706; }
+.badge-biz { background: rgba(16,185,129,0.12); color: #059669; }
+.badge-fin { background: rgba(139,92,246,0.12); color: #7c3aed; }
+.badge-career { background: rgba(236,72,153,0.12); color: #db2777; }
+.badge-other { background: rgba(107,114,128,0.12); color: #6b7280; }
+.bm-tag {
+  font-size: 0.68rem;
+  color: #6b7280;
+  background: rgba(0,0,0,0.04);
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+}
+.bm-date { font-size: 0.68rem; color: #9ca3af; margin-left: auto; white-space: nowrap; }
+.bm-notes { font-size: 0.78rem; color: #6b7280; margin-top: 0.35rem; line-height: 1.45; }
+.bm-actions {
+  display: flex;
+  gap: 0.35rem;
+  flex-shrink: 0;
+  margin-top: 0.15rem;
+}
+.bm-actions button {
+  padding: 0.3rem 0.5rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  background: #fff;
+  font-size: 0.7rem;
+  color: #6b7280;
+  transition: all 0.15s;
+}
+.bm-actions button:hover { border-color: #3b82f6; color: #3b82f6; }
+.bm-actions button.del:hover { border-color: #ef4444; color: #ef4444; }
+
+/* Add form */
+.add-section {
+  max-width: 1200px;
+  margin: 0 auto 1.5rem;
+  padding: 1.5rem;
+}
+.add-section h2 { font-size: 1rem; font-weight: 600; margin-bottom: 1rem; }
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.75rem;
+}
+.form-grid .full { grid-column: 1 / -1; }
+.form-grid label { font-size: 0.75rem; font-weight: 500; color: #6b7280; display: block; margin-bottom: 0.25rem; }
+.form-grid input, .form-grid select, .form-grid textarea {
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  outline: none;
+  background: #fff;
+  transition: border 0.2s;
+}
+.form-grid input:focus, .form-grid select:focus, .form-grid textarea:focus { border-color: #3b82f6; }
+.form-grid textarea { resize: vertical; min-height: 60px; }
+.form-actions { display: flex; gap: 0.5rem; margin-top: 1rem; }
+.btn-primary {
+  padding: 0.55rem 1.25rem;
+  border: none;
+  border-radius: 8px;
+  background: #1a1a2e;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: background 0.15s;
+}
+.btn-primary:hover { background: #2d2d4e; }
+.btn-secondary {
+  padding: 0.55rem 1.25rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+  color: #6b7280;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+.btn-secondary:hover { border-color: #3b82f6; color: #3b82f6; }
+
+/* Export modal */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.3);
+  backdrop-filter: blur(4px);
+  z-index: 100;
+  align-items: center;
+  justify-content: center;
+}
+.modal-overlay.open { display: flex; }
+.modal {
+  background: #fff;
+  border-radius: 16px;
+  padding: 2rem;
+  max-width: 500px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+.modal h2 { font-size: 1.1rem; margin-bottom: 1rem; }
+.modal pre {
+  background: #f1f3f5;
+  padding: 1rem;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  overflow-x: auto;
+  max-height: 300px;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.modal .modal-actions { display: flex; gap: 0.5rem; margin-top: 1rem; }
+
+/* Empty state */
+.empty-state { text-align: center; padding: 3rem 1rem; color: #9ca3af; }
+.empty-state .icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+
+/* Archive toggle */
+.archive-toggle {
+  max-width: 1200px;
+  margin: 0 auto 0.75rem;
+  display: flex;
+  gap: 0.5rem;
+}
+.archive-toggle button {
+  padding: 0.35rem 0.75rem;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  background: #fff;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: #6b7280;
+}
+.archive-toggle button.active { background: #1a1a2e; color: #fff; border-color: #1a1a2e; }
+
+@media (max-width: 700px) {
+  .stats-row { grid-template-columns: 1fr 1fr; }
+  .form-grid { grid-template-columns: 1fr; }
+  .chart-card { flex-direction: column; align-items: flex-start; }
+  .bm-card { flex-direction: column; }
+  .bm-date { margin-left: 0; }
+  .bm-url { max-width: 100%; }
+}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <div>
+    <a href="index.html" class="back">&larr; Analytics</a>
+    <h1>Reading List</h1>
+  </div>
+  <div class="actions">
+    <button class="btn-secondary" onclick="toggleAddForm()">+ Add</button>
+    <button class="btn-secondary" onclick="openExport('json')">Export JSON</button>
+    <button class="btn-secondary" onclick="openExport('md')">Export MD</button>
+  </div>
+</div>
+
+<!-- Stats -->
+<div class="stats-row">
+  <div class="glass stat-card"><div class="val" id="statTotal">0</div><div class="label">Total Saved</div></div>
+  <div class="glass stat-card"><div class="val" id="statUnread">0</div><div class="label">Unread</div></div>
+  <div class="glass stat-card"><div class="val" id="statReadWeek">0</div><div class="label">Read This Week</div></div>
+  <div class="glass stat-card"><div class="val" id="statArchived">0</div><div class="label">Archived</div></div>
+</div>
+
+<!-- Doughnut -->
+<div class="glass chart-card">
+  <canvas id="doughnutChart"></canvas>
+  <div class="chart-legend" id="chartLegend"></div>
+</div>
+
+<!-- Add Form -->
+<div class="glass add-section" id="addSection" style="display:none;">
+  <h2 id="formTitle">Add Bookmark</h2>
+  <div class="form-grid">
+    <div class="full"><label>URL</label><input type="url" id="fUrl" placeholder="https://..." /></div>
+    <div class="full"><label>Title</label><input type="text" id="fTitle" placeholder="Article title" /></div>
+    <div><label>Category</label>
+      <select id="fCategory">
+        <option value="AI/ML">AI/ML</option>
+        <option value="Architecture">Architecture</option>
+        <option value="Business">Business</option>
+        <option value="Finance">Finance</option>
+        <option value="Career">Career</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
+    <div><label>Tags (comma-separated)</label><input type="text" id="fTags" placeholder="memory, RAG, agents" /></div>
+    <div class="full"><label>Notes</label><textarea id="fNotes" placeholder="Why you want to read this..."></textarea></div>
+  </div>
+  <div class="form-actions">
+    <button class="btn-primary" onclick="saveBookmark()">Save</button>
+    <button class="btn-secondary" onclick="cancelEdit()">Cancel</button>
+  </div>
+</div>
+
+<!-- Controls -->
+<div class="controls">
+  <input class="search-box" id="searchBox" type="text" placeholder="Search title, URL, tags, notes..." oninput="renderList()" />
+  <select class="sort-select" id="sortSelect" onchange="renderList()">
+    <option value="date-desc">Newest first</option>
+    <option value="date-asc">Oldest first</option>
+    <option value="category">Category</option>
+    <option value="status">Unread first</option>
+  </select>
+</div>
+
+<div class="controls">
+  <div class="tab-bar" id="tabBar">
+    <button class="active" data-cat="All" onclick="setCategory('All',this)">All</button>
+    <button data-cat="AI/ML" onclick="setCategory('AI/ML',this)">AI/ML</button>
+    <button data-cat="Architecture" onclick="setCategory('Architecture',this)">Architecture</button>
+    <button data-cat="Business" onclick="setCategory('Business',this)">Business</button>
+    <button data-cat="Finance" onclick="setCategory('Finance',this)">Finance</button>
+    <button data-cat="Career" onclick="setCategory('Career',this)">Career</button>
+    <button data-cat="Other" onclick="setCategory('Other',this)">Other</button>
+  </div>
+  <div class="archive-toggle" style="margin:0;">
+    <button class="active" id="btnActive" onclick="setView('active')">Active</button>
+    <button id="btnArchived" onclick="setView('archived')">Archived</button>
+  </div>
+</div>
+
+<!-- Bookmark List -->
+<div class="bookmark-list" id="bookmarkList"></div>
+
+<!-- Export Modal -->
+<div class="modal-overlay" id="exportModal">
+  <div class="modal">
+    <h2 id="exportTitle">Export</h2>
+    <pre id="exportContent"></pre>
+    <div class="modal-actions">
+      <button class="btn-primary" onclick="copyExport()">Copy</button>
+      <button class="btn-secondary" onclick="downloadExport()">Download</button>
+      <button class="btn-secondary" onclick="closeExport()">Close</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const LS_KEY = 'lumen_reading_list';
+const CAT_COLORS = {
+  'AI/ML': '#6366f1',
+  'Architecture': '#d97706',
+  'Business': '#059669',
+  'Finance': '#7c3aed',
+  'Career': '#db2777',
+  'Other': '#6b7280'
+};
+const CAT_BADGE = {
+  'AI/ML': 'badge-ai',
+  'Architecture': 'badge-arch',
+  'Business': 'badge-biz',
+  'Finance': 'badge-fin',
+  'Career': 'badge-career',
+  'Other': 'badge-other'
+};
+
+let bookmarks = [];
+let activeCategory = 'All';
+let viewMode = 'active';
+let editingId = null;
+let exportType = 'json';
+
+function load() {
+  const d = localStorage.getItem(LS_KEY);
+  if (d) { bookmarks = JSON.parse(d); }
+  else { bookmarks = getDefaults(); save(); }
+}
+function save() { localStorage.setItem(LS_KEY, JSON.stringify(bookmarks)); }
+
+function getDefaults() {
+  const now = Date.now();
+  const day = 86400000;
+  return [
+    { id: genId(), url: 'https://arxiv.org/abs/2312.00752', title: 'MemGPT: Towards LLMs as Operating Systems (Memory Management)', category: 'AI/ML', tags: ['memory','agents','LLM'], notes: 'Key paper on tiered memory for AI agents. Relevant to Smara memory architecture.', added: now - day*12, read: false, archived: false },
+    { id: genId(), url: 'https://martinfowler.com/articles/patterns-of-distributed-systems/', title: 'Patterns of Distributed Systems - Martin Fowler', category: 'Architecture', tags: ['distributed','patterns','microservices'], notes: 'Reference for enterprise architecture patterns in Lumen.', added: now - day*10, read: false, archived: false },
+    { id: genId(), url: 'https://docs.aws.amazon.com/prescriptive-guidance/latest/cloud-migration-strategy/', title: 'AWS Cloud Migration Strategy Guide', category: 'Architecture', tags: ['cloud','migration','AWS'], notes: 'Migration strategies and frameworks for hybrid infra.', added: now - day*9, read: true, archived: false },
+    { id: genId(), url: 'https://spec.modelcontextprotocol.io/specification/', title: 'Model Context Protocol (MCP) Specification', category: 'AI/ML', tags: ['MCP','protocol','tools'], notes: 'Official MCP spec. Core to Smara MCP server and Lumen integrations.', added: now - day*8, read: false, archived: false },
+    { id: genId(), url: 'https://en.wikipedia.org/wiki/Forgetting_curve', title: 'Ebbinghaus Forgetting Curve and Spaced Repetition', category: 'AI/ML', tags: ['spaced-repetition','memory','learning'], notes: 'Foundation for Career IDE flash cards and memory decay models.', added: now - day*7, read: false, archived: false },
+    { id: genId(), url: 'https://www.canada.ca/en/revenue-agency/services/tax/individuals/topics/rrsps-related-plans.html', title: 'Canadian RRSP Guide - CRA', category: 'Finance', tags: ['RRSP','tax','Canada'], notes: 'RRSP contribution limits, withdrawal rules, HBP.', added: now - day*6, read: true, archived: false },
+    { id: genId(), url: 'https://www.canada.ca/en/revenue-agency/services/tax/individuals/topics/tax-free-savings-account.html', title: 'TFSA Rules and Contribution Room - CRA', category: 'Finance', tags: ['TFSA','tax','Canada','savings'], notes: 'TFSA maximization strategies for 2026.', added: now - day*5, read: false, archived: false },
+    { id: genId(), url: 'https://www.indiehackers.com/post/how-i-grew-my-side-project-to-10k-mrr', title: 'How I Grew My Side Project to $10K MRR', category: 'Business', tags: ['revenue','indie','SaaS'], notes: 'Distribution and pricing strategies for solo founders.', added: now - day*4, read: false, archived: false },
+    { id: genId(), url: 'https://blog.pragmaticengineer.com/software-architecture-is-overrated/', title: 'Software Architecture is Overrated - Pragmatic Engineer', category: 'Career', tags: ['career','architecture','pragmatism'], notes: 'Perspective on when to invest in architecture vs shipping.', added: now - day*2, read: false, archived: false },
+    { id: genId(), url: 'https://lilianweng.github.io/posts/2023-06-23-agent/', title: 'LLM Powered Autonomous Agents - Lilian Weng', category: 'AI/ML', tags: ['agents','planning','tool-use'], notes: 'Comprehensive survey of agent architectures. Reference for Scoper multi-agent pipeline.', added: now - day*1, read: false, archived: false }
+  ];
+}
+
+function genId() { return 'bm_' + Math.random().toString(36).slice(2, 10) + Date.now().toString(36); }
+
+// Auto-fetch title
+const fUrl = document.getElementById('fUrl');
+let fetchTimeout;
+fUrl.addEventListener('input', () => {
+  clearTimeout(fetchTimeout);
+  const url = fUrl.value.trim();
+  if (!url || !url.startsWith('http')) return;
+  fetchTimeout = setTimeout(() => {
+    fetch(url, { mode: 'cors', signal: AbortSignal.timeout(4000) })
+      .then(r => r.text())
+      .then(html => {
+        const m = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+        if (m && !document.getElementById('fTitle').value) {
+          document.getElementById('fTitle').value = m[1].trim();
+        }
+      })
+      .catch(() => {});
+  }, 600);
+});
+
+function toggleAddForm() {
+  const s = document.getElementById('addSection');
+  if (s.style.display === 'none') {
+    editingId = null;
+    clearForm();
+    document.getElementById('formTitle').textContent = 'Add Bookmark';
+    s.style.display = 'block';
+    fUrl.focus();
+  } else {
+    s.style.display = 'none';
+  }
+}
+
+function clearForm() {
+  ['fUrl','fTitle','fTags','fNotes'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('fCategory').value = 'AI/ML';
+}
+
+function cancelEdit() {
+  document.getElementById('addSection').style.display = 'none';
+  editingId = null;
+}
+
+function saveBookmark() {
+  const url = document.getElementById('fUrl').value.trim();
+  const title = document.getElementById('fTitle').value.trim();
+  if (!url || !title) { alert('URL and Title are required.'); return; }
+  const cat = document.getElementById('fCategory').value;
+  const tags = document.getElementById('fTags').value.split(',').map(t => t.trim()).filter(Boolean);
+  const notes = document.getElementById('fNotes').value.trim();
+
+  if (editingId) {
+    const bm = bookmarks.find(b => b.id === editingId);
+    if (bm) { Object.assign(bm, { url, title, category: cat, tags, notes }); }
+    editingId = null;
+  } else {
+    bookmarks.unshift({ id: genId(), url, title, category: cat, tags, notes, added: Date.now(), read: false, archived: false });
+  }
+  save();
+  document.getElementById('addSection').style.display = 'none';
+  clearForm();
+  renderAll();
+}
+
+function editBookmark(id) {
+  const bm = bookmarks.find(b => b.id === id);
+  if (!bm) return;
+  editingId = id;
+  document.getElementById('fUrl').value = bm.url;
+  document.getElementById('fTitle').value = bm.title;
+  document.getElementById('fCategory').value = bm.category;
+  document.getElementById('fTags').value = bm.tags.join(', ');
+  document.getElementById('fNotes').value = bm.notes || '';
+  document.getElementById('formTitle').textContent = 'Edit Bookmark';
+  document.getElementById('addSection').style.display = 'block';
+  fUrl.focus();
+}
+
+function toggleRead(id) {
+  const bm = bookmarks.find(b => b.id === id);
+  if (bm) { bm.read = !bm.read; save(); renderAll(); }
+}
+
+function archiveBookmark(id) {
+  const bm = bookmarks.find(b => b.id === id);
+  if (bm) { bm.archived = !bm.archived; save(); renderAll(); }
+}
+
+function deleteBookmark(id) {
+  if (!confirm('Delete this bookmark?')) return;
+  bookmarks = bookmarks.filter(b => b.id !== id);
+  save();
+  renderAll();
+}
+
+function setCategory(cat, btn) {
+  activeCategory = cat;
+  document.querySelectorAll('#tabBar button').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderList();
+}
+
+function setView(v) {
+  viewMode = v;
+  document.getElementById('btnActive').classList.toggle('active', v === 'active');
+  document.getElementById('btnArchived').classList.toggle('active', v === 'archived');
+  renderList();
+}
+
+function getFiltered() {
+  const q = document.getElementById('searchBox').value.toLowerCase();
+  let list = bookmarks.filter(b => viewMode === 'active' ? !b.archived : b.archived);
+  if (activeCategory !== 'All') list = list.filter(b => b.category === activeCategory);
+  if (q) {
+    list = list.filter(b =>
+      b.title.toLowerCase().includes(q) ||
+      b.url.toLowerCase().includes(q) ||
+      b.tags.some(t => t.toLowerCase().includes(q)) ||
+      (b.notes || '').toLowerCase().includes(q)
+    );
+  }
+  const sort = document.getElementById('sortSelect').value;
+  if (sort === 'date-desc') list.sort((a, b) => b.added - a.added);
+  else if (sort === 'date-asc') list.sort((a, b) => a.added - b.added);
+  else if (sort === 'category') list.sort((a, b) => a.category.localeCompare(b.category));
+  else if (sort === 'status') list.sort((a, b) => (a.read ? 1 : 0) - (b.read ? 1 : 0));
+  return list;
+}
+
+function fmtDate(ts) {
+  const d = new Date(ts);
+  return d.toLocaleDateString('en-CA', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function truncUrl(u) {
+  try { const p = new URL(u); return p.hostname + (p.pathname.length > 30 ? p.pathname.slice(0, 30) + '...' : p.pathname); }
+  catch { return u.slice(0, 50); }
+}
+
+function renderList() {
+  const list = getFiltered();
+  const el = document.getElementById('bookmarkList');
+  if (!list.length) {
+    el.innerHTML = '<div class="empty-state"><div class="icon">&#128218;</div><p>No bookmarks found.</p></div>';
+    return;
+  }
+  el.innerHTML = list.map(bm => `
+    <div class="glass bm-card ${bm.read ? 'read' : ''}">
+      <div class="bm-check" onclick="toggleRead('${bm.id}')" title="${bm.read ? 'Mark unread' : 'Mark read'}"></div>
+      <div class="bm-body">
+        <div class="bm-title"><a href="${esc(bm.url)}" target="_blank" rel="noopener">${esc(bm.title)}</a></div>
+        <span class="bm-url">${esc(truncUrl(bm.url))}</span>
+        <div class="bm-meta">
+          <span class="badge ${CAT_BADGE[bm.category] || 'badge-other'}">${esc(bm.category)}</span>
+          ${bm.tags.map(t => `<span class="bm-tag">${esc(t)}</span>`).join('')}
+          <span class="bm-date">${fmtDate(bm.added)}</span>
+        </div>
+        ${bm.notes ? `<div class="bm-notes">${esc(bm.notes)}</div>` : ''}
+      </div>
+      <div class="bm-actions">
+        <button onclick="editBookmark('${bm.id}')" title="Edit">&#9998;</button>
+        <button onclick="archiveBookmark('${bm.id}')" title="${bm.archived ? 'Restore' : 'Archive'}">${bm.archived ? '&#8634;' : '&#128451;'}</button>
+        <button class="del" onclick="deleteBookmark('${bm.id}')" title="Delete">&#10005;</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function esc(s) {
+  const d = document.createElement('div');
+  d.textContent = s;
+  return d.innerHTML;
+}
+
+// Stats
+function renderStats() {
+  const active = bookmarks.filter(b => !b.archived);
+  const archived = bookmarks.filter(b => b.archived);
+  const weekAgo = Date.now() - 7 * 86400000;
+  const readThisWeek = bookmarks.filter(b => b.read && b.added > weekAgo).length;
+
+  document.getElementById('statTotal').textContent = bookmarks.length;
+  document.getElementById('statUnread').textContent = active.filter(b => !b.read).length;
+  document.getElementById('statReadWeek').textContent = readThisWeek;
+  document.getElementById('statArchived').textContent = archived.length;
+}
+
+// Doughnut chart (pure canvas)
+function renderChart() {
+  const canvas = document.getElementById('doughnutChart');
+  const ctx = canvas.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  const size = 140;
+  canvas.width = size * dpr;
+  canvas.height = size * dpr;
+  canvas.style.width = size + 'px';
+  canvas.style.height = size + 'px';
+  ctx.scale(dpr, dpr);
+
+  const cats = Object.keys(CAT_COLORS);
+  const counts = cats.map(c => bookmarks.filter(b => b.category === c).length);
+  const total = counts.reduce((a, b) => a + b, 0) || 1;
+  const cx = size / 2, cy = size / 2, r = 55, inner = 35;
+
+  let startAngle = -Math.PI / 2;
+  cats.forEach((cat, i) => {
+    if (counts[i] === 0) return;
+    const slice = (counts[i] / total) * Math.PI * 2;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r, startAngle, startAngle + slice);
+    ctx.arc(cx, cy, inner, startAngle + slice, startAngle, true);
+    ctx.closePath();
+    ctx.fillStyle = CAT_COLORS[cat];
+    ctx.fill();
+    startAngle += slice;
+  });
+
+  // Center text
+  ctx.fillStyle = '#1a1a2e';
+  ctx.font = '700 20px Inter, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText(bookmarks.length, cx, cy - 6);
+  ctx.font = '500 10px Inter, sans-serif';
+  ctx.fillStyle = '#9ca3af';
+  ctx.fillText('total', cx, cy + 10);
+
+  // Legend
+  const legend = document.getElementById('chartLegend');
+  legend.innerHTML = cats.map((c, i) => `<span><span class="dot" style="background:${CAT_COLORS[c]}"></span>${c}: ${counts[i]}</span>`).join('');
+}
+
+// Export
+function openExport(type) {
+  exportType = type;
+  const modal = document.getElementById('exportModal');
+  const title = document.getElementById('exportTitle');
+  const content = document.getElementById('exportContent');
+
+  if (type === 'json') {
+    title.textContent = 'Export JSON';
+    content.textContent = JSON.stringify(bookmarks, null, 2);
+  } else {
+    title.textContent = 'Export Markdown';
+    const cats = [...new Set(bookmarks.map(b => b.category))];
+    let md = '# Reading List\n\n';
+    cats.forEach(c => {
+      md += `## ${c}\n\n`;
+      bookmarks.filter(b => b.category === c).forEach(bm => {
+        md += `- [${bm.read ? '~' : ' '}] [${bm.title}](${bm.url})`;
+        if (bm.tags.length) md += ` \`${bm.tags.join('` `')}\``;
+        md += '\n';
+        if (bm.notes) md += `  > ${bm.notes}\n`;
+      });
+      md += '\n';
+    });
+    content.textContent = md;
+  }
+  modal.classList.add('open');
+}
+
+function closeExport() { document.getElementById('exportModal').classList.remove('open'); }
+
+function copyExport() {
+  navigator.clipboard.writeText(document.getElementById('exportContent').textContent)
+    .then(() => alert('Copied to clipboard!'));
+}
+
+function downloadExport() {
+  const text = document.getElementById('exportContent').textContent;
+  const ext = exportType === 'json' ? 'json' : 'md';
+  const blob = new Blob([text], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `reading-list.${ext}`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function renderAll() { renderStats(); renderChart(); renderList(); }
+
+// Init
+load();
+renderAll();
+
+// Close modal on overlay click
+document.getElementById('exportModal').addEventListener('click', e => {
+  if (e.target === e.currentTarget) closeExport();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,1045 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Decision Journal - Lumen Analytics</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #f8f9fc;
+  color: #1a1a2e;
+  min-height: 100vh;
+}
+/* Navigation */
+.top-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 1rem 2rem;
+  background: rgba(255,255,255,0.72);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid rgba(255,255,255,0.6);
+  position: sticky; top: 0; z-index: 100;
+}
+.top-bar a { color: #6b7280; text-decoration: none; font-size: 0.875rem; font-weight: 500; }
+.top-bar a:hover { color: #1a1a2e; }
+.top-bar h1 { font-size: 1.1rem; font-weight: 700; letter-spacing: -0.02em; }
+/* Layout */
+.container { max-width: 1200px; margin: 0 auto; padding: 2rem; }
+/* Tabs */
+.tabs {
+  display: flex; gap: 0.25rem; margin-bottom: 2rem;
+  background: rgba(255,255,255,0.5); border-radius: 12px; padding: 4px;
+  overflow-x: auto;
+}
+.tab {
+  padding: 0.6rem 1.2rem; border-radius: 10px; border: none; cursor: pointer;
+  font-family: inherit; font-size: 0.85rem; font-weight: 500;
+  background: transparent; color: #6b7280; white-space: nowrap;
+  transition: all 0.2s;
+}
+.tab.active { background: #fff; color: #1a1a2e; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+.tab:hover:not(.active) { color: #1a1a2e; }
+/* Glass card */
+.glass {
+  background: rgba(255,255,255,0.72);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.6);
+  border-radius: 16px; padding: 1.5rem;
+}
+/* Panels */
+.panel { display: none; }
+.panel.active { display: block; }
+/* Form styles */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.form-group { display: flex; flex-direction: column; gap: 0.35rem; }
+.form-group.full { grid-column: 1 / -1; }
+label { font-size: 0.8rem; font-weight: 600; color: #374151; }
+input, select, textarea {
+  font-family: inherit; font-size: 0.875rem; padding: 0.6rem 0.75rem;
+  border: 1px solid #e5e7eb; border-radius: 10px; background: #fff;
+  color: #1a1a2e; transition: border-color 0.2s;
+}
+input:focus, select:focus, textarea:focus { outline: none; border-color: #3b82f6; }
+textarea { resize: vertical; min-height: 80px; }
+/* Stars */
+.stars { display: flex; gap: 4px; cursor: pointer; }
+.stars .star { font-size: 1.4rem; color: #d1d5db; transition: color 0.15s; user-select: none; }
+.stars .star.filled { color: #f59e0b; }
+.stars .star:hover { color: #fbbf24; }
+/* Buttons */
+.btn {
+  padding: 0.6rem 1.2rem; border: none; border-radius: 10px; cursor: pointer;
+  font-family: inherit; font-size: 0.85rem; font-weight: 600;
+  transition: all 0.2s; display: inline-flex; align-items: center; gap: 0.4rem;
+}
+.btn-primary { background: #3b82f6; color: #fff; }
+.btn-primary:hover { background: #2563eb; }
+.btn-secondary { background: #f3f4f6; color: #374151; }
+.btn-secondary:hover { background: #e5e7eb; }
+.btn-success { background: #10b981; color: #fff; }
+.btn-success:hover { background: #059669; }
+.btn-danger { background: #ef4444; color: #fff; }
+.btn-danger:hover { background: #dc2626; }
+.btn-sm { padding: 0.4rem 0.8rem; font-size: 0.8rem; }
+.btn-group { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+/* Badge */
+.badge {
+  display: inline-block; padding: 0.15rem 0.6rem; border-radius: 20px;
+  font-size: 0.72rem; font-weight: 600;
+}
+.badge-career { background: rgba(139,92,246,0.12); color: #7c3aed; }
+.badge-technical { background: rgba(59,130,246,0.12); color: #2563eb; }
+.badge-financial { background: rgba(16,185,129,0.12); color: #059669; }
+.badge-business { background: rgba(245,158,11,0.12); color: #d97706; }
+.badge-personal { background: rgba(236,72,153,0.12); color: #db2777; }
+.badge-good { background: rgba(16,185,129,0.12); color: #059669; }
+.badge-neutral { background: rgba(245,158,11,0.12); color: #d97706; }
+.badge-bad { background: rgba(239,68,68,0.12); color: #dc2626; }
+.badge-pending { background: rgba(107,114,128,0.12); color: #6b7280; }
+/* Timeline */
+.timeline { position: relative; padding-left: 2rem; }
+.timeline::before {
+  content: ''; position: absolute; left: 7px; top: 0; bottom: 0;
+  width: 2px; background: #e5e7eb;
+}
+.timeline-item { position: relative; margin-bottom: 1.5rem; }
+.timeline-dot {
+  position: absolute; left: -2rem; top: 0.3rem;
+  width: 14px; height: 14px; border-radius: 50%;
+  border: 3px solid #3b82f6; background: #fff; z-index: 1;
+}
+.timeline-dot.good { border-color: #10b981; }
+.timeline-dot.bad { border-color: #ef4444; }
+.timeline-dot.neutral { border-color: #f59e0b; }
+.timeline-dot.pending { border-color: #6b7280; }
+.timeline-card {
+  background: rgba(255,255,255,0.72);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.6);
+  border-radius: 12px; padding: 1rem 1.25rem;
+  cursor: pointer; transition: transform 0.15s, box-shadow 0.15s;
+}
+.timeline-card:hover { transform: translateX(4px); box-shadow: 0 4px 16px rgba(0,0,0,0.06); }
+.timeline-card h3 { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.25rem; }
+.timeline-meta { display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap; font-size: 0.8rem; color: #6b7280; }
+.timeline-meta .stars-display { color: #f59e0b; font-size: 0.85rem; letter-spacing: -1px; }
+/* Search bar */
+.search-bar {
+  display: flex; gap: 0.75rem; margin-bottom: 1.5rem; flex-wrap: wrap; align-items: center;
+}
+.search-bar input { flex: 1; min-width: 200px; }
+.search-bar select { min-width: 140px; }
+/* Analytics */
+.analytics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+.chart-card { padding: 1.25rem; }
+.chart-card h3 { font-size: 0.9rem; font-weight: 600; margin-bottom: 1rem; }
+.stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; margin-bottom: 1.5rem; }
+.stat-box { text-align: center; padding: 1rem; }
+.stat-box .val { font-size: 1.8rem; font-weight: 700; color: #1a1a2e; }
+.stat-box .lbl { font-size: 0.75rem; color: #6b7280; margin-top: 0.25rem; }
+/* Lessons */
+.lesson-card {
+  background: rgba(255,255,255,0.72);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.6);
+  border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 0.75rem;
+}
+.lesson-card h4 { font-size: 0.9rem; font-weight: 600; margin-bottom: 0.3rem; }
+.lesson-card p { font-size: 0.85rem; color: #4b5563; line-height: 1.5; }
+.lesson-tags { display: flex; gap: 0.3rem; flex-wrap: wrap; margin-top: 0.5rem; }
+.lesson-tag {
+  padding: 0.15rem 0.5rem; border-radius: 6px; font-size: 0.7rem; font-weight: 500;
+  background: rgba(59,130,246,0.08); color: #3b82f6;
+}
+/* Templates */
+.template-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 1rem; }
+.template-card {
+  background: rgba(255,255,255,0.72);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.6);
+  border-radius: 12px; padding: 1.25rem; cursor: pointer;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.template-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.06); }
+.template-card h3 { font-size: 0.95rem; font-weight: 600; margin-bottom: 0.3rem; }
+.template-card p { font-size: 0.8rem; color: #6b7280; line-height: 1.4; }
+/* Detail modal */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.3);
+  backdrop-filter: blur(4px); z-index: 200; display: none;
+  align-items: center; justify-content: center; padding: 2rem;
+}
+.modal-overlay.show { display: flex; }
+.modal {
+  background: rgba(255,255,255,0.95);
+  backdrop-filter: blur(30px); -webkit-backdrop-filter: blur(30px);
+  border: 1px solid rgba(255,255,255,0.6);
+  border-radius: 20px; padding: 2rem; width: 100%; max-width: 640px;
+  max-height: 85vh; overflow-y: auto;
+}
+.modal h2 { font-size: 1.2rem; font-weight: 700; margin-bottom: 1rem; }
+.modal .field-label { font-size: 0.75rem; font-weight: 600; color: #6b7280; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 0.75rem; }
+.modal .field-value { font-size: 0.9rem; color: #1a1a2e; margin-top: 0.2rem; line-height: 1.6; }
+.modal .field-value ul { padding-left: 1.2rem; }
+/* Review prompt banner */
+.review-banner {
+  background: linear-gradient(135deg, rgba(245,158,11,0.1), rgba(239,68,68,0.08));
+  border: 1px solid rgba(245,158,11,0.2);
+  border-radius: 12px; padding: 1rem 1.25rem; margin-bottom: 1.5rem;
+  display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;
+}
+.review-banner h3 { font-size: 0.9rem; font-weight: 600; }
+.review-banner p { font-size: 0.8rem; color: #6b7280; flex: 1; }
+/* Toast */
+.toast {
+  position: fixed; bottom: 2rem; right: 2rem;
+  background: #1a1a2e; color: #fff; padding: 0.75rem 1.25rem;
+  border-radius: 10px; font-size: 0.85rem; z-index: 300;
+  opacity: 0; transform: translateY(10px);
+  transition: opacity 0.3s, transform 0.3s;
+}
+.toast.show { opacity: 1; transform: translateY(0); }
+/* Responsive */
+@media (max-width: 768px) {
+  .form-grid { grid-template-columns: 1fr; }
+  .analytics-grid { grid-template-columns: 1fr; }
+  .stat-row { grid-template-columns: repeat(2, 1fr); }
+  .container { padding: 1rem; }
+  .search-bar { flex-direction: column; }
+  .search-bar input, .search-bar select { width: 100%; }
+}
+</style>
+</head>
+<body>
+
+<div class="top-bar">
+  <a href="index.html">&larr; Analytics</a>
+  <h1>Decision Journal</h1>
+  <div class="btn-group">
+    <button class="btn btn-secondary btn-sm" onclick="exportJSON()">Export JSON</button>
+    <button class="btn btn-secondary btn-sm" onclick="exportMarkdown()">Export MD</button>
+  </div>
+</div>
+
+<div class="container">
+  <!-- Review banner -->
+  <div id="reviewBanner" class="review-banner" style="display:none;">
+    <div>
+      <h3>Decisions due for review</h3>
+      <p id="reviewBannerText"></p>
+    </div>
+    <button class="btn btn-primary btn-sm" onclick="switchTab('timeline'); scrollToReviewable()">Review now</button>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs">
+    <button class="tab active" data-tab="record" onclick="switchTab('record')">Record</button>
+    <button class="tab" data-tab="timeline" onclick="switchTab('timeline')">Timeline</button>
+    <button class="tab" data-tab="analytics" onclick="switchTab('analytics')">Analytics</button>
+    <button class="tab" data-tab="lessons" onclick="switchTab('lessons')">Lessons</button>
+    <button class="tab" data-tab="templates" onclick="switchTab('templates')">Templates</button>
+  </div>
+
+  <!-- RECORD PANEL -->
+  <div id="panel-record" class="panel active">
+    <div class="glass">
+      <h2 style="font-size:1.05rem;font-weight:700;margin-bottom:1.25rem;" id="formTitle">Record a Decision</h2>
+      <input type="hidden" id="editId" value="">
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Title</label>
+          <input type="text" id="dTitle" placeholder="What did you decide?">
+        </div>
+        <div class="form-group">
+          <label>Date</label>
+          <input type="date" id="dDate">
+        </div>
+        <div class="form-group">
+          <label>Category</label>
+          <select id="dCategory">
+            <option value="Career">Career</option>
+            <option value="Technical">Technical</option>
+            <option value="Financial">Financial</option>
+            <option value="Business">Business</option>
+            <option value="Personal">Personal</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Review Date</label>
+          <input type="date" id="dReviewDate">
+        </div>
+        <div class="form-group full">
+          <label>Decision Made</label>
+          <textarea id="dDecision" rows="2" placeholder="Describe the decision clearly..."></textarea>
+        </div>
+        <div class="form-group full">
+          <label>Alternatives Considered (one per line)</label>
+          <textarea id="dAlternatives" rows="3" placeholder="Option A&#10;Option B&#10;Option C"></textarea>
+        </div>
+        <div class="form-group full">
+          <label>Reasoning / Rationale</label>
+          <textarea id="dReasoning" rows="3" placeholder="Why did you choose this over the alternatives?"></textarea>
+        </div>
+        <div class="form-group full">
+          <label>Expected Outcome</label>
+          <textarea id="dExpected" rows="2" placeholder="What do you expect will happen?"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Confidence Level</label>
+          <div class="stars" id="dConfidence">
+            <span class="star" data-v="1">&#9733;</span>
+            <span class="star" data-v="2">&#9733;</span>
+            <span class="star" data-v="3">&#9733;</span>
+            <span class="star" data-v="4">&#9733;</span>
+            <span class="star" data-v="5">&#9733;</span>
+          </div>
+        </div>
+        <div class="form-group" style="justify-content:flex-end;">
+          <div class="btn-group">
+            <button class="btn btn-secondary" id="cancelEditBtn" style="display:none;" onclick="cancelEdit()">Cancel</button>
+            <button class="btn btn-primary" onclick="saveDecision()">Save Decision</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- TIMELINE PANEL -->
+  <div id="panel-timeline" class="panel">
+    <div class="search-bar">
+      <input type="text" id="searchKeyword" placeholder="Search decisions..." oninput="renderTimeline()">
+      <select id="filterCategory" onchange="renderTimeline()">
+        <option value="">All Categories</option>
+        <option value="Career">Career</option>
+        <option value="Technical">Technical</option>
+        <option value="Financial">Financial</option>
+        <option value="Business">Business</option>
+        <option value="Personal">Personal</option>
+      </select>
+      <select id="filterOutcome" onchange="renderTimeline()">
+        <option value="">All Outcomes</option>
+        <option value="Good">Good</option>
+        <option value="Neutral">Neutral</option>
+        <option value="Bad">Bad</option>
+        <option value="Pending">Pending Review</option>
+      </select>
+      <input type="date" id="filterFrom" onchange="renderTimeline()" title="From date">
+      <input type="date" id="filterTo" onchange="renderTimeline()" title="To date">
+    </div>
+    <div class="timeline" id="timelineContainer"></div>
+  </div>
+
+  <!-- ANALYTICS PANEL -->
+  <div id="panel-analytics" class="panel">
+    <div class="stat-row" id="statRow"></div>
+    <div class="analytics-grid">
+      <div class="glass chart-card">
+        <h3>Decision Quality Over Time</h3>
+        <canvas id="qualityChart"></canvas>
+      </div>
+      <div class="glass chart-card">
+        <h3>Decisions by Category</h3>
+        <canvas id="categoryChart"></canvas>
+      </div>
+      <div class="glass chart-card">
+        <h3>Confidence vs Actual Outcome</h3>
+        <canvas id="correlationChart"></canvas>
+      </div>
+      <div class="glass chart-card">
+        <h3>Outcome Distribution</h3>
+        <canvas id="outcomeChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- LESSONS PANEL -->
+  <div id="panel-lessons" class="panel">
+    <div class="glass" style="margin-bottom:1.5rem;">
+      <h2 style="font-size:1.05rem;font-weight:700;margin-bottom:1rem;">Add a Lesson</h2>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Lesson Title</label>
+          <input type="text" id="lessonTitle" placeholder="Key takeaway">
+        </div>
+        <div class="form-group">
+          <label>Related Decision</label>
+          <select id="lessonDecision"></select>
+        </div>
+        <div class="form-group full">
+          <label>Description</label>
+          <textarea id="lessonDesc" rows="2" placeholder="What did you learn?"></textarea>
+        </div>
+        <div class="form-group">
+          <label>Tags (comma separated)</label>
+          <input type="text" id="lessonTags" placeholder="risk, timing, cost">
+        </div>
+        <div class="form-group" style="justify-content:flex-end;">
+          <button class="btn btn-primary" onclick="saveLesson()">Save Lesson</button>
+        </div>
+      </div>
+    </div>
+    <div id="lessonsList"></div>
+  </div>
+
+  <!-- TEMPLATES PANEL -->
+  <div id="panel-templates" class="panel">
+    <p style="font-size:0.85rem;color:#6b7280;margin-bottom:1.25rem;">Pick a template to pre-fill the decision form with common fields.</p>
+    <div class="template-grid" id="templateGrid"></div>
+  </div>
+</div>
+
+<!-- Detail Modal -->
+<div class="modal-overlay" id="modalOverlay" onclick="if(event.target===this)closeModal()">
+  <div class="modal" id="modalContent"></div>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── Data ──
+const STORAGE_KEY = 'lumen_decision_journal';
+const LESSONS_KEY = 'lumen_decision_lessons';
+
+function loadDecisions() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch { return []; }
+}
+function saveDecisions(d) { localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); }
+function loadLessons() {
+  try { return JSON.parse(localStorage.getItem(LESSONS_KEY)) || []; } catch { return []; }
+}
+function saveLessons(l) { localStorage.setItem(LESSONS_KEY, JSON.stringify(l)); }
+
+function genId() { return Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+// ── Seed data ──
+function seedData() {
+  if (loadDecisions().length > 0) return;
+  const seeds = [
+    {
+      id: genId(), title: 'Chose PostgreSQL + pgvector for Smara instead of Pinecone',
+      date: '2026-03-15', category: 'Technical',
+      decision: 'Use PostgreSQL with pgvector extension for vector storage in Smara rather than Pinecone managed service.',
+      alternatives: ['Pinecone (managed vector DB)', 'Weaviate (self-hosted)', 'Qdrant (self-hosted)', 'ChromaDB (embedded)'],
+      reasoning: 'pgvector keeps everything in one database, reducing operational complexity. No vendor lock-in, no per-query pricing surprises. Railway already runs Postgres, so zero extra infra cost. Performance is sufficient for our scale (< 100K vectors).',
+      expected: 'Lower costs, simpler architecture, easier backups, acceptable query performance for current scale.',
+      confidence: 4, reviewDate: '2026-06-15',
+      outcome: 'Good',
+      actualOutcome: 'Query performance is great, saved ~$70/mo vs Pinecone. Single DB backup covers everything. No regrets.',
+      reviewedAt: '2026-04-20'
+    },
+    {
+      id: genId(), title: 'Kill Traces/Lantern and focus on Smara',
+      date: '2026-04-16', category: 'Business',
+      decision: 'Archive the Traces/Lantern observability project and redirect all effort to Smara memory API.',
+      alternatives: ['Continue both projects in parallel', 'Pivot Traces to a different niche', 'Open-source Traces and focus on Smara'],
+      reasoning: 'Traces had no organic users after scraper floor fix. Langfuse dominates the space. Smara has clearer differentiation and active usage within Lumen. Focus beats spreading thin.',
+      expected: 'Faster Smara v1.2 delivery, clearer positioning, less context-switching fatigue.',
+      confidence: 3, reviewDate: '2026-05-16',
+      outcome: null, actualOutcome: null, reviewedAt: null
+    },
+    {
+      id: genId(), title: 'Stay at CIBC while building side projects',
+      date: '2026-01-15', category: 'Career',
+      decision: 'Continue full-time employment at CIBC while building Lumen, Smara, and other side projects evenings and weekends.',
+      alternatives: ['Quit and go full-time on side projects', 'Reduce to part-time/contract at CIBC', 'Find a startup role with more flexibility'],
+      reasoning: 'Stable income covers family expenses and funds infrastructure. Side projects are not yet generating revenue. Building in stealth while employed de-risks the transition. Can always leave once there is product-market fit.',
+      expected: 'Financial stability while building towards independence. May slow project velocity but reduces existential risk.',
+      confidence: 4, reviewDate: '2026-07-15',
+      outcome: 'Good',
+      actualOutcome: 'Correct call. Projects are progressing well without financial pressure. CIBC role provides enterprise patterns that inform product design.',
+      reviewedAt: '2026-04-15'
+    },
+    {
+      id: genId(), title: 'Invest in Railway Pro instead of self-hosting',
+      date: '2026-02-01', category: 'Financial',
+      decision: 'Use Railway Pro plan ($20/mo) for hosting Smara and other services rather than setting up a VPS or home server.',
+      alternatives: ['Self-host on Hetzner VPS ($5-15/mo)', 'Use Fly.io free tier + paid as needed', 'Host on Mac Mini at home via Cloudflare Tunnel'],
+      reasoning: 'Railway has excellent DX, auto-deploys from GitHub, built-in Postgres, and handles SSL/domains. Time saved on DevOps is worth the premium. Can always migrate later if costs grow.',
+      expected: 'Fast deploys, minimal ops burden, acceptable cost for early stage.',
+      confidence: 3, reviewDate: '2026-05-01',
+      outcome: 'Neutral',
+      actualOutcome: 'Railway works well but costs crept up to ~$35/mo with multiple services. Good for speed but will need to evaluate hybrid approach as traffic grows.',
+      reviewedAt: '2026-04-28'
+    }
+  ];
+  saveDecisions(seeds);
+}
+
+// ── Templates ──
+const TEMPLATES = [
+  {
+    name: 'Hiring Decision', icon: '👤',
+    desc: 'Evaluate a candidate or decide on team structure.',
+    prefill: {
+      category: 'Career',
+      alternatives: 'Hire candidate A\nHire candidate B\nPromote internally\nDelay hiring',
+      reasoning: 'Skills match: \nCulture fit: \nCost: \nTimeline impact: ',
+      expected: 'Impact on velocity: \nRamp-up time: '
+    }
+  },
+  {
+    name: 'Tech Stack Choice', icon: '🔧',
+    desc: 'Choose a framework, database, or infrastructure component.',
+    prefill: {
+      category: 'Technical',
+      alternatives: 'Option A (managed)\nOption B (open-source)\nOption C (build custom)',
+      reasoning: 'Performance: \nCost: \nMaintenance burden: \nCommunity/ecosystem: \nVendor lock-in risk: ',
+      expected: 'Expected cost/mo: \nMigration difficulty if wrong: '
+    }
+  },
+  {
+    name: 'Investment Decision', icon: '💰',
+    desc: 'Evaluate a financial investment or significant purchase.',
+    prefill: {
+      category: 'Financial',
+      alternatives: 'Invest full amount\nInvest partial amount\nWait for better entry\nAllocate to alternative',
+      reasoning: 'Expected return: \nRisk level: \nTime horizon: \nOpportunity cost: ',
+      expected: 'Target return: \nMax acceptable loss: '
+    }
+  },
+  {
+    name: 'Project Scope', icon: '📋',
+    desc: 'Decide what to build, cut, or defer in a project.',
+    prefill: {
+      category: 'Business',
+      alternatives: 'Build full scope\nMVP only\nDefer entirely\nPartner/outsource',
+      reasoning: 'User demand: \nEffort estimate: \nStrategic alignment: \nResource availability: ',
+      expected: 'Ship date: \nUser impact: '
+    }
+  },
+  {
+    name: 'Kill / Continue', icon: '🔴',
+    desc: 'Decide whether to shut down or continue a project.',
+    prefill: {
+      category: 'Business',
+      alternatives: 'Continue with current approach\nPivot direction\nArchive and move on\nOpen-source and move on',
+      reasoning: 'Traction so far: \nBurn rate: \nOpportunity cost: \nEmotional attachment vs data: ',
+      expected: 'If killed, freed hours/week: \nIf continued, milestone by: '
+    }
+  },
+  {
+    name: 'Career Move', icon: '🚀',
+    desc: 'Job change, promotion negotiation, or career pivot.',
+    prefill: {
+      category: 'Career',
+      alternatives: 'Accept offer\nNegotiate terms\nStay current role\nExplore other options',
+      reasoning: 'Compensation delta: \nGrowth potential: \nWork-life balance: \nTeam/manager quality: ',
+      expected: 'Impact on 5-year plan: \nRegret minimization: '
+    }
+  }
+];
+
+// ── Star widget ──
+let currentConfidence = 0;
+function initStars() {
+  const container = document.getElementById('dConfidence');
+  container.querySelectorAll('.star').forEach(star => {
+    star.addEventListener('click', () => {
+      currentConfidence = parseInt(star.dataset.v);
+      updateStars();
+    });
+  });
+}
+function updateStars() {
+  document.querySelectorAll('#dConfidence .star').forEach(s => {
+    s.classList.toggle('filled', parseInt(s.dataset.v) <= currentConfidence);
+  });
+}
+function starsHTML(n) {
+  let s = '';
+  for (let i = 1; i <= 5; i++) s += i <= n ? '&#9733;' : '&#9734;';
+  return s;
+}
+
+// ── Save decision ──
+function saveDecision() {
+  const title = document.getElementById('dTitle').value.trim();
+  if (!title) { toast('Please enter a title'); return; }
+  const decisions = loadDecisions();
+  const editId = document.getElementById('editId').value;
+  const data = {
+    id: editId || genId(),
+    title,
+    date: document.getElementById('dDate').value || new Date().toISOString().slice(0,10),
+    category: document.getElementById('dCategory').value,
+    decision: document.getElementById('dDecision').value.trim(),
+    alternatives: document.getElementById('dAlternatives').value.trim().split('\n').filter(a => a.trim()),
+    reasoning: document.getElementById('dReasoning').value.trim(),
+    expected: document.getElementById('dExpected').value.trim(),
+    confidence: currentConfidence || 3,
+    reviewDate: document.getElementById('dReviewDate').value || null,
+    outcome: null,
+    actualOutcome: null,
+    reviewedAt: null
+  };
+  if (editId) {
+    const idx = decisions.findIndex(d => d.id === editId);
+    if (idx >= 0) {
+      data.outcome = decisions[idx].outcome;
+      data.actualOutcome = decisions[idx].actualOutcome;
+      data.reviewedAt = decisions[idx].reviewedAt;
+      decisions[idx] = data;
+    }
+  } else {
+    decisions.push(data);
+  }
+  saveDecisions(decisions);
+  clearForm();
+  toast(editId ? 'Decision updated' : 'Decision recorded');
+}
+
+function clearForm() {
+  document.getElementById('dTitle').value = '';
+  document.getElementById('dDate').value = '';
+  document.getElementById('dCategory').value = 'Career';
+  document.getElementById('dDecision').value = '';
+  document.getElementById('dAlternatives').value = '';
+  document.getElementById('dReasoning').value = '';
+  document.getElementById('dExpected').value = '';
+  document.getElementById('dReviewDate').value = '';
+  document.getElementById('editId').value = '';
+  document.getElementById('formTitle').textContent = 'Record a Decision';
+  document.getElementById('cancelEditBtn').style.display = 'none';
+  currentConfidence = 0;
+  updateStars();
+}
+
+function cancelEdit() { clearForm(); }
+
+function editDecision(id) {
+  const d = loadDecisions().find(x => x.id === id);
+  if (!d) return;
+  document.getElementById('editId').value = d.id;
+  document.getElementById('dTitle').value = d.title;
+  document.getElementById('dDate').value = d.date;
+  document.getElementById('dCategory').value = d.category;
+  document.getElementById('dDecision').value = d.decision;
+  document.getElementById('dAlternatives').value = (d.alternatives || []).join('\n');
+  document.getElementById('dReasoning').value = d.reasoning;
+  document.getElementById('dExpected').value = d.expected;
+  document.getElementById('dReviewDate').value = d.reviewDate || '';
+  currentConfidence = d.confidence;
+  updateStars();
+  document.getElementById('formTitle').textContent = 'Edit Decision';
+  document.getElementById('cancelEditBtn').style.display = 'inline-flex';
+  switchTab('record');
+  closeModal();
+}
+
+function deleteDecision(id) {
+  if (!confirm('Delete this decision permanently?')) return;
+  const decisions = loadDecisions().filter(d => d.id !== id);
+  saveDecisions(decisions);
+  closeModal();
+  renderTimeline();
+  toast('Decision deleted');
+}
+
+// ── Review (outcome recording) ──
+function reviewDecision(id) {
+  const decisions = loadDecisions();
+  const d = decisions.find(x => x.id === id);
+  if (!d) return;
+  const modal = document.getElementById('modalContent');
+  modal.innerHTML = `
+    <h2>Review: ${esc(d.title)}</h2>
+    <p style="font-size:0.85rem;color:#6b7280;margin-bottom:1rem;">Record the actual outcome and rate this decision.</p>
+    <div class="form-group" style="margin-bottom:1rem;">
+      <label>Actual Outcome</label>
+      <textarea id="reviewOutcomeText" rows="3" placeholder="What actually happened?">${esc(d.actualOutcome || '')}</textarea>
+    </div>
+    <div class="form-group" style="margin-bottom:1rem;">
+      <label>Rating</label>
+      <div class="btn-group">
+        <button class="btn btn-sm ${d.outcome==='Good'?'btn-success':'btn-secondary'}" onclick="setReviewRating('Good',this)">Good</button>
+        <button class="btn btn-sm ${d.outcome==='Neutral'?'btn-primary':'btn-secondary'}" onclick="setReviewRating('Neutral',this)">Neutral</button>
+        <button class="btn btn-sm ${d.outcome==='Bad'?'btn-danger':'btn-secondary'}" onclick="setReviewRating('Bad',this)">Bad</button>
+      </div>
+    </div>
+    <div class="btn-group">
+      <button class="btn btn-primary" onclick="submitReview('${d.id}')">Save Review</button>
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+    </div>
+  `;
+  document.getElementById('modalOverlay').classList.add('show');
+  window._reviewRating = d.outcome || null;
+}
+
+function setReviewRating(val, btn) {
+  window._reviewRating = val;
+  btn.parentElement.querySelectorAll('.btn').forEach(b => {
+    b.className = 'btn btn-sm btn-secondary';
+  });
+  btn.className = 'btn btn-sm ' + (val === 'Good' ? 'btn-success' : val === 'Bad' ? 'btn-danger' : 'btn-primary');
+}
+
+function submitReview(id) {
+  const decisions = loadDecisions();
+  const d = decisions.find(x => x.id === id);
+  if (!d) return;
+  d.actualOutcome = document.getElementById('reviewOutcomeText').value.trim();
+  d.outcome = window._reviewRating;
+  d.reviewedAt = new Date().toISOString().slice(0,10);
+  saveDecisions(decisions);
+  closeModal();
+  renderTimeline();
+  checkReviewBanner();
+  toast('Review saved');
+}
+
+// ── Timeline ──
+function renderTimeline() {
+  const container = document.getElementById('timelineContainer');
+  let decisions = loadDecisions();
+  // Filters
+  const kw = document.getElementById('searchKeyword').value.toLowerCase();
+  const cat = document.getElementById('filterCategory').value;
+  const out = document.getElementById('filterOutcome').value;
+  const from = document.getElementById('filterFrom').value;
+  const to = document.getElementById('filterTo').value;
+  if (kw) decisions = decisions.filter(d =>
+    d.title.toLowerCase().includes(kw) || d.decision.toLowerCase().includes(kw) || d.reasoning.toLowerCase().includes(kw)
+  );
+  if (cat) decisions = decisions.filter(d => d.category === cat);
+  if (out === 'Pending') decisions = decisions.filter(d => !d.outcome);
+  else if (out) decisions = decisions.filter(d => d.outcome === out);
+  if (from) decisions = decisions.filter(d => d.date >= from);
+  if (to) decisions = decisions.filter(d => d.date <= to);
+  decisions.sort((a, b) => b.date.localeCompare(a.date));
+
+  const today = new Date().toISOString().slice(0,10);
+
+  if (!decisions.length) {
+    container.innerHTML = '<p style="color:#6b7280;font-size:0.9rem;text-align:center;padding:2rem;">No decisions found.</p>';
+    return;
+  }
+
+  container.innerHTML = decisions.map(d => {
+    const dotClass = d.outcome ? d.outcome.toLowerCase() : 'pending';
+    const needsReview = !d.outcome && d.reviewDate && d.reviewDate <= today;
+    return `
+      <div class="timeline-item" data-id="${d.id}">
+        <div class="timeline-dot ${dotClass}"></div>
+        <div class="timeline-card" onclick="showDetail('${d.id}')">
+          <h3>${esc(d.title)}</h3>
+          <div class="timeline-meta">
+            <span>${d.date}</span>
+            <span class="badge badge-${d.category.toLowerCase()}">${d.category}</span>
+            <span class="stars-display">${starsHTML(d.confidence)}</span>
+            ${d.outcome ? `<span class="badge badge-${d.outcome.toLowerCase()}">${d.outcome}</span>` : '<span class="badge badge-pending">Pending</span>'}
+            ${needsReview ? '<span style="color:#f59e0b;font-weight:600;">Review due</span>' : ''}
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function scrollToReviewable() {
+  const today = new Date().toISOString().slice(0,10);
+  const decisions = loadDecisions();
+  const due = decisions.find(d => !d.outcome && d.reviewDate && d.reviewDate <= today);
+  if (due) {
+    const el = document.querySelector(`[data-id="${due.id}"]`);
+    if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+}
+
+// ── Detail modal ──
+function showDetail(id) {
+  const d = loadDecisions().find(x => x.id === id);
+  if (!d) return;
+  const today = new Date().toISOString().slice(0,10);
+  const needsReview = !d.outcome && d.reviewDate && d.reviewDate <= today;
+  const modal = document.getElementById('modalContent');
+  modal.innerHTML = `
+    <div style="display:flex;align-items:start;justify-content:space-between;gap:1rem;margin-bottom:0.5rem;">
+      <h2 style="flex:1">${esc(d.title)}</h2>
+      <span class="badge badge-${d.category.toLowerCase()}">${d.category}</span>
+    </div>
+    <div class="timeline-meta" style="margin-bottom:1rem;">
+      <span>${d.date}</span>
+      <span class="stars-display" style="font-size:1.1rem;">${starsHTML(d.confidence)}</span>
+      ${d.outcome ? `<span class="badge badge-${d.outcome.toLowerCase()}">${d.outcome}</span>` : '<span class="badge badge-pending">Pending</span>'}
+    </div>
+
+    <div class="field-label">Decision</div>
+    <div class="field-value">${esc(d.decision)}</div>
+
+    <div class="field-label">Alternatives Considered</div>
+    <div class="field-value"><ul>${(d.alternatives||[]).map(a => `<li>${esc(a)}</li>`).join('')}</ul></div>
+
+    <div class="field-label">Reasoning</div>
+    <div class="field-value">${esc(d.reasoning).replace(/\n/g,'<br>')}</div>
+
+    <div class="field-label">Expected Outcome</div>
+    <div class="field-value">${esc(d.expected)}</div>
+
+    ${d.reviewDate ? `<div class="field-label">Review Date</div><div class="field-value">${d.reviewDate}</div>` : ''}
+
+    ${d.actualOutcome ? `
+      <div class="field-label">Actual Outcome</div>
+      <div class="field-value">${esc(d.actualOutcome).replace(/\n/g,'<br>')}</div>
+      <div class="field-label">Reviewed</div>
+      <div class="field-value">${d.reviewedAt}</div>
+    ` : ''}
+
+    <div style="margin-top:1.5rem;" class="btn-group">
+      ${needsReview ? `<button class="btn btn-primary btn-sm" onclick="reviewDecision('${d.id}')">Record Outcome</button>` : ''}
+      ${!d.outcome ? `<button class="btn btn-success btn-sm" onclick="reviewDecision('${d.id}')">Review</button>` : ''}
+      <button class="btn btn-secondary btn-sm" onclick="editDecision('${d.id}')">Edit</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteDecision('${d.id}')">Delete</button>
+      <button class="btn btn-secondary btn-sm" onclick="closeModal()">Close</button>
+    </div>
+  `;
+  document.getElementById('modalOverlay').classList.add('show');
+}
+
+function closeModal() { document.getElementById('modalOverlay').classList.remove('show'); }
+
+// ── Review banner ──
+function checkReviewBanner() {
+  const today = new Date().toISOString().slice(0,10);
+  const due = loadDecisions().filter(d => !d.outcome && d.reviewDate && d.reviewDate <= today);
+  const banner = document.getElementById('reviewBanner');
+  if (due.length) {
+    banner.style.display = 'flex';
+    document.getElementById('reviewBannerText').textContent =
+      `${due.length} decision${due.length>1?'s':''} past review date: ${due.map(d=>d.title).join(', ')}`;
+  } else {
+    banner.style.display = 'none';
+  }
+}
+
+// ── Analytics ──
+let charts = {};
+function renderAnalytics() {
+  const decisions = loadDecisions();
+  const reviewed = decisions.filter(d => d.outcome);
+  const total = decisions.length;
+  const good = reviewed.filter(d => d.outcome === 'Good').length;
+  const neutral = reviewed.filter(d => d.outcome === 'Neutral').length;
+  const bad = reviewed.filter(d => d.outcome === 'Bad').length;
+  const pending = total - reviewed.length;
+  const avgConf = total ? (decisions.reduce((s,d) => s + d.confidence, 0) / total).toFixed(1) : '0';
+  const qualityScore = reviewed.length ? Math.round((good * 100 + neutral * 50) / reviewed.length) : 0;
+
+  document.getElementById('statRow').innerHTML = `
+    <div class="glass stat-box"><div class="val">${total}</div><div class="lbl">Total Decisions</div></div>
+    <div class="glass stat-box"><div class="val" style="color:#10b981">${qualityScore}%</div><div class="lbl">Quality Score</div></div>
+    <div class="glass stat-box"><div class="val">${avgConf}</div><div class="lbl">Avg Confidence</div></div>
+    <div class="glass stat-box"><div class="val" style="color:#f59e0b">${pending}</div><div class="lbl">Pending Review</div></div>
+  `;
+
+  // Destroy old charts
+  Object.values(charts).forEach(c => c.destroy());
+  charts = {};
+
+  // Quality over time
+  const sorted = [...reviewed].sort((a,b) => a.date.localeCompare(b.date));
+  const qualityData = sorted.map(d => ({
+    x: d.date,
+    y: d.outcome === 'Good' ? 100 : d.outcome === 'Neutral' ? 50 : 0
+  }));
+  charts.quality = new Chart(document.getElementById('qualityChart'), {
+    type: 'line',
+    data: { datasets: [{ label: 'Quality', data: qualityData, borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', fill: true, tension: 0.3, pointRadius: 5 }] },
+    options: { responsive: true, scales: { x: { type: 'category', labels: qualityData.map(d=>d.x) }, y: { min: 0, max: 100 } }, plugins: { legend: { display: false } } }
+  });
+
+  // Category doughnut
+  const cats = {};
+  decisions.forEach(d => { cats[d.category] = (cats[d.category]||0) + 1; });
+  const catColors = { Career: '#8b5cf6', Technical: '#3b82f6', Financial: '#10b981', Business: '#f59e0b', Personal: '#ec4899' };
+  charts.category = new Chart(document.getElementById('categoryChart'), {
+    type: 'doughnut',
+    data: {
+      labels: Object.keys(cats),
+      datasets: [{ data: Object.values(cats), backgroundColor: Object.keys(cats).map(c => catColors[c] || '#6b7280') }]
+    },
+    options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+  });
+
+  // Confidence vs outcome
+  const corrData = reviewed.map(d => ({
+    x: d.confidence,
+    y: d.outcome === 'Good' ? 100 : d.outcome === 'Neutral' ? 50 : 0
+  }));
+  charts.correlation = new Chart(document.getElementById('correlationChart'), {
+    type: 'scatter',
+    data: { datasets: [{ label: 'Decisions', data: corrData, backgroundColor: corrData.map(d => d.y === 100 ? '#10b981' : d.y === 50 ? '#f59e0b' : '#ef4444'), pointRadius: 8 }] },
+    options: { responsive: true, scales: { x: { title: { display: true, text: 'Confidence' }, min: 0, max: 6 }, y: { title: { display: true, text: 'Outcome Score' }, min: -10, max: 110 } }, plugins: { legend: { display: false } } }
+  });
+
+  // Outcome distribution
+  charts.outcome = new Chart(document.getElementById('outcomeChart'), {
+    type: 'doughnut',
+    data: {
+      labels: ['Good', 'Neutral', 'Bad', 'Pending'],
+      datasets: [{ data: [good, neutral, bad, pending], backgroundColor: ['#10b981', '#f59e0b', '#ef4444', '#d1d5db'] }]
+    },
+    options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+  });
+}
+
+// ── Lessons ──
+function renderLessons() {
+  const lessons = loadLessons();
+  const decisions = loadDecisions();
+  // Populate dropdown
+  const sel = document.getElementById('lessonDecision');
+  sel.innerHTML = '<option value="">General</option>' + decisions.map(d => `<option value="${d.id}">${esc(d.title)}</option>`).join('');
+
+  const container = document.getElementById('lessonsList');
+  if (!lessons.length) {
+    container.innerHTML = '<p style="color:#6b7280;font-size:0.9rem;text-align:center;padding:2rem;">No lessons recorded yet. Review your decisions and extract insights.</p>';
+    return;
+  }
+  container.innerHTML = lessons.map(l => {
+    const rel = decisions.find(d => d.id === l.decisionId);
+    return `
+      <div class="lesson-card">
+        <div style="display:flex;justify-content:space-between;align-items:start;">
+          <h4>${esc(l.title)}</h4>
+          <button class="btn btn-secondary btn-sm" style="padding:0.2rem 0.5rem;font-size:0.7rem;" onclick="deleteLesson('${l.id}')">Remove</button>
+        </div>
+        <p>${esc(l.description)}</p>
+        ${rel ? `<p style="font-size:0.78rem;color:#6b7280;margin-top:0.25rem;">From: ${esc(rel.title)}</p>` : ''}
+        <div class="lesson-tags">${(l.tags||[]).map(t => `<span class="lesson-tag">${esc(t)}</span>`).join('')}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function saveLesson() {
+  const title = document.getElementById('lessonTitle').value.trim();
+  if (!title) { toast('Please enter a lesson title'); return; }
+  const lessons = loadLessons();
+  lessons.push({
+    id: genId(),
+    title,
+    decisionId: document.getElementById('lessonDecision').value || null,
+    description: document.getElementById('lessonDesc').value.trim(),
+    tags: document.getElementById('lessonTags').value.split(',').map(t => t.trim()).filter(Boolean),
+    createdAt: new Date().toISOString().slice(0,10)
+  });
+  saveLessons(lessons);
+  document.getElementById('lessonTitle').value = '';
+  document.getElementById('lessonDesc').value = '';
+  document.getElementById('lessonTags').value = '';
+  renderLessons();
+  toast('Lesson saved');
+}
+
+function deleteLesson(id) {
+  saveLessons(loadLessons().filter(l => l.id !== id));
+  renderLessons();
+  toast('Lesson removed');
+}
+
+// ── Templates ──
+function renderTemplates() {
+  document.getElementById('templateGrid').innerHTML = TEMPLATES.map((t, i) => `
+    <div class="template-card" onclick="applyTemplate(${i})">
+      <div style="font-size:1.5rem;margin-bottom:0.5rem;">${t.icon}</div>
+      <h3>${t.name}</h3>
+      <p>${t.desc}</p>
+    </div>
+  `).join('');
+}
+
+function applyTemplate(i) {
+  const t = TEMPLATES[i];
+  clearForm();
+  if (t.prefill.category) document.getElementById('dCategory').value = t.prefill.category;
+  if (t.prefill.alternatives) document.getElementById('dAlternatives').value = t.prefill.alternatives;
+  if (t.prefill.reasoning) document.getElementById('dReasoning').value = t.prefill.reasoning;
+  if (t.prefill.expected) document.getElementById('dExpected').value = t.prefill.expected;
+  switchTab('record');
+  toast(`Template "${t.name}" applied`);
+}
+
+// ── Export ──
+function exportJSON() {
+  const data = { decisions: loadDecisions(), lessons: loadLessons(), exportedAt: new Date().toISOString() };
+  downloadFile('decision-journal.json', JSON.stringify(data, null, 2), 'application/json');
+  toast('Exported JSON');
+}
+
+function exportMarkdown() {
+  const decisions = loadDecisions();
+  const lessons = loadLessons();
+  let md = '# Decision Journal\n\n';
+  md += `Exported: ${new Date().toISOString().slice(0,10)}\n\n`;
+  decisions.sort((a,b) => b.date.localeCompare(a.date)).forEach(d => {
+    md += `## ${d.title}\n\n`;
+    md += `- **Date:** ${d.date}\n`;
+    md += `- **Category:** ${d.category}\n`;
+    md += `- **Confidence:** ${'★'.repeat(d.confidence)}${'☆'.repeat(5-d.confidence)}\n`;
+    md += `- **Outcome:** ${d.outcome || 'Pending'}\n\n`;
+    md += `**Decision:** ${d.decision}\n\n`;
+    if (d.alternatives?.length) {
+      md += '**Alternatives:**\n';
+      d.alternatives.forEach(a => md += `- ${a}\n`);
+      md += '\n';
+    }
+    md += `**Reasoning:** ${d.reasoning}\n\n`;
+    md += `**Expected:** ${d.expected}\n\n`;
+    if (d.actualOutcome) md += `**Actual Outcome:** ${d.actualOutcome}\n\n`;
+    md += '---\n\n';
+  });
+  if (lessons.length) {
+    md += '## Lessons Learned\n\n';
+    lessons.forEach(l => {
+      md += `### ${l.title}\n\n${l.description}\n\nTags: ${(l.tags||[]).join(', ')}\n\n`;
+    });
+  }
+  downloadFile('decision-journal.md', md, 'text/markdown');
+  toast('Exported Markdown');
+}
+
+function downloadFile(name, content, type) {
+  const blob = new Blob([content], { type });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = name;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// ── Tabs ──
+function switchTab(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.tab === name));
+  document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.id === 'panel-' + name));
+  if (name === 'timeline') renderTimeline();
+  if (name === 'analytics') renderAnalytics();
+  if (name === 'lessons') renderLessons();
+  if (name === 'templates') renderTemplates();
+}
+
+// ── Utils ──
+function esc(s) { if (!s) return ''; const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ── Init ──
+document.addEventListener('DOMContentLoaded', () => {
+  seedData();
+  initStars();
+  document.getElementById('dDate').value = new Date().toISOString().slice(0,10);
+  checkReviewBanner();
+});
+
+// Keyboard: Escape closes modal
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeModal(); });
+</script>
+</body>
+</html>

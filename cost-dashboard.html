@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cost Dashboard — Lumen Analytics</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #f8f9fc;
+    color: #1a1a2e;
+    min-height: 100vh;
+    padding: 1.5rem;
+  }
+  a { color: #3b82f6; text-decoration: none; }
+  .nav { margin-bottom: 1.5rem; font-size: 0.85rem; }
+  h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.25rem; }
+  .subtitle { color: #6b7280; font-size: 0.9rem; margin-bottom: 1.5rem; }
+  .glass {
+    background: rgba(255,255,255,0.72);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.6);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .glass h2 { font-size: 1rem; font-weight: 600; margin-bottom: 1rem; }
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .stat-card {
+    background: rgba(255,255,255,0.72);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.6);
+    border-radius: 12px;
+    padding: 1.25rem;
+    text-align: center;
+  }
+  .stat-card .value { font-size: 1.75rem; font-weight: 700; }
+  .stat-card .label { font-size: 0.75rem; color: #6b7280; margin-top: 0.25rem; }
+  .v-blue { color: #3b82f6; }
+  .v-red { color: #ef4444; }
+  .v-green { color: #10b981; }
+  .v-amber { color: #f59e0b; }
+  .chart-container { position: relative; height: 280px; }
+  .cost-table { width: 100%; border-collapse: collapse; }
+  .cost-table th { text-align: left; padding: 0.6rem 0.5rem; color: #6b7280; font-weight: 500; font-size: 0.8rem; border-bottom: 1px solid #e5e7eb; }
+  .cost-table td { padding: 0.5rem; border-bottom: 1px solid #f3f4f6; font-size: 0.85rem; }
+  .cost-table input {
+    width: 90px;
+    padding: 0.35rem 0.5rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    font-family: inherit;
+    font-size: 0.85rem;
+    text-align: right;
+    background: #fff;
+  }
+  .cost-table input:focus { outline: none; border-color: #3b82f6; box-shadow: 0 0 0 3px rgba(59,130,246,0.1); }
+  .cost-table .cat { font-weight: 600; background: #f9fafb; }
+  .cost-table .total-row { font-weight: 600; border-top: 2px solid #e5e7eb; }
+  .savings-bar {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+  .savings-bar .bar-bg {
+    flex: 1;
+    height: 8px;
+    background: #e5e7eb;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+  .savings-bar .bar-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s;
+  }
+  .savings-label { font-size: 0.8rem; color: #6b7280; min-width: 200px; }
+  .savings-value { font-size: 0.85rem; font-weight: 600; min-width: 80px; text-align: right; }
+  button {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .btn-primary { background: #3b82f6; color: #fff; }
+  .btn-primary:hover { background: #2563eb; }
+  .btn-secondary { background: #e5e7eb; color: #374151; }
+  .btn-secondary:hover { background: #d1d5db; }
+  .btn-danger { background: #fee2e2; color: #ef4444; }
+  .btn-danger:hover { background: #fecaca; }
+  .actions { display: flex; gap: 0.5rem; margin-top: 1rem; flex-wrap: wrap; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  @media (max-width: 768px) { .two-col { grid-template-columns: 1fr; } .chart-container { height: 220px; } }
+</style>
+</head>
+<body>
+  <div class="nav"><a href="index.html">&larr; Lumen Analytics</a></div>
+  <h1>Cost Dashboard</h1>
+  <p class="subtitle">Monthly cost tracking, burn rate, and savings analysis</p>
+
+  <div class="stats-row" id="stats-row"></div>
+
+  <div class="glass">
+    <h2>Monthly Cost Breakdown</h2>
+    <div style="overflow-x:auto">
+      <table class="cost-table" id="cost-table"></table>
+    </div>
+    <div class="actions">
+      <button class="btn-primary" onclick="saveAll()">Save Changes</button>
+      <button class="btn-secondary" onclick="loadDefaults()">Reset to Defaults</button>
+      <button class="btn-secondary" onclick="exportCosts()">Export JSON</button>
+    </div>
+  </div>
+
+  <div class="two-col">
+    <div class="glass">
+      <h2>Cost Distribution</h2>
+      <div class="chart-container"><canvas id="pieChart"></canvas></div>
+    </div>
+    <div class="glass">
+      <h2>Monthly Trend</h2>
+      <div class="chart-container"><canvas id="trendChart"></canvas></div>
+    </div>
+  </div>
+
+  <div class="glass">
+    <h2>Savings vs Cloud Alternatives</h2>
+    <p style="font-size:0.8rem;color:#6b7280;margin-bottom:1rem;">Estimated monthly cost if running equivalent workloads on major cloud providers.</p>
+    <div id="savings-bars"></div>
+  </div>
+
+<script>
+const STORAGE_KEY = 'lumen_costs';
+const HISTORY_KEY = 'lumen_cost_history';
+
+const DEFAULT_COSTS = [
+  { category: 'Infrastructure', items: [
+    { name: 'Railway (Smara)', monthly: 8, note: 'Hobby plan' },
+    { name: 'Cloudflare (Tunnel + DNS)', monthly: 0, note: 'Free tier' },
+    { name: 'Domain (parallelromb.dev)', monthly: 1.50, note: '~$18/yr' },
+    { name: 'Mac Mini electricity', monthly: 8, note: '~$0.27/day' },
+    { name: 'Internet (share)', monthly: 10, note: 'Allocated portion' },
+  ]},
+  { category: 'LLM / AI', items: [
+    { name: 'Anthropic (Claude Max)', monthly: 100, note: 'Max plan' },
+    { name: 'OpenAI API', monthly: 5, note: 'Minimal usage' },
+    { name: 'Ollama (local)', monthly: 0, note: 'Self-hosted' },
+  ]},
+  { category: 'Services & Tools', items: [
+    { name: 'GitHub (free tier)', monthly: 0, note: '' },
+    { name: 'Telegram Bot API', monthly: 0, note: 'Free' },
+    { name: 'NPM (publish)', monthly: 0, note: 'Free' },
+    { name: 'Redis (local)', monthly: 0, note: 'Self-hosted' },
+  ]},
+  { category: 'Marketing & Distribution', items: [
+    { name: 'Product Hunt', monthly: 0, note: 'Free to list' },
+    { name: 'Blog hosting', monthly: 0, note: 'Static / free' },
+    { name: 'Other marketing', monthly: 0, note: '' },
+  ]},
+];
+
+const CLOUD_ALTERNATIVES = [
+  { name: 'AWS (EC2 + RDS + S3)', estimated: 180 },
+  { name: 'GCP (GKE + Cloud SQL)', estimated: 160 },
+  { name: 'Vercel + PlanetScale + Redis Cloud', estimated: 95 },
+  { name: 'DigitalOcean (Droplet + Managed DB)', estimated: 65 },
+];
+
+function load() {
+  const d = localStorage.getItem(STORAGE_KEY);
+  return d ? JSON.parse(d) : JSON.parse(JSON.stringify(DEFAULT_COSTS));
+}
+function save(d) { localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); }
+function loadHistory() { return JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]'); }
+function saveHistory(h) { localStorage.setItem(HISTORY_KEY, JSON.stringify(h)); }
+
+let pieChart, trendChart;
+
+function init() { render(); }
+
+function getTotal(costs) {
+  return costs.reduce((s, c) => s + c.items.reduce((ss, it) => ss + (parseFloat(it.monthly) || 0), 0), 0);
+}
+
+function render() {
+  const costs = load();
+  const total = getTotal(costs);
+  renderStats(total);
+  renderTable(costs, total);
+  renderPie(costs);
+  renderTrend(total);
+  renderSavings(total);
+}
+
+function renderStats(total) {
+  const annual = total * 12;
+  const daily = total / 30;
+  document.getElementById('stats-row').innerHTML = `
+    <div class="stat-card"><div class="value v-blue">$${total.toFixed(2)}</div><div class="label">Monthly Burn</div></div>
+    <div class="stat-card"><div class="value v-amber">$${annual.toFixed(0)}</div><div class="label">Projected Annual</div></div>
+    <div class="stat-card"><div class="value v-green">$${daily.toFixed(2)}</div><div class="label">Daily Burn</div></div>
+    <div class="stat-card"><div class="value v-red">$0</div><div class="label">Monthly Revenue</div></div>
+  `;
+}
+
+function renderTable(costs, total) {
+  let html = '<thead><tr><th>Item</th><th>Monthly ($)</th><th>Annual ($)</th><th>Notes</th></tr></thead><tbody>';
+  costs.forEach((cat, ci) => {
+    html += `<tr class="cat"><td colspan="4">${cat.category}</td></tr>`;
+    cat.items.forEach((item, ii) => {
+      const monthly = parseFloat(item.monthly) || 0;
+      html += `<tr>
+        <td>${item.name}</td>
+        <td><input type="number" step="0.01" value="${monthly.toFixed(2)}" data-ci="${ci}" data-ii="${ii}" onchange="updateCost(this)"></td>
+        <td>$${(monthly * 12).toFixed(0)}</td>
+        <td style="color:#6b7280;font-size:0.8rem">${item.note}</td>
+      </tr>`;
+    });
+  });
+  html += `<tr class="total-row"><td>Total</td><td>$${total.toFixed(2)}</td><td>$${(total*12).toFixed(0)}</td><td></td></tr>`;
+  html += '</tbody>';
+  document.getElementById('cost-table').innerHTML = html;
+}
+
+function updateCost(el) {
+  const costs = load();
+  costs[el.dataset.ci].items[el.dataset.ii].monthly = parseFloat(el.value) || 0;
+  save(costs);
+  render();
+}
+
+function saveAll() {
+  // snapshot to history
+  const costs = load();
+  const total = getTotal(costs);
+  const history = loadHistory();
+  const month = new Date().toISOString().slice(0,7);
+  const existing = history.findIndex(h => h.month === month);
+  if (existing >= 0) history[existing] = { month, total, costs: JSON.parse(JSON.stringify(costs)) };
+  else history.push({ month, total, costs: JSON.parse(JSON.stringify(costs)) });
+  saveHistory(history);
+  save(costs);
+  render();
+  alert('Saved! Monthly snapshot recorded.');
+}
+
+function loadDefaults() {
+  if (!confirm('Reset all costs to defaults?')) return;
+  save(JSON.parse(JSON.stringify(DEFAULT_COSTS)));
+  render();
+}
+
+function exportCosts() {
+  const blob = new Blob([JSON.stringify({ costs: load(), history: loadHistory() }, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'lumen-costs-' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+}
+
+function renderPie(costs) {
+  const ctx = document.getElementById('pieChart').getContext('2d');
+  if (pieChart) pieChart.destroy();
+  const catTotals = costs.map(c => ({ label: c.category, value: c.items.reduce((s, it) => s + (parseFloat(it.monthly) || 0), 0) })).filter(c => c.value > 0);
+  const colors = ['#3b82f6','#10b981','#f59e0b','#8b5cf6','#ef4444','#ec4899'];
+  pieChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: catTotals.map(c => c.label),
+      datasets: [{ data: catTotals.map(c => c.value), backgroundColor: colors.slice(0, catTotals.length), borderWidth: 0 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { size: 11 } } } } }
+  });
+}
+
+function renderTrend(currentTotal) {
+  const ctx = document.getElementById('trendChart').getContext('2d');
+  if (trendChart) trendChart.destroy();
+  const history = loadHistory();
+  const currentMonth = new Date().toISOString().slice(0,7);
+  // ensure current month is present
+  const months = history.map(h => h.month);
+  if (!months.includes(currentMonth)) {
+    history.push({ month: currentMonth, total: currentTotal });
+  }
+  history.sort((a,b) => a.month.localeCompare(b.month));
+  const last6 = history.slice(-6);
+  trendChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: last6.map(h => h.month),
+      datasets: [{ label: 'Monthly Cost', data: last6.map(h => h.total), borderColor: '#3b82f6', backgroundColor: 'rgba(59,130,246,0.1)', fill: true, tension: 0.3, pointRadius: 4 }]
+    },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { callback: v => '$' + v } } } }
+  });
+}
+
+function renderSavings(currentTotal) {
+  const container = document.getElementById('savings-bars');
+  const maxAlt = Math.max(...CLOUD_ALTERNATIVES.map(a => a.estimated));
+  container.innerHTML = CLOUD_ALTERNATIVES.map(alt => {
+    const saving = alt.estimated - currentTotal;
+    const pct = Math.round((currentTotal / alt.estimated) * 100);
+    const color = saving > 0 ? '#10b981' : '#ef4444';
+    return `<div class="savings-bar">
+      <div class="savings-label">${alt.name}</div>
+      <div class="bar-bg">
+        <div class="bar-fill" style="width:${Math.min(100, (alt.estimated / maxAlt) * 100)}%;background:${color}"></div>
+      </div>
+      <div class="savings-value" style="color:${color}">${saving > 0 ? '-' : '+'}$${Math.abs(saving).toFixed(0)}/mo</div>
+    </div>`;
+  }).join('') + `<p style="font-size:0.8rem;color:#6b7280;margin-top:1rem;">Your current self-hosted cost: <strong>$${currentTotal.toFixed(2)}/mo</strong>. Green = you save, red = cloud is cheaper.</p>`;
+}
+
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sprint Retrospective</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;background:#f8f9fc;color:#1a1a2e;min-height:100vh}
+.app{max-width:1400px;margin:0 auto;padding:1.5rem}
+button{font-family:inherit;cursor:pointer;border:none;background:none}
+input,select,textarea{font-family:inherit;border:1px solid rgba(0,0,0,0.1);border-radius:8px;padding:0.5rem 0.75rem;font-size:0.875rem;background:#fff;outline:none}
+input:focus,select:focus,textarea:focus{border-color:#3b82f6;box-shadow:0 0 0 3px rgba(59,130,246,0.1)}
+.glass{background:rgba(255,255,255,0.72);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid rgba(255,255,255,0.6);border-radius:16px}
+.header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem}
+.header h1{font-size:1.75rem;font-weight:700;letter-spacing:-0.02em;display:flex;align-items:center;gap:0.5rem}
+.header h1 svg{width:28px;height:28px}
+.back-link{color:#6b7280;text-decoration:none;font-size:0.875rem;font-weight:500}
+.back-link:hover{color:#3b82f6}
+.tabs{display:flex;gap:0.25rem;background:rgba(255,255,255,0.5);border-radius:12px;padding:4px;margin-bottom:1.5rem;flex-wrap:wrap}
+.tab{padding:0.5rem 1rem;border-radius:8px;font-size:0.875rem;font-weight:500;color:#6b7280;transition:all 0.2s}
+.tab:hover{color:#1a1a2e}
+.tab.active{background:#fff;color:#1a1a2e;box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+.btn{padding:0.5rem 1rem;border-radius:8px;font-size:0.875rem;font-weight:500;transition:all 0.2s}
+.btn-primary{background:#3b82f6;color:#fff}
+.btn-primary:hover{background:#2563eb}
+.btn-secondary{background:rgba(0,0,0,0.05);color:#1a1a2e}
+.btn-secondary:hover{background:rgba(0,0,0,0.1)}
+.btn-sm{padding:0.35rem 0.75rem;font-size:0.8rem}
+.btn-danger{background:rgba(239,68,68,0.1);color:#dc2626}
+.btn-danger:hover{background:rgba(239,68,68,0.2)}
+
+/* Board */
+.board{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem}
+@media(max-width:900px){.board{grid-template-columns:1fr}}
+.column{padding:1rem;min-height:300px}
+.column-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem}
+.column-title{font-weight:600;font-size:0.95rem;display:flex;align-items:center;gap:0.5rem}
+.column-count{background:rgba(0,0,0,0.06);border-radius:99px;padding:0.15rem 0.5rem;font-size:0.75rem;font-weight:600}
+.col-green .column-title{color:#059669}
+.col-red .column-title{color:#dc2626}
+.col-blue .column-title{color:#2563eb}
+
+.retro-card{border-radius:10px;padding:0.75rem;margin-bottom:0.5rem;font-size:0.875rem;line-height:1.5;position:relative;transition:transform 0.15s}
+.retro-card:hover{transform:translateY(-1px)}
+.card-green{background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.15)}
+.card-red{background:rgba(239,68,68,0.06);border:1px solid rgba(239,68,68,0.12)}
+.card-blue{background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.15)}
+.card-actions{display:flex;align-items:center;gap:0.5rem;margin-top:0.5rem;font-size:0.75rem;color:#6b7280}
+.vote-btn{display:inline-flex;align-items:center;gap:0.25rem;padding:0.2rem 0.5rem;border-radius:6px;font-size:0.75rem;font-weight:600;transition:all 0.15s}
+.vote-btn:hover{background:rgba(0,0,0,0.06)}
+.vote-btn.voted{color:#3b82f6}
+.remove-btn{margin-left:auto;color:#9ca3af;font-size:0.75rem}
+.remove-btn:hover{color:#ef4444}
+.card-meta{font-size:0.75rem;color:#6b7280;margin-top:0.25rem}
+.card-meta .overdue{color:#dc2626;font-weight:600}
+
+.add-item{display:flex;gap:0.5rem;margin-top:0.5rem}
+.add-item input{flex:1;font-size:0.8rem;padding:0.4rem 0.6rem}
+.add-item button{padding:0.4rem 0.75rem;border-radius:8px;font-size:0.8rem;font-weight:600;color:#fff}
+.col-green .add-item button{background:#059669}
+.col-red .add-item button{background:#dc2626}
+.col-blue .add-item button{background:#2563eb}
+
+/* Action item extras */
+.action-extras{display:flex;gap:0.4rem;margin-top:0.4rem;flex-wrap:wrap}
+.action-extras input,.action-extras select{font-size:0.75rem;padding:0.25rem 0.4rem;border-radius:6px}
+.status-badge{display:inline-block;padding:0.15rem 0.5rem;border-radius:99px;font-size:0.7rem;font-weight:600}
+.status-open{background:rgba(59,130,246,0.1);color:#2563eb}
+.status-closed{background:rgba(16,185,129,0.1);color:#059669}
+.status-overdue{background:rgba(239,68,68,0.1);color:#dc2626}
+
+/* Timer */
+.timer-bar{display:flex;align-items:center;gap:1rem;padding:1rem;margin-bottom:1.5rem}
+.timer-display{font-size:2rem;font-weight:700;font-variant-numeric:tabular-nums;min-width:100px}
+.timer-display.warning{color:#f59e0b}
+.timer-display.danger{color:#ef4444}
+.timer-presets{display:flex;gap:0.5rem}
+
+/* Create form */
+.create-form{padding:1.5rem;margin-bottom:1.5rem}
+.form-row{display:flex;gap:1rem;margin-bottom:1rem;flex-wrap:wrap}
+.form-row label{font-size:0.8rem;font-weight:500;color:#6b7280;display:block;margin-bottom:0.25rem}
+.form-row .field{flex:1;min-width:200px}
+.form-row input,.form-row select{width:100%}
+.template-cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:0.75rem;margin-top:0.5rem}
+.template-card{padding:1rem;border-radius:12px;border:2px solid transparent;cursor:pointer;transition:all 0.2s}
+.template-card:hover{border-color:rgba(59,130,246,0.3)}
+.template-card.selected{border-color:#3b82f6;background:rgba(59,130,246,0.05)}
+.template-card h4{font-size:0.875rem;margin-bottom:0.25rem}
+.template-card p{font-size:0.75rem;color:#6b7280}
+
+/* History */
+.history-list{display:grid;gap:0.75rem}
+.history-card{padding:1rem;cursor:pointer;transition:all 0.2s}
+.history-card:hover{transform:translateY(-2px);box-shadow:0 8px 30px rgba(0,0,0,0.06)}
+.history-card h3{font-size:1rem;margin-bottom:0.25rem}
+.history-card .meta{font-size:0.8rem;color:#6b7280;display:flex;gap:1rem;flex-wrap:wrap}
+.search-bar{margin-bottom:1rem}
+.search-bar input{width:100%;max-width:400px}
+
+/* Trends */
+.chart-container{padding:1.5rem}
+.chart-canvas{width:100%;height:300px;position:relative}
+.bar-group{display:flex;align-items:flex-end;gap:4px;flex:1;justify-content:center}
+.bar{border-radius:4px 4px 0 0;min-width:20px;transition:height 0.5s}
+.bar-green{background:rgba(16,185,129,0.6)}
+.bar-red{background:rgba(239,68,68,0.5)}
+.bar-blue{background:rgba(59,130,246,0.5)}
+.chart-bars{display:flex;align-items:flex-end;gap:1rem;height:200px;padding:0 1rem;border-bottom:1px solid rgba(0,0,0,0.1)}
+.chart-labels{display:flex;gap:1rem;padding:0.5rem 1rem;justify-content:space-around}
+.chart-labels span{font-size:0.7rem;color:#6b7280;text-align:center;flex:1}
+.chart-legend{display:flex;gap:1.5rem;margin-top:1rem;justify-content:center}
+.legend-item{display:flex;align-items:center;gap:0.4rem;font-size:0.8rem;color:#6b7280}
+.legend-dot{width:10px;height:10px;border-radius:3px}
+
+/* Action tracker */
+.action-table{width:100%;border-collapse:collapse;font-size:0.85rem}
+.action-table th{text-align:left;padding:0.75rem;border-bottom:2px solid rgba(0,0,0,0.06);font-weight:600;color:#6b7280;font-size:0.8rem}
+.action-table td{padding:0.75rem;border-bottom:1px solid rgba(0,0,0,0.04)}
+.action-table tr:hover td{background:rgba(59,130,246,0.03)}
+.action-filter-tabs{display:flex;gap:0.5rem;margin-bottom:1rem}
+
+.empty-state{text-align:center;padding:3rem;color:#9ca3af}
+.empty-state svg{width:48px;height:48px;margin-bottom:1rem;opacity:0.4}
+.hidden{display:none!important}
+
+/* Toolbar */
+.toolbar{display:flex;gap:0.5rem;flex-wrap:wrap}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div>
+      <a href="index.html" class="back-link">&larr; Analytics</a>
+      <h1>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6"/><path d="M21.34 15.57a10 10 0 11-.57-8.38L21.5 8"/></svg>
+        Sprint Retrospective
+      </h1>
+    </div>
+    <div class="toolbar">
+      <button class="btn btn-secondary btn-sm" onclick="exportJSON()">Export JSON</button>
+      <button class="btn btn-primary btn-sm" onclick="showView('create')">+ New Retro</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-view="board" onclick="showView('board')">Board</button>
+    <button class="tab" data-view="actions" onclick="showView('actions')">Action Items</button>
+    <button class="tab" data-view="history" onclick="showView('history')">History</button>
+    <button class="tab" data-view="trends" onclick="showView('trends')">Trends</button>
+    <button class="tab" data-view="create" onclick="showView('create')">New Retro</button>
+  </div>
+
+  <!-- CREATE VIEW -->
+  <div id="view-create" class="hidden">
+    <div class="create-form glass">
+      <h2 style="margin-bottom:1rem;font-size:1.15rem">Create Sprint Retrospective</h2>
+      <div class="form-row">
+        <div class="field"><label>Sprint Name / Number</label><input id="f-name" placeholder="e.g. Sprint 14"></div>
+        <div class="field"><label>Date</label><input id="f-date" type="date"></div>
+        <div class="field"><label>Team / Project</label>
+          <select id="f-team"><option>CIBC</option><option>Smara</option><option>Lumen</option><option>Scoper</option><option>PJ Tales</option></select>
+        </div>
+      </div>
+      <label style="font-size:0.8rem;font-weight:500;color:#6b7280;margin-bottom:0.5rem;display:block">Template</label>
+      <div class="template-cards">
+        <div class="template-card glass selected" data-tpl="standard" onclick="selectTemplate(this)">
+          <h4>Standard Retro</h4>
+          <p>What went well / What didn't / Action items</p>
+        </div>
+        <div class="template-card glass" data-tpl="ssc" onclick="selectTemplate(this)">
+          <h4>Start / Stop / Continue</h4>
+          <p>What to start, stop, and continue doing</p>
+        </div>
+        <div class="template-card glass" data-tpl="4ls" onclick="selectTemplate(this)">
+          <h4>4Ls</h4>
+          <p>Liked / Learned / Lacked / Longed For</p>
+        </div>
+      </div>
+      <div style="margin-top:1.5rem;display:flex;gap:0.5rem">
+        <button class="btn btn-primary" onclick="createRetro()">Create Retro</button>
+        <button class="btn btn-secondary" onclick="showView('board')">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOARD VIEW -->
+  <div id="view-board">
+    <div id="retro-selector" style="margin-bottom:1rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap">
+      <select id="active-retro" onchange="switchRetro(this.value)" style="font-weight:600"></select>
+      <button class="btn btn-secondary btn-sm" onclick="copyFormatted()">Copy for Slack</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteCurrentRetro()">Delete</button>
+    </div>
+    <!-- Timer -->
+    <div class="timer-bar glass">
+      <div class="timer-display" id="timer-display">0:00</div>
+      <div class="timer-presets">
+        <button class="btn btn-secondary btn-sm" onclick="setTimer(2)">2 min</button>
+        <button class="btn btn-secondary btn-sm" onclick="setTimer(3)">3 min</button>
+        <button class="btn btn-secondary btn-sm" onclick="setTimer(5)">5 min</button>
+      </div>
+      <button class="btn btn-primary btn-sm" id="timer-toggle" onclick="toggleTimer()">Start</button>
+      <button class="btn btn-secondary btn-sm" onclick="resetTimer()">Reset</button>
+    </div>
+    <div class="board" id="retro-board"></div>
+    <div id="no-retro" class="empty-state glass hidden">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M21.5 2v6h-6"/><path d="M21.34 15.57a10 10 0 11-.57-8.38L21.5 8"/></svg>
+      <p style="font-size:0.95rem;margin-bottom:0.5rem">No retros yet</p>
+      <p style="font-size:0.85rem">Create your first sprint retrospective to get started.</p>
+      <button class="btn btn-primary" style="margin-top:1rem" onclick="showView('create')">+ New Retro</button>
+    </div>
+  </div>
+
+  <!-- ACTIONS VIEW -->
+  <div id="view-actions" class="hidden">
+    <div class="glass" style="padding:1.5rem">
+      <h2 style="font-size:1.15rem;margin-bottom:1rem">Action Item Tracker</h2>
+      <div class="action-filter-tabs">
+        <button class="btn btn-sm btn-secondary active" onclick="filterActions('all',this)">All</button>
+        <button class="btn btn-sm btn-secondary" onclick="filterActions('open',this)">Open</button>
+        <button class="btn btn-sm btn-secondary" onclick="filterActions('closed',this)">Closed</button>
+        <button class="btn btn-sm btn-secondary" onclick="filterActions('overdue',this)">Overdue</button>
+      </div>
+      <div style="overflow-x:auto">
+        <table class="action-table" id="actions-table">
+          <thead><tr><th>Action</th><th>Assignee</th><th>Due</th><th>Sprint</th><th>Status</th><th></th></tr></thead>
+          <tbody id="actions-body"></tbody>
+        </table>
+      </div>
+      <div id="no-actions" class="empty-state hidden"><p>No action items found.</p></div>
+    </div>
+  </div>
+
+  <!-- HISTORY VIEW -->
+  <div id="view-history" class="hidden">
+    <div class="search-bar"><input id="history-search" placeholder="Search sprints by name or content..." oninput="renderHistory()"></div>
+    <div class="history-list" id="history-list"></div>
+    <div id="no-history" class="empty-state hidden"><p>No retros found.</p></div>
+  </div>
+
+  <!-- TRENDS VIEW -->
+  <div id="view-trends" class="hidden">
+    <div class="chart-container glass">
+      <h2 style="font-size:1.15rem;margin-bottom:1.5rem">Retro Trends (Last 8 Sprints)</h2>
+      <div class="chart-bars" id="trend-bars"></div>
+      <div class="chart-labels" id="trend-labels"></div>
+      <div class="chart-legend">
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(16,185,129,0.6)"></div>Went Well</div>
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(239,68,68,0.5)"></div>Didn't Go Well</div>
+        <div class="legend-item"><div class="legend-dot" style="background:rgba(59,130,246,0.5)"></div>Action Items</div>
+      </div>
+      <div id="no-trends" class="empty-state hidden"><p>Need at least 2 retros for trend data.</p></div>
+    </div>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'lumen_retros';
+const TEMPLATES = {
+  standard: {cols:[{key:'well',title:'What Went Well',color:'green',icon:'\\u2705'},{key:'bad',title:"What Didn't Go Well",color:'red',icon:'\\u26A0\\uFE0F'},{key:'actions',title:'Action Items',color:'blue',icon:'\\u{1F3AF}'}]},
+  ssc: {cols:[{key:'start',title:'Start Doing',color:'green',icon:'\\u{1F7E2}'},{key:'stop',title:'Stop Doing',color:'red',icon:'\\u{1F534}'},{key:'continue',title:'Continue Doing',color:'blue',icon:'\\u{1F535}'}]},
+  '4ls': {cols:[{key:'liked',title:'Liked',color:'green',icon:'\\u{1F44D}'},{key:'learned',title:'Learned',color:'blue',icon:'\\u{1F4DA}'},{key:'lacked',title:'Lacked',color:'red',icon:'\\u{1F614}'}]}
+};
+// 4Ls has 4 columns but we'll put "Longed For" as a 4th item in the lacked column's data or adjust
+// Actually let's keep it 3 for layout, and note 4Ls packs into 3 visible columns + extra
+
+let state = {retros:[], activeId:null};
+let timerInterval = null, timerSeconds = 0, timerRunning = false, timerTotal = 180;
+let currentActionFilter = 'all';
+
+function load(){
+  try{const d=localStorage.getItem(STORAGE_KEY);if(d)state=JSON.parse(d)}catch(e){}
+  if(!state.retros)state.retros=[];
+  if(!state.retros.length)seedSampleData();
+}
+function save(){localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}
+
+function seedSampleData(){
+  const now = new Date();
+  const r1 = {
+    id:'sample-1', name:'Smara Sprint 11', date:'2026-04-14', team:'Smara', template:'standard',
+    cols:{
+      well:[
+        {id:'s1-1',text:'Redis caching reduced API latency by 40%',votes:3},
+        {id:'s1-2',text:'MCP server integration shipped on time',votes:5},
+        {id:'s1-3',text:'Zero downtime during Railway migration',votes:2}
+      ],
+      bad:[
+        {id:'s1-4',text:'Memory search accuracy dropped after schema change',votes:4},
+        {id:'s1-5',text:'Documentation fell behind on v1.2 features',votes:2}
+      ],
+      actions:[
+        {id:'s1-6',text:'Add integration tests for memory search pipeline',votes:1,assignee:'Sri',due:'2026-04-21',status:'closed'},
+        {id:'s1-7',text:'Write v1.2 API docs with examples',votes:3,assignee:'Sri',due:'2026-04-28',status:'open'},
+        {id:'s1-8',text:'Set up Playwright E2E tests for site',votes:0,assignee:'',due:'2026-05-01',status:'open'}
+      ]
+    }
+  };
+  const r2 = {
+    id:'sample-2', name:'Smara Sprint 12', date:'2026-04-28', team:'Smara', template:'standard',
+    cols:{
+      well:[
+        {id:'s2-1',text:'Teams context support landed and tested',votes:4},
+        {id:'s2-2',text:'Graph search performance 3x faster with index',votes:6},
+        {id:'s2-3',text:'First external developer tried the SDK',votes:3},
+        {id:'s2-4',text:'CI pipeline runs under 2 minutes',votes:1}
+      ],
+      bad:[
+        {id:'s2-5',text:'Rate limiting not enforced on free tier',votes:5},
+        {id:'s2-6',text:'SSL cert auto-renewal broke once',votes:2},
+        {id:'s2-7',text:'Sprint scope creep from MCP Doctor features',votes:3}
+      ],
+      actions:[
+        {id:'s2-8',text:'Implement token-based rate limiting middleware',votes:4,assignee:'Sri',due:'2026-05-05',status:'open'},
+        {id:'s2-9',text:'Add cert renewal monitoring to system health',votes:2,assignee:'Sri',due:'2026-05-03',status:'open'},
+        {id:'s2-10',text:'Create sprint planning checklist to prevent scope creep',votes:1,assignee:'Sri',due:'2026-05-01',status:'open'}
+      ]
+    }
+  };
+  state.retros = [r1, r2];
+  state.activeId = r2.id;
+  save();
+}
+
+function uid(){return Date.now().toString(36)+Math.random().toString(36).slice(2,7)}
+
+// Views
+function showView(v){
+  document.querySelectorAll('[id^="view-"]').forEach(el=>el.classList.add('hidden'));
+  const el=document.getElementById('view-'+v);if(el)el.classList.remove('hidden');
+  document.querySelectorAll('.tab').forEach(t=>{t.classList.toggle('active',t.dataset.view===v)});
+  if(v==='board')renderBoard();
+  if(v==='actions')renderActions();
+  if(v==='history')renderHistory();
+  if(v==='trends')renderTrends();
+  if(v==='create'){document.getElementById('f-date').value=new Date().toISOString().split('T')[0]}
+}
+
+// Templates
+function selectTemplate(el){
+  document.querySelectorAll('.template-card').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+// Create
+function createRetro(){
+  const name=document.getElementById('f-name').value.trim();
+  const date=document.getElementById('f-date').value;
+  const team=document.getElementById('f-team').value;
+  const tplEl=document.querySelector('.template-card.selected');
+  const tpl=tplEl?tplEl.dataset.tpl:'standard';
+  if(!name){alert('Enter a sprint name');return}
+  const template=TEMPLATES[tpl];
+  const cols={};
+  template.cols.forEach(c=>{cols[c.key]=[]});
+  // 4Ls gets a 4th column
+  if(tpl==='4ls')cols['longed']=[];
+  const retro={id:uid(),name,date,team,template:tpl,cols};
+  state.retros.push(retro);
+  state.activeId=retro.id;
+  save();
+  document.getElementById('f-name').value='';
+  showView('board');
+}
+
+// Board
+function getActiveRetro(){return state.retros.find(r=>r.id===state.activeId)}
+
+function switchRetro(id){state.activeId=id;save();renderBoard()}
+
+function renderBoard(){
+  const sel=document.getElementById('active-retro');
+  sel.innerHTML=state.retros.map(r=>`<option value="${r.id}"${r.id===state.activeId?' selected':''}>${r.name} (${r.team}) - ${r.date}</option>`).join('');
+  const retro=getActiveRetro();
+  const board=document.getElementById('retro-board');
+  const noRetro=document.getElementById('no-retro');
+  const selectorRow=document.getElementById('retro-selector');
+  const timerBar=document.querySelector('.timer-bar');
+  if(!retro){
+    board.classList.add('hidden');noRetro.classList.remove('hidden');
+    selectorRow.classList.add('hidden');timerBar.classList.add('hidden');
+    return;
+  }
+  board.classList.remove('hidden');noRetro.classList.add('hidden');
+  selectorRow.classList.remove('hidden');timerBar.classList.remove('hidden');
+  const tpl=TEMPLATES[retro.template]||TEMPLATES.standard;
+  let cols=tpl.cols;
+  // 4Ls 4th column
+  if(retro.template==='4ls')cols=[...cols,{key:'longed',title:'Longed For',color:'red',icon:'\\u{1F4AD}'}];
+  board.style.gridTemplateColumns=`repeat(${cols.length},1fr)`;
+  board.innerHTML=cols.map(col=>{
+    const items=retro.cols[col.key]||[];
+    const isAction=col.key==='actions';
+    return `<div class="column glass col-${col.color}">
+      <div class="column-header">
+        <span class="column-title">${col.icon} ${col.title} <span class="column-count">${items.length}</span></span>
+      </div>
+      ${items.map(item=>`
+        <div class="retro-card card-${col.color}">
+          <div>${esc(item.text)}</div>
+          ${isAction?`<div class="card-meta">
+            ${item.assignee?'<strong>'+esc(item.assignee)+'</strong>':'Unassigned'}
+            ${item.due?' &middot; Due: '+item.due:''}
+            &middot; <span class="status-badge status-${getActionStatus(item)}">${getActionStatus(item)}</span>
+          </div>`:''}
+          <div class="card-actions">
+            <button class="vote-btn${item.votes>0?' voted':''}" onclick="voteItem('${retro.id}','${col.key}','${item.id}')">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 19V5M5 12l7-7 7 7"/></svg>
+              ${item.votes||0}
+            </button>
+            ${isAction&&item.status!=='closed'?`<button class="btn btn-sm" style="font-size:0.7rem;color:#059669" onclick="closeAction('${retro.id}','${item.id}')">Close</button>`:''}
+            <button class="remove-btn" onclick="removeItem('${retro.id}','${col.key}','${item.id}')">Remove</button>
+          </div>
+        </div>
+      `).join('')}
+      <div class="add-item">
+        <input id="add-${col.key}" placeholder="Add item..." onkeydown="if(event.key==='Enter')addItem('${retro.id}','${col.key}')">
+        <button onclick="addItem('${retro.id}','${col.key}')">+</button>
+      </div>
+      ${isAction?`<div class="action-extras" style="margin-top:0.4rem">
+        <input id="add-assignee" placeholder="Assignee" style="flex:1">
+        <input id="add-due" type="date" style="flex:1">
+      </div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function addItem(retroId,colKey){
+  const input=document.getElementById('add-'+colKey);
+  const text=input.value.trim();if(!text)return;
+  const retro=state.retros.find(r=>r.id===retroId);if(!retro)return;
+  const item={id:uid(),text,votes:0};
+  if(colKey==='actions'){
+    const aEl=document.getElementById('add-assignee');
+    const dEl=document.getElementById('add-due');
+    item.assignee=aEl?aEl.value.trim():'';
+    item.due=dEl?dEl.value:'';
+    item.status='open';
+    if(aEl)aEl.value='';if(dEl)dEl.value='';
+  }
+  retro.cols[colKey].push(item);save();renderBoard();
+  // Re-focus input
+  setTimeout(()=>{const i=document.getElementById('add-'+colKey);if(i)i.focus()},50);
+}
+
+function removeItem(retroId,colKey,itemId){
+  const retro=state.retros.find(r=>r.id===retroId);if(!retro)return;
+  retro.cols[colKey]=retro.cols[colKey].filter(i=>i.id!==itemId);save();renderBoard();
+}
+
+function voteItem(retroId,colKey,itemId){
+  const retro=state.retros.find(r=>r.id===retroId);if(!retro)return;
+  const item=retro.cols[colKey].find(i=>i.id===itemId);if(!item)return;
+  item.votes=(item.votes||0)+1;
+  // Sort by votes desc
+  retro.cols[colKey].sort((a,b)=>(b.votes||0)-(a.votes||0));
+  save();renderBoard();
+}
+
+function closeAction(retroId,itemId){
+  const retro=state.retros.find(r=>r.id===retroId);if(!retro)return;
+  const item=retro.cols.actions.find(i=>i.id===itemId);if(!item)return;
+  item.status='closed';save();renderBoard();
+}
+
+function getActionStatus(item){
+  if(item.status==='closed')return 'closed';
+  if(item.due&&new Date(item.due)<new Date())return 'overdue';
+  return 'open';
+}
+
+function deleteCurrentRetro(){
+  const retro=getActiveRetro();if(!retro)return;
+  if(!confirm('Delete "'+retro.name+'"?'))return;
+  state.retros=state.retros.filter(r=>r.id!==retro.id);
+  state.activeId=state.retros.length?state.retros[state.retros.length-1].id:null;
+  save();renderBoard();
+}
+
+// Timer
+function setTimer(min){timerSeconds=min*60;timerTotal=timerSeconds;updateTimerDisplay()}
+function toggleTimer(){
+  if(timerRunning){clearInterval(timerInterval);timerRunning=false;document.getElementById('timer-toggle').textContent='Start';return}
+  if(timerSeconds<=0)timerSeconds=timerTotal||180;
+  timerRunning=true;document.getElementById('timer-toggle').textContent='Pause';
+  timerInterval=setInterval(()=>{
+    timerSeconds--;updateTimerDisplay();
+    if(timerSeconds<=0){clearInterval(timerInterval);timerRunning=false;document.getElementById('timer-toggle').textContent='Start';
+      try{new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdH2Dg4F/f3+Bg4ODg4N/f3+BgYODg4OBf39/gYGDg4ODgX9/f4GBg4ODg4F/f3+BgYODg4OBf39/gYGDg4ODgX9/f4GBg4ODg4F/').play()}catch(e){}
+    }
+  },1000);
+}
+function resetTimer(){clearInterval(timerInterval);timerRunning=false;timerSeconds=timerTotal||180;document.getElementById('timer-toggle').textContent='Start';updateTimerDisplay()}
+function updateTimerDisplay(){
+  const m=Math.floor(timerSeconds/60),s=timerSeconds%60;
+  const el=document.getElementById('timer-display');
+  el.textContent=m+':'+(s<10?'0':'')+s;
+  el.className='timer-display'+(timerSeconds<=30&&timerSeconds>0?' danger':timerSeconds<=60&&timerSeconds>0?' warning':'');
+}
+
+// Actions view
+function renderActions(){
+  const body=document.getElementById('actions-body');
+  const noEl=document.getElementById('no-actions');
+  let allActions=[];
+  state.retros.forEach(r=>{
+    (r.cols.actions||[]).forEach(a=>{
+      allActions.push({...a,sprint:r.name,retroId:r.id,computedStatus:getActionStatus(a)});
+    });
+  });
+  if(currentActionFilter!=='all')allActions=allActions.filter(a=>a.computedStatus===currentActionFilter);
+  if(!allActions.length){body.innerHTML='';noEl.classList.remove('hidden');return}
+  noEl.classList.add('hidden');
+  body.innerHTML=allActions.map(a=>`<tr>
+    <td>${esc(a.text)}</td>
+    <td>${esc(a.assignee||'-')}</td>
+    <td>${a.due||'-'}</td>
+    <td>${esc(a.sprint)}</td>
+    <td><span class="status-badge status-${a.computedStatus}">${a.computedStatus}</span></td>
+    <td>${a.status!=='closed'?`<button class="btn btn-sm" style="font-size:0.7rem;color:#059669" onclick="closeActionGlobal('${a.retroId}','${a.id}')">Close</button>`:''}</td>
+  </tr>`).join('');
+}
+
+function closeActionGlobal(retroId,itemId){
+  const retro=state.retros.find(r=>r.id===retroId);if(!retro)return;
+  const item=retro.cols.actions.find(i=>i.id===itemId);if(!item)return;
+  item.status='closed';save();renderActions();
+}
+
+function filterActions(f,btn){
+  currentActionFilter=f;
+  document.querySelectorAll('.action-filter-tabs .btn').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  renderActions();
+}
+
+// History
+function renderHistory(){
+  const q=(document.getElementById('history-search').value||'').toLowerCase();
+  const list=document.getElementById('history-list');
+  const noEl=document.getElementById('no-history');
+  let retros=[...state.retros].reverse();
+  if(q){retros=retros.filter(r=>{
+    const all=[r.name,r.team,r.date,...Object.values(r.cols).flat().map(i=>i.text)].join(' ').toLowerCase();
+    return all.includes(q);
+  })}
+  if(!retros.length){list.innerHTML='';noEl.classList.remove('hidden');return}
+  noEl.classList.add('hidden');
+  list.innerHTML=retros.map(r=>{
+    const tpl=TEMPLATES[r.template]||TEMPLATES.standard;
+    const totalItems=Object.values(r.cols).flat().length;
+    const actionCount=(r.cols.actions||[]).length;
+    const closedCount=(r.cols.actions||[]).filter(a=>a.status==='closed').length;
+    return `<div class="history-card glass" onclick="state.activeId='${r.id}';save();showView('board')">
+      <h3>${esc(r.name)}</h3>
+      <div class="meta">
+        <span>${r.date}</span>
+        <span>${r.team}</span>
+        <span>${totalItems} items</span>
+        <span>${closedCount}/${actionCount} actions closed</span>
+        <span class="status-badge status-open">${r.template}</span>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// Trends
+function renderTrends(){
+  const last8=state.retros.slice(-8);
+  const bars=document.getElementById('trend-bars');
+  const labels=document.getElementById('trend-labels');
+  const noEl=document.getElementById('no-trends');
+  if(last8.length<2){bars.innerHTML='';labels.innerHTML='';noEl.classList.remove('hidden');return}
+  noEl.classList.add('hidden');
+  const max=Math.max(...last8.flatMap(r=>Object.values(r.cols).map(c=>c.length)),1);
+  bars.innerHTML=last8.map(r=>{
+    const tpl=TEMPLATES[r.template]||TEMPLATES.standard;
+    const cols=tpl.cols;
+    return `<div class="bar-group">${cols.map(c=>{
+      const h=((r.cols[c.key]||[]).length/max)*100;
+      return `<div class="bar bar-${c.color}" style="height:${Math.max(h,4)}%" title="${c.title}: ${(r.cols[c.key]||[]).length}"></div>`;
+    }).join('')}</div>`;
+  }).join('');
+  labels.innerHTML=last8.map(r=>`<span>${esc(r.name.length>12?r.name.slice(0,12)+'...':r.name)}</span>`).join('');
+}
+
+// Copy formatted
+function copyFormatted(){
+  const retro=getActiveRetro();if(!retro)return;
+  const tpl=TEMPLATES[retro.template]||TEMPLATES.standard;
+  let lines=[`*${retro.name}* (${retro.team}) - ${retro.date}`,''];
+  let allCols=tpl.cols;
+  if(retro.template==='4ls')allCols=[...allCols,{key:'longed',title:'Longed For',icon:'\\u{1F4AD}'}];
+  allCols.forEach(col=>{
+    const items=retro.cols[col.key]||[];
+    lines.push(`${col.icon} *${col.title}*`);
+    if(!items.length)lines.push('  (none)');
+    items.forEach(i=>{
+      let line=`  - ${i.text}`;
+      if(i.votes)line+=` (${i.votes} votes)`;
+      if(i.assignee)line+=` [@${i.assignee}]`;
+      if(i.due)line+=` [due: ${i.due}]`;
+      lines.push(line);
+    });
+    lines.push('');
+  });
+  navigator.clipboard.writeText(lines.join('\n')).then(()=>alert('Copied to clipboard!')).catch(()=>{
+    const ta=document.createElement('textarea');ta.value=lines.join('\n');document.body.appendChild(ta);ta.select();document.execCommand('copy');document.body.removeChild(ta);alert('Copied!');
+  });
+}
+
+// Export
+function exportJSON(){
+  const blob=new Blob([JSON.stringify(state,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='retros-backup-'+new Date().toISOString().split('T')[0]+'.json';a.click();
+}
+
+function esc(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML}
+
+// Init
+load();
+showView('board');
+setTimer(3);
+</script>
+</body>
+</html>

@@ -1,0 +1,919 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>JSON Formatter & Validator</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #f8f9fc;
+    --glass: rgba(255,255,255,0.72);
+    --glass-border: rgba(255,255,255,0.6);
+    --text: #1a1a2e;
+    --text-secondary: #6b7280;
+    --editor-bg: #fafbfd;
+    --editor-border: #e5e7eb;
+    --key-color: #2563eb;
+    --string-color: #16a34a;
+    --number-color: #ea580c;
+    --bool-color: #7c3aed;
+    --null-color: #dc2626;
+    --diff-add: rgba(34,197,94,0.15);
+    --diff-remove: rgba(239,68,68,0.15);
+    --accent: #3b82f6;
+    --success: #22c55e;
+    --error: #ef4444;
+  }
+
+  .dark {
+    --bg: #0f1117;
+    --glass: rgba(30,32,44,0.85);
+    --glass-border: rgba(255,255,255,0.08);
+    --text: #e2e8f0;
+    --text-secondary: #94a3b8;
+    --editor-bg: #1a1c2e;
+    --editor-border: #2d3048;
+    --diff-add: rgba(34,197,94,0.1);
+    --diff-remove: rgba(239,68,68,0.1);
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 1.5rem;
+    transition: background 0.3s, color 0.3s;
+  }
+
+  .header {
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 1.5rem; max-width: 1400px; margin-left: auto; margin-right: auto;
+  }
+  .header-left { display: flex; align-items: center; gap: 0.75rem; }
+  .header-left a { color: var(--accent); text-decoration: none; font-size: 0.875rem; font-weight: 500; }
+  .header h1 { font-size: 1.5rem; font-weight: 700; letter-spacing: -0.02em; }
+  .header-right { display: flex; align-items: center; gap: 0.75rem; }
+
+  .glass {
+    background: var(--glass);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid var(--glass-border);
+    border-radius: 16px;
+  }
+
+  .toolbar {
+    display: flex; flex-wrap: wrap; gap: 0.5rem; padding: 1rem 1.25rem;
+    margin-bottom: 1rem; max-width: 1400px; margin-left: auto; margin-right: auto;
+    align-items: center;
+  }
+
+  button, .btn {
+    font-family: inherit; font-size: 0.8rem; font-weight: 500;
+    padding: 0.45rem 0.85rem; border-radius: 8px; border: 1px solid var(--editor-border);
+    background: var(--glass); color: var(--text); cursor: pointer;
+    transition: all 0.15s; display: inline-flex; align-items: center; gap: 0.35rem;
+  }
+  button:hover { background: var(--accent); color: #fff; border-color: var(--accent); }
+  button.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  button.success { background: var(--success); color: #fff; border-color: var(--success); }
+  button.danger { background: var(--error); color: #fff; border-color: var(--error); }
+
+  .sep { width: 1px; height: 24px; background: var(--editor-border); margin: 0 0.25rem; }
+
+  .main { display: flex; gap: 1rem; max-width: 1400px; margin: 0 auto; min-height: 60vh; }
+  .pane { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+  .pane-label { font-size: 0.75rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 0.5rem; display: flex; align-items: center; gap: 0.5rem; }
+
+  textarea {
+    width: 100%; flex: 1; min-height: 400px; padding: 1rem; border: none; outline: none;
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; font-size: 0.82rem;
+    line-height: 1.6; resize: none; background: var(--editor-bg); color: var(--text);
+    border-radius: 0 0 16px 16px;
+  }
+
+  .output-area {
+    flex: 1; min-height: 400px; padding: 1rem; overflow: auto;
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace; font-size: 0.82rem;
+    line-height: 1.6; background: var(--editor-bg); color: var(--text);
+    border-radius: 0 0 16px 16px; white-space: pre-wrap; word-break: break-word;
+  }
+
+  .output-area .key { color: var(--key-color); }
+  .output-area .string { color: var(--string-color); }
+  .output-area .number { color: var(--number-color); }
+  .output-area .boolean { color: var(--bool-color); }
+  .output-area .null { color: var(--null-color); }
+
+  .status-bar {
+    padding: 0.5rem 1rem; font-size: 0.75rem; display: flex; align-items: center;
+    justify-content: space-between; border-radius: 16px 16px 0 0;
+  }
+  .status-valid { color: var(--success); font-weight: 600; }
+  .status-error { color: var(--error); font-weight: 600; }
+
+  .tabs { display: flex; gap: 0; }
+  .tab {
+    padding: 0.5rem 1rem; font-size: 0.75rem; font-weight: 600; cursor: pointer;
+    border: none; background: none; color: var(--text-secondary);
+    border-bottom: 2px solid transparent; transition: all 0.15s;
+  }
+  .tab:hover { color: var(--text); background: none; border-color: transparent; }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); background: none; }
+
+  /* Tree view */
+  .tree { font-size: 0.82rem; }
+  .tree-node { padding-left: 1.25rem; }
+  .tree-toggle { cursor: pointer; user-select: none; display: inline-flex; align-items: center; gap: 0.25rem; }
+  .tree-toggle:hover .tree-key { text-decoration: underline; }
+  .tree-arrow { display: inline-block; width: 1em; text-align: center; color: var(--text-secondary); font-size: 0.7rem; transition: transform 0.15s; }
+  .tree-arrow.open { transform: rotate(90deg); }
+  .tree-key { color: var(--key-color); font-weight: 500; }
+  .tree-value { cursor: pointer; }
+  .tree-value:hover { text-decoration: underline; }
+  .tree-children { overflow: hidden; }
+  .tree-children.collapsed { display: none; }
+  .tree-bracket { color: var(--text-secondary); font-weight: 400; }
+  .tree-count { color: var(--text-secondary); font-size: 0.7rem; font-style: italic; }
+
+  .path-bar {
+    padding: 0.5rem 1rem; font-size: 0.75rem; font-family: 'SF Mono', monospace;
+    color: var(--accent); background: rgba(59,130,246,0.06); border-radius: 8px;
+    margin-top: 0.5rem; display: none; cursor: pointer;
+  }
+  .path-bar.visible { display: block; }
+
+  /* Compare */
+  .compare-container { display: flex; gap: 1rem; flex: 1; }
+  .diff-line-add { background: var(--diff-add); }
+  .diff-line-remove { background: var(--diff-remove); }
+
+  /* Stats panel */
+  .stats-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 0.75rem; padding: 1rem;
+  }
+  .stat-card {
+    padding: 0.75rem; border-radius: 10px; background: rgba(59,130,246,0.04);
+    border: 1px solid var(--editor-border);
+  }
+  .stat-label { font-size: 0.7rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.05em; }
+  .stat-value { font-size: 1.25rem; font-weight: 700; margin-top: 0.25rem; }
+
+  /* Convert panel */
+  .convert-output {
+    flex: 1; padding: 1rem; overflow: auto;
+    font-family: 'SF Mono', monospace; font-size: 0.82rem; line-height: 1.6;
+    background: var(--editor-bg); color: var(--text); white-space: pre-wrap;
+    border-radius: 0 0 16px 16px;
+  }
+
+  /* History */
+  .history-list { padding: 0.75rem; max-height: 300px; overflow-y: auto; }
+  .history-item {
+    padding: 0.5rem 0.75rem; border-radius: 8px; cursor: pointer; font-size: 0.8rem;
+    margin-bottom: 0.35rem; border: 1px solid var(--editor-border); display: flex;
+    justify-content: space-between; align-items: center;
+  }
+  .history-item:hover { background: rgba(59,130,246,0.06); }
+  .history-time { font-size: 0.7rem; color: var(--text-secondary); }
+  .history-preview { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-family: monospace; font-size: 0.75rem; margin-right: 0.5rem; }
+
+  /* Toggle */
+  .toggle { position: relative; display: inline-block; width: 40px; height: 22px; }
+  .toggle input { opacity: 0; width: 0; height: 0; }
+  .toggle-slider {
+    position: absolute; cursor: pointer; inset: 0; background: #ccc;
+    transition: 0.3s; border-radius: 22px;
+  }
+  .toggle-slider:before {
+    content: ""; position: absolute; height: 16px; width: 16px; left: 3px; bottom: 3px;
+    background: white; transition: 0.3s; border-radius: 50%;
+  }
+  .toggle input:checked + .toggle-slider { background: var(--accent); }
+  .toggle input:checked + .toggle-slider:before { transform: translateX(18px); }
+
+  .mode-label { font-size: 0.75rem; color: var(--text-secondary); font-weight: 500; }
+
+  /* Modal */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 100;
+    display: none; align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal { width: 90%; max-width: 500px; padding: 1.5rem; border-radius: 16px; }
+
+  @media (max-width: 768px) {
+    .main { flex-direction: column; }
+    .toolbar { gap: 0.35rem; }
+    button { font-size: 0.75rem; padding: 0.35rem 0.6rem; }
+  }
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="header-left">
+    <a href="index.html">&larr; Back</a>
+    <h1>JSON Formatter & Validator</h1>
+  </div>
+  <div class="header-right">
+    <span class="mode-label">Auto-format on paste</span>
+    <label class="toggle"><input type="checkbox" id="autoFormatToggle" checked><span class="toggle-slider"></span></label>
+    <div class="sep"></div>
+    <span class="mode-label" id="themeLabel">Light</span>
+    <label class="toggle"><input type="checkbox" id="darkToggle"><span class="toggle-slider"></span></label>
+  </div>
+</div>
+
+<div class="toolbar glass" id="mainToolbar">
+  <button onclick="validateJSON()" title="Validate">&#10003; Validate</button>
+  <button onclick="formatJSON()" title="Format">{ } Format</button>
+  <button onclick="minifyJSON()" title="Minify">&#x2014; Minify</button>
+  <div class="sep"></div>
+  <button onclick="copyFormatted()">Copy Formatted</button>
+  <button onclick="copyMinified()">Copy Minified</button>
+  <button onclick="downloadJSON()">Download .json</button>
+  <div class="sep"></div>
+  <button onclick="loadSample()">Sample JSON</button>
+  <button onclick="showHistory()">History</button>
+  <button onclick="clearInput()">Clear</button>
+</div>
+
+<div class="tabs glass" style="max-width:1400px;margin:0 auto 1rem;padding:0 1rem;">
+  <button class="tab active" data-tab="editor" onclick="switchTab('editor',this)">Editor</button>
+  <button class="tab" data-tab="tree" onclick="switchTab('tree',this)">Tree View</button>
+  <button class="tab" data-tab="compare" onclick="switchTab('compare',this)">Compare</button>
+  <button class="tab" data-tab="convert" onclick="switchTab('convert',this)">Convert</button>
+  <button class="tab" data-tab="stats" onclick="switchTab('stats',this)">Stats</button>
+</div>
+
+<!-- Editor Tab -->
+<div class="main" id="tab-editor">
+  <div class="pane">
+    <div class="pane-label">Input</div>
+    <div class="glass" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+      <div class="status-bar" id="inputStatus">
+        <span id="statusMsg">Paste or type JSON</span>
+        <span id="inputSize"></span>
+      </div>
+      <textarea id="jsonInput" placeholder='Paste JSON here...' spellcheck="false"></textarea>
+    </div>
+  </div>
+  <div class="pane">
+    <div class="pane-label">Output</div>
+    <div class="glass" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+      <div class="status-bar">
+        <span id="outputLabel">Formatted</span>
+      </div>
+      <div class="output-area" id="jsonOutput"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Tree Tab -->
+<div class="main" id="tab-tree" style="display:none;">
+  <div class="pane" style="max-width:100%;">
+    <div class="pane-label">Tree View <span style="font-weight:400;text-transform:none;font-size:0.75rem;color:var(--text-secondary)">— click any value to copy its JSONPath</span></div>
+    <div class="glass" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+      <div class="output-area" id="treeView" style="overflow:auto;"></div>
+    </div>
+    <div class="path-bar" id="pathBar" onclick="copyPath()"></div>
+  </div>
+</div>
+
+<!-- Compare Tab -->
+<div class="main" id="tab-compare" style="display:none;">
+  <div class="pane">
+    <div class="pane-label">JSON A</div>
+    <div class="glass" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+      <div class="status-bar"><span>Left document</span></div>
+      <textarea id="compareA" placeholder="Paste first JSON..." spellcheck="false"></textarea>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;">
+    <button onclick="runCompare()" style="white-space:nowrap;">Compare &harr;</button>
+  </div>
+  <div class="pane">
+    <div class="pane-label">JSON B</div>
+    <div class="glass" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+      <div class="status-bar"><span>Right document</span></div>
+      <textarea id="compareB" placeholder="Paste second JSON..." spellcheck="false"></textarea>
+    </div>
+  </div>
+  <div class="pane">
+    <div class="pane-label">Differences</div>
+    <div class="glass" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+      <div class="status-bar"><span id="diffCount">No comparison yet</span></div>
+      <div class="output-area" id="diffOutput"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Convert Tab -->
+<div class="main" id="tab-convert" style="display:none;">
+  <div class="pane" style="max-width:100%;">
+    <div class="pane-label" style="gap:1rem;">
+      Convert to:
+      <button class="active" data-conv="yaml" onclick="switchConvert('yaml',this)">YAML</button>
+      <button data-conv="csv" onclick="switchConvert('csv',this)">CSV</button>
+      <button data-conv="ts" onclick="switchConvert('ts',this)">TypeScript</button>
+      <button onclick="copyConvert()" style="margin-left:auto;">Copy</button>
+    </div>
+    <div class="glass" style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+      <div class="convert-output" id="convertOutput"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Stats Tab -->
+<div class="main" id="tab-stats" style="display:none;">
+  <div class="pane" style="max-width:100%;">
+    <div class="pane-label">JSON Statistics</div>
+    <div class="glass" style="flex:1;">
+      <div class="stats-grid" id="statsGrid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- History Modal -->
+<div class="modal-overlay" id="historyModal">
+  <div class="modal glass">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+      <h3 style="font-size:1rem;font-weight:600;">History (last 10)</h3>
+      <button onclick="closeHistory()" style="border:none;background:none;font-size:1.25rem;cursor:pointer;color:var(--text);">&times;</button>
+    </div>
+    <div class="history-list" id="historyList"></div>
+    <button onclick="clearHistory()" style="margin-top:0.75rem;width:100;" class="danger">Clear History</button>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const LS_KEY = 'json-formatter-history';
+const LS_THEME = 'json-formatter-theme';
+const LS_AUTO = 'json-formatter-autoformat';
+let currentConvert = 'yaml';
+let currentTab = 'editor';
+
+// Init
+(function init() {
+  const dark = localStorage.getItem(LS_THEME) === 'dark';
+  if (dark) { document.body.classList.add('dark'); $('darkToggle').checked = true; $('themeLabel').textContent = 'Dark'; }
+  const af = localStorage.getItem(LS_AUTO);
+  if (af === 'false') $('autoFormatToggle').checked = false;
+
+  $('darkToggle').addEventListener('change', e => {
+    document.body.classList.toggle('dark', e.target.checked);
+    $('themeLabel').textContent = e.target.checked ? 'Dark' : 'Light';
+    localStorage.setItem(LS_THEME, e.target.checked ? 'dark' : 'light');
+  });
+
+  $('autoFormatToggle').addEventListener('change', e => {
+    localStorage.setItem(LS_AUTO, e.target.checked);
+  });
+
+  $('jsonInput').addEventListener('input', () => { updateSize(); });
+  $('jsonInput').addEventListener('paste', e => {
+    if ($('autoFormatToggle').checked) {
+      setTimeout(() => formatJSON(), 50);
+    }
+  });
+
+  // Load last input
+  const hist = getHistory();
+  if (hist.length > 0) {
+    $('jsonInput').value = hist[0].json;
+    setTimeout(() => formatJSON(), 100);
+  }
+})();
+
+function updateSize() {
+  const bytes = new Blob([$('jsonInput').value]).size;
+  $('inputSize').textContent = formatBytes(bytes);
+}
+
+function formatBytes(b) {
+  if (b === 0) return '0 B';
+  const k = 1024, s = ['B','KB','MB'], i = Math.floor(Math.log(b)/Math.log(k));
+  return parseFloat((b / Math.pow(k, i)).toFixed(1)) + ' ' + s[i];
+}
+
+function getJSON() {
+  try {
+    const val = $('jsonInput').value.trim();
+    if (!val) return null;
+    return JSON.parse(val);
+  } catch(e) { return e; }
+}
+
+function validateJSON() {
+  const val = $('jsonInput').value.trim();
+  if (!val) { setStatus('No input', 'error'); return; }
+  try {
+    JSON.parse(val);
+    setStatus('Valid JSON', 'valid');
+  } catch(e) {
+    const match = e.message.match(/position (\d+)/);
+    let line = '';
+    if (match) {
+      const pos = parseInt(match[1]);
+      line = ' (near position ' + pos + ', line ' + getLineFromPos(val, pos) + ')';
+    }
+    setStatus('Invalid: ' + e.message + line, 'error');
+  }
+}
+
+function getLineFromPos(str, pos) {
+  return str.substring(0, pos).split('\n').length;
+}
+
+function setStatus(msg, type) {
+  const el = $('statusMsg');
+  el.textContent = msg;
+  el.className = type === 'valid' ? 'status-valid' : type === 'error' ? 'status-error' : '';
+}
+
+function formatJSON() {
+  const val = $('jsonInput').value.trim();
+  if (!val) { $('jsonOutput').innerHTML = ''; setStatus('No input', ''); return; }
+  try {
+    const obj = JSON.parse(val);
+    const formatted = JSON.stringify(obj, null, 2);
+    $('jsonInput').value = formatted;
+    $('jsonOutput').innerHTML = syntaxHighlight(formatted);
+    setStatus('Valid JSON', 'valid');
+    updateSize();
+    saveHistory(formatted);
+    // Update other tabs
+    updateTree(obj);
+    updateStats(obj, formatted);
+    updateConvert(obj);
+  } catch(e) {
+    setStatus('Invalid: ' + e.message, 'error');
+  }
+}
+
+function minifyJSON() {
+  const val = $('jsonInput').value.trim();
+  if (!val) return;
+  try {
+    const obj = JSON.parse(val);
+    const min = JSON.stringify(obj);
+    $('jsonInput').value = min;
+    $('jsonOutput').innerHTML = syntaxHighlight(min);
+    setStatus('Minified (' + formatBytes(new Blob([min]).size) + ')', 'valid');
+    updateSize();
+  } catch(e) {
+    setStatus('Invalid: ' + e.message, 'error');
+  }
+}
+
+function syntaxHighlight(json) {
+  return json.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false)\b|-?\d+(\.\d+)?([eE][+-]?\d+)?|\bnull\b)/g,
+    function(match) {
+      let cls = 'number';
+      if (/^"/.test(match)) {
+        cls = /:$/.test(match) ? 'key' : 'string';
+      } else if (/true|false/.test(match)) {
+        cls = 'boolean';
+      } else if (/null/.test(match)) {
+        cls = 'null';
+      }
+      return '<span class="' + cls + '">' + match + '</span>';
+    });
+}
+
+function copyFormatted() {
+  try {
+    const obj = JSON.parse($('jsonInput').value);
+    navigator.clipboard.writeText(JSON.stringify(obj, null, 2));
+    showToast('Copied formatted JSON');
+  } catch(e) { showToast('Invalid JSON'); }
+}
+
+function copyMinified() {
+  try {
+    const obj = JSON.parse($('jsonInput').value);
+    navigator.clipboard.writeText(JSON.stringify(obj));
+    showToast('Copied minified JSON');
+  } catch(e) { showToast('Invalid JSON'); }
+}
+
+function downloadJSON() {
+  try {
+    const obj = JSON.parse($('jsonInput').value);
+    const blob = new Blob([JSON.stringify(obj, null, 2)], {type: 'application/json'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'data.json';
+    a.click();
+  } catch(e) { showToast('Invalid JSON'); }
+}
+
+function clearInput() {
+  $('jsonInput').value = '';
+  $('jsonOutput').innerHTML = '';
+  setStatus('Paste or type JSON', '');
+  updateSize();
+}
+
+function loadSample() {
+  const sample = {
+    "company": "Acme Corp",
+    "founded": 2019,
+    "active": true,
+    "headquarters": { "city": "Toronto", "country": "Canada", "coordinates": { "lat": 43.6532, "lng": -79.3832 } },
+    "employees": [
+      { "id": 1, "name": "Alice Chen", "role": "CEO", "skills": ["leadership", "strategy", "finance"], "remote": false },
+      { "id": 2, "name": "Bob Patel", "role": "CTO", "skills": ["rust", "kubernetes", "ML"], "remote": true },
+      { "id": 3, "name": "Carol Kim", "role": "Designer", "skills": ["figma", "CSS", "motion"], "remote": true }
+    ],
+    "products": [
+      { "name": "Widget Pro", "price": 29.99, "categories": ["tools", "productivity"], "ratings": [4.5, 4.8, 4.2, 4.9] },
+      { "name": "Data Sync", "price": 49.99, "categories": ["data", "integration"], "ratings": [4.7, 4.6] }
+    ],
+    "metadata": { "lastUpdated": "2026-04-29T10:30:00Z", "version": "2.1.0", "deprecated": null, "tags": ["startup", "B2B", "SaaS"] }
+  };
+  $('jsonInput').value = JSON.stringify(sample, null, 2);
+  formatJSON();
+}
+
+// Tree View
+function updateTree(obj) {
+  $('treeView').innerHTML = '';
+  $('treeView').appendChild(buildTree(obj, '$'));
+}
+
+function buildTree(data, path) {
+  const frag = document.createDocumentFragment();
+  if (data === null) {
+    const span = document.createElement('span');
+    span.className = 'null tree-value';
+    span.textContent = 'null';
+    span.onclick = () => showPath(path);
+    frag.appendChild(span);
+    return frag;
+  }
+  if (typeof data !== 'object') {
+    const span = document.createElement('span');
+    span.className = (typeof data === 'string' ? 'string' : typeof data === 'boolean' ? 'boolean' : 'number') + ' tree-value';
+    span.textContent = JSON.stringify(data);
+    span.onclick = () => showPath(path);
+    frag.appendChild(span);
+    return frag;
+  }
+
+  const isArr = Array.isArray(data);
+  const keys = Object.keys(data);
+  const container = document.createElement('div');
+
+  keys.forEach((key, i) => {
+    const node = document.createElement('div');
+    node.className = 'tree-node';
+    const childPath = isArr ? path + '[' + key + ']' : path + '.' + key;
+    const val = data[key];
+    const isObj = val !== null && typeof val === 'object';
+
+    if (isObj) {
+      const childIsArr = Array.isArray(val);
+      const childKeys = Object.keys(val);
+      const toggle = document.createElement('span');
+      toggle.className = 'tree-toggle';
+      toggle.innerHTML = '<span class="tree-arrow open">&#9654;</span> <span class="tree-key">' +
+        (isArr ? key : '"' + key + '"') + '</span>: <span class="tree-bracket">' +
+        (childIsArr ? '[' : '{') + '</span> <span class="tree-count">' +
+        childKeys.length + (childIsArr ? ' items' : ' keys') + '</span>';
+
+      const children = document.createElement('div');
+      children.className = 'tree-children';
+      children.appendChild(buildTree(val, childPath));
+
+      const closeBracket = document.createElement('div');
+      closeBracket.className = 'tree-node';
+      closeBracket.innerHTML = '<span class="tree-bracket">' + (childIsArr ? ']' : '}') + '</span>';
+      children.appendChild(closeBracket);
+
+      toggle.onclick = () => {
+        const arrow = toggle.querySelector('.tree-arrow');
+        arrow.classList.toggle('open');
+        children.classList.toggle('collapsed');
+      };
+
+      node.appendChild(toggle);
+      node.appendChild(children);
+    } else {
+      const keySpan = '<span class="tree-key">' + (isArr ? key : '"' + key + '"') + '</span>: ';
+      const valTree = buildTree(val, childPath);
+      const line = document.createElement('span');
+      line.innerHTML = keySpan;
+      line.appendChild(valTree);
+      node.appendChild(line);
+    }
+    container.appendChild(node);
+  });
+
+  frag.appendChild(container);
+  return frag;
+}
+
+function showPath(path) {
+  const bar = $('pathBar');
+  bar.textContent = path;
+  bar.classList.add('visible');
+  navigator.clipboard.writeText(path);
+  showToast('Copied: ' + path);
+}
+
+function copyPath() {
+  navigator.clipboard.writeText($('pathBar').textContent);
+  showToast('Path copied');
+}
+
+// Compare
+function runCompare() {
+  try {
+    const a = JSON.parse($('compareA').value);
+    const b = JSON.parse($('compareB').value);
+    const diffs = deepDiff(a, b, '$');
+    if (diffs.length === 0) {
+      $('diffCount').textContent = 'No differences found';
+      $('diffOutput').innerHTML = '<span style="color:var(--success);">Identical JSON documents</span>';
+    } else {
+      $('diffCount').textContent = diffs.length + ' difference(s)';
+      $('diffOutput').innerHTML = diffs.map(d => {
+        if (d.type === 'added') return '<div class="diff-line-add" style="padding:2px 4px;margin:1px 0;">+ ' + d.path + ': ' + esc(JSON.stringify(d.val)) + '</div>';
+        if (d.type === 'removed') return '<div class="diff-line-remove" style="padding:2px 4px;margin:1px 0;">- ' + d.path + ': ' + esc(JSON.stringify(d.val)) + '</div>';
+        return '<div class="diff-line-remove" style="padding:2px 4px;margin:1px 0;">- ' + d.path + ': ' + esc(JSON.stringify(d.oldVal)) + '</div>' +
+               '<div class="diff-line-add" style="padding:2px 4px;margin:1px 0;">+ ' + d.path + ': ' + esc(JSON.stringify(d.newVal)) + '</div>';
+      }).join('');
+    }
+  } catch(e) {
+    $('diffCount').textContent = 'Error';
+    $('diffOutput').innerHTML = '<span class="status-error">' + esc(e.message) + '</span>';
+  }
+}
+
+function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function deepDiff(a, b, path) {
+  const diffs = [];
+  if (a === b) return diffs;
+  if (a === null || b === null || typeof a !== typeof b || typeof a !== 'object') {
+    diffs.push({ type: 'changed', path, oldVal: a, newVal: b });
+    return diffs;
+  }
+  const isArrA = Array.isArray(a), isArrB = Array.isArray(b);
+  if (isArrA !== isArrB) {
+    diffs.push({ type: 'changed', path, oldVal: a, newVal: b });
+    return diffs;
+  }
+  const allKeys = new Set([...Object.keys(a), ...Object.keys(b)]);
+  for (const key of allKeys) {
+    const childPath = isArrA ? path + '[' + key + ']' : path + '.' + key;
+    if (!(key in a)) { diffs.push({ type: 'added', path: childPath, val: b[key] }); }
+    else if (!(key in b)) { diffs.push({ type: 'removed', path: childPath, val: a[key] }); }
+    else { diffs.push(...deepDiff(a[key], b[key], childPath)); }
+  }
+  return diffs;
+}
+
+// Convert
+function updateConvert(obj) {
+  if (!obj) return;
+  if (currentConvert === 'yaml') $('convertOutput').textContent = toYAML(obj, 0);
+  else if (currentConvert === 'csv') $('convertOutput').textContent = toCSV(obj);
+  else if (currentConvert === 'ts') $('convertOutput').textContent = toTS(obj);
+}
+
+function switchConvert(type, el) {
+  currentConvert = type;
+  document.querySelectorAll('[data-conv]').forEach(b => b.classList.remove('active'));
+  el.classList.add('active');
+  try { updateConvert(JSON.parse($('jsonInput').value)); } catch(e) { $('convertOutput').textContent = 'Invalid JSON'; }
+}
+
+function copyConvert() {
+  navigator.clipboard.writeText($('convertOutput').textContent);
+  showToast('Copied');
+}
+
+function toYAML(obj, indent) {
+  const pad = '  '.repeat(indent);
+  if (obj === null) return 'null';
+  if (typeof obj !== 'object') return typeof obj === 'string' ? '"' + obj + '"' : String(obj);
+  if (Array.isArray(obj)) {
+    if (obj.length === 0) return '[]';
+    return obj.map(v => pad + '- ' + (typeof v === 'object' && v !== null ? '\n' + toYAMLObj(v, indent + 2) : toYAML(v, indent + 1))).join('\n');
+  }
+  return toYAMLObj(obj, indent);
+}
+
+function toYAMLObj(obj, indent) {
+  const pad = '  '.repeat(indent);
+  return Object.entries(obj).map(([k, v]) => {
+    if (v === null) return pad + k + ': null';
+    if (typeof v !== 'object') return pad + k + ': ' + (typeof v === 'string' ? '"' + v + '"' : v);
+    if (Array.isArray(v)) return pad + k + ':\n' + toYAML(v, indent + 1);
+    return pad + k + ':\n' + toYAMLObj(v, indent + 1);
+  }).join('\n');
+}
+
+function toCSV(obj) {
+  let arr = Array.isArray(obj) ? obj : (typeof obj === 'object' && obj !== null ? Object.values(obj) : []);
+  if (!Array.isArray(arr) || arr.length === 0) return '// Input must be an array of objects for CSV conversion';
+  const items = arr.filter(i => typeof i === 'object' && i !== null && !Array.isArray(i));
+  if (items.length === 0) return '// No objects found in array';
+  const headers = [...new Set(items.flatMap(i => Object.keys(i)))];
+  const csvEsc = v => {
+    const s = v === null || v === undefined ? '' : typeof v === 'object' ? JSON.stringify(v) : String(v);
+    return s.includes(',') || s.includes('"') || s.includes('\n') ? '"' + s.replace(/"/g,'""') + '"' : s;
+  };
+  return [headers.join(','), ...items.map(i => headers.map(h => csvEsc(i[h])).join(','))].join('\n');
+}
+
+function toTS(obj, name, indent) {
+  name = name || 'Root';
+  indent = indent || 0;
+  const pad = '  '.repeat(indent);
+  const lines = [];
+  const interfaces = [];
+
+  if (Array.isArray(obj)) {
+    if (obj.length > 0 && typeof obj[0] === 'object' && obj[0] !== null) {
+      const inner = toTS(obj[0], name + 'Item', indent);
+      return inner + '\n' + pad + 'type ' + name + ' = ' + name + 'Item[];';
+    }
+    const types = [...new Set(obj.map(v => tsType(v)))];
+    return pad + 'type ' + name + ' = (' + types.join(' | ') + ')[];';
+  }
+
+  if (typeof obj !== 'object' || obj === null) return pad + 'type ' + name + ' = ' + tsType(obj) + ';';
+
+  lines.push(pad + 'interface ' + name + ' {');
+  for (const [k, v] of Object.entries(obj)) {
+    const safeName = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(k) ? k : '"' + k + '"';
+    if (v === null) { lines.push(pad + '  ' + safeName + ': null;'); }
+    else if (Array.isArray(v)) {
+      if (v.length > 0 && typeof v[0] === 'object' && v[0] !== null) {
+        const subName = capitalize(k) + 'Item';
+        interfaces.push(toTS(v[0], subName, indent));
+        lines.push(pad + '  ' + safeName + ': ' + subName + '[];');
+      } else {
+        const types = v.length > 0 ? [...new Set(v.map(i => tsType(i)))].join(' | ') : 'unknown';
+        lines.push(pad + '  ' + safeName + ': (' + types + ')[];');
+      }
+    } else if (typeof v === 'object') {
+      const subName = capitalize(k);
+      interfaces.push(toTS(v, subName, indent));
+      lines.push(pad + '  ' + safeName + ': ' + subName + ';');
+    } else {
+      lines.push(pad + '  ' + safeName + ': ' + tsType(v) + ';');
+    }
+  }
+  lines.push(pad + '}');
+  return [...interfaces, lines.join('\n')].join('\n\n');
+}
+
+function tsType(v) {
+  if (v === null) return 'null';
+  if (typeof v === 'string') return 'string';
+  if (typeof v === 'number') return 'number';
+  if (typeof v === 'boolean') return 'boolean';
+  return 'unknown';
+}
+
+function capitalize(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+// Stats
+function updateStats(obj, raw) {
+  const stats = analyzeJSON(obj, raw);
+  $('statsGrid').innerHTML = [
+    { label: 'Total Keys', value: stats.keys },
+    { label: 'Max Depth', value: stats.depth },
+    { label: 'Size (raw)', value: formatBytes(stats.size) },
+    { label: 'Size (minified)', value: formatBytes(stats.minSize) },
+    { label: 'Arrays', value: stats.arrays },
+    { label: 'Objects', value: stats.objects },
+    { label: 'Strings', value: stats.strings },
+    { label: 'Numbers', value: stats.numbers },
+    { label: 'Booleans', value: stats.booleans },
+    { label: 'Nulls', value: stats.nulls },
+    { label: 'Max Array Length', value: stats.maxArrayLen },
+    { label: 'Unique Keys', value: stats.uniqueKeys },
+  ].map(s => '<div class="stat-card"><div class="stat-label">' + s.label + '</div><div class="stat-value">' + s.value + '</div></div>').join('');
+}
+
+function analyzeJSON(obj, raw) {
+  const s = { keys:0, depth:0, size:0, minSize:0, arrays:0, objects:0, strings:0, numbers:0, booleans:0, nulls:0, maxArrayLen:0, uniqueKeys: new Set() };
+  s.size = new Blob([raw || '']).size;
+  s.minSize = new Blob([JSON.stringify(obj)]).size;
+  function walk(v, d) {
+    if (d > s.depth) s.depth = d;
+    if (v === null) { s.nulls++; return; }
+    if (typeof v !== 'object') {
+      if (typeof v === 'string') s.strings++;
+      else if (typeof v === 'number') s.numbers++;
+      else if (typeof v === 'boolean') s.booleans++;
+      return;
+    }
+    if (Array.isArray(v)) {
+      s.arrays++;
+      if (v.length > s.maxArrayLen) s.maxArrayLen = v.length;
+      v.forEach(i => walk(i, d+1));
+    } else {
+      s.objects++;
+      for (const [k, val] of Object.entries(v)) {
+        s.keys++;
+        s.uniqueKeys.add(k);
+        walk(val, d+1);
+      }
+    }
+  }
+  walk(obj, 0);
+  s.uniqueKeys = s.uniqueKeys.size;
+  return s;
+}
+
+// Tabs
+function switchTab(tab, el) {
+  currentTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  ['editor','tree','compare','convert','stats'].forEach(t => {
+    const el = $('tab-' + t);
+    if (el) el.style.display = t === tab ? 'flex' : 'none';
+  });
+  // Refresh content when switching
+  if (tab !== 'editor' && tab !== 'compare') {
+    try {
+      const obj = JSON.parse($('jsonInput').value);
+      if (tab === 'tree') updateTree(obj);
+      if (tab === 'stats') updateStats(obj, $('jsonInput').value);
+      if (tab === 'convert') updateConvert(obj);
+    } catch(e) {}
+  }
+}
+
+// History
+function getHistory() {
+  try { return JSON.parse(localStorage.getItem(LS_KEY) || '[]'); } catch { return []; }
+}
+
+function saveHistory(json) {
+  let hist = getHistory();
+  // Don't duplicate
+  hist = hist.filter(h => h.json !== json);
+  hist.unshift({ json, time: Date.now() });
+  if (hist.length > 10) hist = hist.slice(0, 10);
+  localStorage.setItem(LS_KEY, JSON.stringify(hist));
+}
+
+function showHistory() {
+  const hist = getHistory();
+  $('historyList').innerHTML = hist.length === 0 ? '<p style="color:var(--text-secondary);font-size:0.85rem;">No history yet</p>' :
+    hist.map((h, i) => '<div class="history-item" onclick="loadHistory(' + i + ')"><span class="history-preview">' +
+    esc(h.json.substring(0, 80)) + '</span><span class="history-time">' + timeAgo(h.time) + '</span></div>').join('');
+  $('historyModal').classList.add('open');
+}
+
+function closeHistory() { $('historyModal').classList.remove('open'); }
+
+function clearHistory() {
+  localStorage.removeItem(LS_KEY);
+  $('historyList').innerHTML = '<p style="color:var(--text-secondary);font-size:0.85rem;">History cleared</p>';
+}
+
+function loadHistory(i) {
+  const hist = getHistory();
+  if (hist[i]) {
+    $('jsonInput').value = hist[i].json;
+    formatJSON();
+    closeHistory();
+  }
+}
+
+function timeAgo(ts) {
+  const diff = Date.now() - ts;
+  if (diff < 60000) return 'just now';
+  if (diff < 3600000) return Math.floor(diff/60000) + 'm ago';
+  if (diff < 86400000) return Math.floor(diff/3600000) + 'h ago';
+  return Math.floor(diff/86400000) + 'd ago';
+}
+
+// Toast
+function showToast(msg) {
+  const toast = document.createElement('div');
+  toast.style.cssText = 'position:fixed;bottom:2rem;left:50%;transform:translateX(-50%);padding:0.6rem 1.25rem;border-radius:10px;background:#1a1a2e;color:#fff;font-size:0.82rem;font-family:Inter,sans-serif;z-index:1000;opacity:0;transition:opacity 0.3s;';
+  toast.textContent = msg;
+  document.body.appendChild(toast);
+  requestAnimationFrame(() => toast.style.opacity = '1');
+  setTimeout(() => { toast.style.opacity = '0'; setTimeout(() => toast.remove(), 300); }, 2000);
+}
+</script>
+</body>
+</html>

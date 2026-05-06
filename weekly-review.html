@@ -1,0 +1,892 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Weekly Review - Lumen Analytics</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #f8f9fc;
+    color: #1a1a2e;
+    min-height: 100vh;
+    padding: 1.5rem;
+    line-height: 1.5;
+  }
+
+  @media print {
+    body { padding: 0.5rem; background: #fff; }
+    .no-print { display: none !important; }
+    .glass { background: #fff !important; border: 1px solid #e5e7eb !important; backdrop-filter: none !important; }
+    .week-nav { justify-content: center; }
+  }
+
+  .container { max-width: 900px; margin: 0 auto; }
+
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    color: #6b7280;
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 500;
+    margin-bottom: 1.5rem;
+    transition: color 0.2s;
+  }
+  .back-link:hover { color: #3b82f6; }
+
+  .glass {
+    background: rgba(255,255,255,0.72);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.6);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1.25rem;
+  }
+
+  /* Week Header */
+  .week-header { text-align: center; padding: 2rem 1.5rem; }
+  .week-header h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.25rem;
+  }
+  .week-header .subtitle {
+    color: #6b7280;
+    font-size: 0.9rem;
+  }
+  .week-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1.5rem;
+    margin-top: 1rem;
+  }
+  .week-nav button {
+    background: rgba(255,255,255,0.6);
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 10px;
+    padding: 0.45rem 1rem;
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    color: #374151;
+    transition: all 0.2s;
+  }
+  .week-nav button:hover { background: #fff; box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+  .week-nav .week-label { font-weight: 600; font-size: 0.95rem; min-width: 220px; text-align: center; }
+
+  /* Section headers */
+  .section-head {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 1rem;
+  }
+  .section-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .section-head h2 { font-size: 1.05rem; font-weight: 600; }
+  .section-prompt {
+    color: #9ca3af;
+    font-size: 0.8rem;
+    font-style: italic;
+    margin-bottom: 0.75rem;
+  }
+
+  /* Bullet list sections */
+  .bullet-list { list-style: none; }
+  .bullet-list li {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    padding: 0.4rem 0;
+  }
+  .bullet-list li .marker {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+    margin-top: 0.55rem;
+  }
+  .bullet-list li input[type="text"] {
+    flex: 1;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+    padding: 0.3rem 0;
+    font-family: inherit;
+    font-size: 0.9rem;
+    color: #1a1a2e;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .bullet-list li input[type="text"]:focus { border-bottom-color: rgba(0,0,0,0.2); }
+  .bullet-list li input[type="text"]::placeholder { color: #d1d5db; }
+  .bullet-list li .remove-btn {
+    background: none;
+    border: none;
+    color: #d1d5db;
+    cursor: pointer;
+    font-size: 1.1rem;
+    line-height: 1;
+    padding: 0.2rem;
+    transition: color 0.2s;
+  }
+  .bullet-list li .remove-btn:hover { color: #ef4444; }
+
+  .add-btn {
+    background: none;
+    border: 1px dashed rgba(0,0,0,0.12);
+    border-radius: 8px;
+    padding: 0.4rem 0.8rem;
+    font-family: inherit;
+    font-size: 0.8rem;
+    color: #9ca3af;
+    cursor: pointer;
+    margin-top: 0.5rem;
+    transition: all 0.2s;
+  }
+  .add-btn:hover { border-color: rgba(0,0,0,0.25); color: #6b7280; }
+
+  /* Color themes */
+  .green .section-dot, .green .marker { background: #10b981; }
+  .green .section-head h2 { color: #059669; }
+  .amber .section-dot, .amber .marker { background: #f59e0b; }
+  .amber .section-head h2 { color: #d97706; }
+  .blue .section-dot, .blue .marker { background: #3b82f6; }
+  .blue .section-head h2 { color: #2563eb; }
+  .purple .section-dot, .purple .marker { background: #8b5cf6; }
+  .purple .section-head h2 { color: #7c3aed; }
+
+  /* Metrics grid */
+  .metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 1rem;
+  }
+  .metric-card {
+    background: rgba(255,255,255,0.5);
+    border-radius: 12px;
+    padding: 1rem;
+    text-align: center;
+  }
+  .metric-card label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #6b7280;
+    margin-bottom: 0.5rem;
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+  }
+  .metric-card input {
+    background: transparent;
+    border: none;
+    border-bottom: 1.5px solid rgba(0,0,0,0.08);
+    font-family: inherit;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1a1a2e;
+    width: 100%;
+    text-align: center;
+    outline: none;
+    padding: 0.2rem 0;
+  }
+  .metric-card input:focus { border-bottom-color: #3b82f6; }
+  .metric-prefix { font-size: 1rem; font-weight: 500; color: #9ca3af; }
+
+  /* Priorities */
+  .priority-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.75rem;
+    padding: 0.6rem 0;
+  }
+  .priority-num {
+    width: 28px; height: 28px;
+    border-radius: 8px;
+    background: rgba(139,92,246,0.1);
+    color: #7c3aed;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .priority-item input[type="checkbox"] {
+    width: 18px; height: 18px;
+    accent-color: #8b5cf6;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+  .priority-item input[type="text"] {
+    flex: 1;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+    padding: 0.3rem 0;
+    font-family: inherit;
+    font-size: 0.9rem;
+    color: #1a1a2e;
+    outline: none;
+  }
+  .priority-item input[type="text"]:focus { border-bottom-color: rgba(0,0,0,0.2); }
+
+  /* Energy ratings */
+  .rating-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid rgba(0,0,0,0.04);
+  }
+  .rating-row:last-child { border-bottom: none; }
+  .rating-label { font-size: 0.9rem; font-weight: 500; color: #374151; }
+  .rating-stars { display: flex; gap: 0.35rem; }
+  .rating-stars button {
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    border: 1.5px solid rgba(0,0,0,0.08);
+    background: rgba(255,255,255,0.5);
+    font-size: 0.8rem;
+    font-weight: 600;
+    color: #9ca3af;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .rating-stars button.active {
+    background: #3b82f6;
+    border-color: #3b82f6;
+    color: #fff;
+  }
+  .rating-stars button:hover { border-color: #3b82f6; }
+
+  .energy-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    align-items: start;
+  }
+  @media (max-width: 680px) { .energy-layout { grid-template-columns: 1fr; } }
+  .radar-wrap { display: flex; justify-content: center; align-items: center; }
+  .radar-wrap canvas { max-width: 280px; max-height: 280px; }
+
+  /* Notes */
+  .notes-area {
+    width: 100%;
+    min-height: 120px;
+    background: transparent;
+    border: 1px solid rgba(0,0,0,0.06);
+    border-radius: 10px;
+    padding: 0.8rem;
+    font-family: inherit;
+    font-size: 0.9rem;
+    color: #1a1a2e;
+    outline: none;
+    resize: vertical;
+    line-height: 1.6;
+  }
+  .notes-area:focus { border-color: rgba(0,0,0,0.15); }
+  .notes-area::placeholder { color: #d1d5db; }
+
+  /* Trend charts */
+  .trend-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+  @media (max-width: 600px) { .trend-grid { grid-template-columns: 1fr; } }
+  .trend-card { background: rgba(255,255,255,0.4); border-radius: 12px; padding: 1rem; }
+  .trend-card h3 { font-size: 0.8rem; font-weight: 600; color: #6b7280; margin-bottom: 0.5rem; text-transform: uppercase; letter-spacing: 0.03em; }
+  .trend-card canvas { width: 100% !important; height: 120px !important; }
+
+  /* Actions bar */
+  .actions {
+    display: flex;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin: 1.5rem 0;
+  }
+  .action-btn {
+    background: rgba(255,255,255,0.72);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(0,0,0,0.08);
+    border-radius: 10px;
+    padding: 0.55rem 1.2rem;
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 500;
+    color: #374151;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+  .action-btn:hover { background: #fff; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+  .action-btn.primary { background: #3b82f6; color: #fff; border-color: #3b82f6; }
+  .action-btn.primary:hover { background: #2563eb; }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: #1a1a2e;
+    color: #fff;
+    padding: 0.7rem 1.5rem;
+    border-radius: 12px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 1000;
+    pointer-events: none;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+
+  .save-indicator {
+    position: fixed;
+    top: 1rem;
+    right: 1rem;
+    font-size: 0.75rem;
+    color: #9ca3af;
+    transition: opacity 0.3s;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <a href="index.html" class="back-link no-print">&larr; Back to Analytics</a>
+
+  <!-- Week Header -->
+  <div class="glass week-header">
+    <h1 id="weekTitle">Weekly Review</h1>
+    <p class="subtitle">Structured reflection and planning</p>
+    <div class="week-nav no-print">
+      <button onclick="changeWeek(-1)">&larr; Previous</button>
+      <span class="week-label" id="weekLabel"></span>
+      <button onclick="changeWeek(1)">Next &rarr;</button>
+    </div>
+  </div>
+
+  <!-- Wins -->
+  <div class="glass green">
+    <div class="section-head">
+      <div class="section-dot"></div>
+      <h2>Wins This Week</h2>
+    </div>
+    <p class="section-prompt">What went well? What shipped? What are you proud of?</p>
+    <ul class="bullet-list" id="wins"></ul>
+    <button class="add-btn no-print" onclick="addBullet('wins')">+ Add win</button>
+  </div>
+
+  <!-- Challenges -->
+  <div class="glass amber">
+    <div class="section-head">
+      <div class="section-dot"></div>
+      <h2>Challenges</h2>
+    </div>
+    <p class="section-prompt">What was hard? What didn't go as planned?</p>
+    <ul class="bullet-list" id="challenges"></ul>
+    <button class="add-btn no-print" onclick="addBullet('challenges')">+ Add challenge</button>
+  </div>
+
+  <!-- Lessons -->
+  <div class="glass blue">
+    <div class="section-head">
+      <div class="section-dot"></div>
+      <h2>Lessons Learned</h2>
+    </div>
+    <p class="section-prompt">What would you do differently? What did you learn?</p>
+    <ul class="bullet-list" id="lessons"></ul>
+    <button class="add-btn no-print" onclick="addBullet('lessons')">+ Add lesson</button>
+  </div>
+
+  <!-- Key Metrics -->
+  <div class="glass">
+    <div class="section-head">
+      <div class="section-dot" style="background:#6366f1"></div>
+      <h2 style="color:#4f46e5">Key Metrics</h2>
+    </div>
+    <div class="metrics-grid">
+      <div class="metric-card">
+        <label>Revenue</label>
+        <div><span class="metric-prefix">$</span><input type="number" id="metric-revenue" step="0.01" min="0" placeholder="0" oninput="autoSave()"></div>
+      </div>
+      <div class="metric-card">
+        <label>New Signups</label>
+        <input type="number" id="metric-signups" min="0" placeholder="0" oninput="autoSave()">
+      </div>
+      <div class="metric-card">
+        <label>Blog Posts</label>
+        <input type="number" id="metric-posts" min="0" placeholder="0" oninput="autoSave()">
+      </div>
+      <div class="metric-card">
+        <label>Commits</label>
+        <input type="number" id="metric-commits" min="0" placeholder="0" oninput="autoSave()">
+      </div>
+      <div class="metric-card">
+        <label>Side Project Hours</label>
+        <input type="number" id="metric-hours" step="0.5" min="0" placeholder="0" oninput="autoSave()">
+      </div>
+    </div>
+  </div>
+
+  <!-- Priorities -->
+  <div class="glass purple">
+    <div class="section-head">
+      <div class="section-dot"></div>
+      <h2>Next Week Priorities</h2>
+    </div>
+    <div id="priorities">
+      <div class="priority-item">
+        <span class="priority-num">1</span>
+        <input type="checkbox" id="pri-check-0" onchange="autoSave()">
+        <input type="text" id="pri-text-0" placeholder="Top priority for next week..." oninput="autoSave()">
+      </div>
+      <div class="priority-item">
+        <span class="priority-num">2</span>
+        <input type="checkbox" id="pri-check-1" onchange="autoSave()">
+        <input type="text" id="pri-text-1" placeholder="Second priority..." oninput="autoSave()">
+      </div>
+      <div class="priority-item">
+        <span class="priority-num">3</span>
+        <input type="checkbox" id="pri-check-2" onchange="autoSave()">
+        <input type="text" id="pri-text-2" placeholder="Third priority..." oninput="autoSave()">
+      </div>
+    </div>
+  </div>
+
+  <!-- Energy & Focus -->
+  <div class="glass">
+    <div class="section-head">
+      <div class="section-dot" style="background:#f43f5e"></div>
+      <h2 style="color:#e11d48">Energy & Focus Rating</h2>
+    </div>
+    <div class="energy-layout">
+      <div>
+        <div class="rating-row" data-key="energy">
+          <span class="rating-label">Energy</span>
+          <div class="rating-stars" id="rating-energy"></div>
+        </div>
+        <div class="rating-row" data-key="focus">
+          <span class="rating-label">Focus</span>
+          <div class="rating-stars" id="rating-focus"></div>
+        </div>
+        <div class="rating-row" data-key="motivation">
+          <span class="rating-label">Motivation</span>
+          <div class="rating-stars" id="rating-motivation"></div>
+        </div>
+        <div class="rating-row" data-key="balance">
+          <span class="rating-label">Work-Life Balance</span>
+          <div class="rating-stars" id="rating-balance"></div>
+        </div>
+      </div>
+      <div class="radar-wrap">
+        <canvas id="radarChart"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Notes -->
+  <div class="glass">
+    <div class="section-head">
+      <div class="section-dot" style="background:#6b7280"></div>
+      <h2 style="color:#4b5563">Quick Notes</h2>
+    </div>
+    <textarea class="notes-area" id="quickNotes" placeholder="Free-form thoughts, ideas, or anything else on your mind..." oninput="autoSave()"></textarea>
+  </div>
+
+  <!-- Trend Charts -->
+  <div class="glass no-print">
+    <div class="section-head">
+      <div class="section-dot" style="background:#0ea5e9"></div>
+      <h2 style="color:#0284c7">8-Week Trends</h2>
+    </div>
+    <div class="trend-grid">
+      <div class="trend-card"><h3>Revenue</h3><canvas id="trendRevenue"></canvas></div>
+      <div class="trend-card"><h3>Signups</h3><canvas id="trendSignups"></canvas></div>
+      <div class="trend-card"><h3>Commits</h3><canvas id="trendCommits"></canvas></div>
+      <div class="trend-card"><h3>Side Project Hours</h3><canvas id="trendHours"></canvas></div>
+    </div>
+  </div>
+
+  <!-- Actions -->
+  <div class="actions no-print">
+    <button class="action-btn" onclick="exportMarkdown()">Export Markdown</button>
+    <button class="action-btn" onclick="copyToClipboard()">Copy to Clipboard</button>
+    <button class="action-btn" onclick="window.print()">Print</button>
+    <button class="action-btn primary" onclick="showToast('Saved!')">Force Save</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="save-indicator no-print" id="saveIndicator"></div>
+
+<script>
+// ---- Week management ----
+const STORAGE_PREFIX = 'weeklyReview_';
+let currentWeekStart = getMonday(new Date());
+
+function getMonday(d) {
+  const date = new Date(d);
+  const day = date.getDay();
+  const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+  date.setDate(diff);
+  date.setHours(0, 0, 0, 0);
+  return date;
+}
+
+function weekKey(d) {
+  return d.toISOString().split('T')[0];
+}
+
+function formatDate(d) {
+  return d.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+}
+
+function getWeekEnd(d) {
+  const end = new Date(d);
+  end.setDate(end.getDate() + 6);
+  return end;
+}
+
+function updateWeekDisplay() {
+  const end = getWeekEnd(currentWeekStart);
+  document.getElementById('weekLabel').textContent = `${formatDate(currentWeekStart)} - ${formatDate(end)}`;
+  document.getElementById('weekTitle').textContent = `Week of ${currentWeekStart.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}`;
+}
+
+function changeWeek(delta) {
+  saveData();
+  currentWeekStart.setDate(currentWeekStart.getDate() + delta * 7);
+  updateWeekDisplay();
+  loadData();
+}
+
+// ---- Bullet lists ----
+function addBullet(section, value = '', focus = true) {
+  const ul = document.getElementById(section);
+  const li = document.createElement('li');
+  const colorMap = { wins: '#10b981', challenges: '#f59e0b', lessons: '#3b82f6' };
+  li.innerHTML = `
+    <div class="marker" style="background:${colorMap[section]}"></div>
+    <input type="text" value="${escapeHtml(value)}" placeholder="Type here..." oninput="autoSave()">
+    <button class="remove-btn no-print" onclick="this.parentElement.remove(); autoSave();">&times;</button>
+  `;
+  ul.appendChild(li);
+  if (focus) {
+    const inp = li.querySelector('input');
+    inp.focus();
+  }
+}
+
+function getBullets(section) {
+  const inputs = document.getElementById(section).querySelectorAll('input[type="text"]');
+  return Array.from(inputs).map(i => i.value).filter(v => v.trim());
+}
+
+function escapeHtml(s) {
+  const div = document.createElement('div');
+  div.textContent = s;
+  return div.innerHTML;
+}
+
+// ---- Ratings ----
+const ratings = { energy: 0, focus: 0, motivation: 0, balance: 0 };
+let radarChart = null;
+
+function buildRatingButtons() {
+  ['energy', 'focus', 'motivation', 'balance'].forEach(key => {
+    const container = document.getElementById('rating-' + key);
+    container.innerHTML = '';
+    for (let i = 1; i <= 5; i++) {
+      const btn = document.createElement('button');
+      btn.textContent = i;
+      btn.className = ratings[key] >= i ? 'active' : '';
+      btn.onclick = () => { ratings[key] = i; buildRatingButtons(); updateRadar(); autoSave(); };
+      container.appendChild(btn);
+    }
+  });
+}
+
+function updateRadar() {
+  const data = [ratings.energy, ratings.focus, ratings.motivation, ratings.balance];
+  if (radarChart) {
+    radarChart.data.datasets[0].data = data;
+    radarChart.update();
+    return;
+  }
+  const ctx = document.getElementById('radarChart').getContext('2d');
+  radarChart = new Chart(ctx, {
+    type: 'radar',
+    data: {
+      labels: ['Energy', 'Focus', 'Motivation', 'Balance'],
+      datasets: [{
+        data: data,
+        backgroundColor: 'rgba(59,130,246,0.15)',
+        borderColor: '#3b82f6',
+        borderWidth: 2,
+        pointBackgroundColor: '#3b82f6',
+        pointRadius: 4,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      scales: {
+        r: {
+          beginAtZero: true,
+          min: 0,
+          max: 5,
+          ticks: { stepSize: 1, display: false },
+          grid: { color: 'rgba(0,0,0,0.06)' },
+          pointLabels: { font: { family: 'Inter', size: 12, weight: '500' }, color: '#6b7280' }
+        }
+      },
+      plugins: { legend: { display: false } }
+    }
+  });
+}
+
+// ---- Save / Load ----
+let saveTimeout = null;
+
+function autoSave() {
+  clearTimeout(saveTimeout);
+  saveTimeout = setTimeout(() => {
+    saveData();
+    const ind = document.getElementById('saveIndicator');
+    ind.textContent = 'Saved ' + new Date().toLocaleTimeString();
+    ind.style.opacity = '1';
+    setTimeout(() => { ind.style.opacity = '0.4'; }, 1500);
+  }, 400);
+}
+
+function saveData() {
+  const key = STORAGE_PREFIX + weekKey(currentWeekStart);
+  const data = {
+    wins: getBullets('wins'),
+    challenges: getBullets('challenges'),
+    lessons: getBullets('lessons'),
+    metrics: {
+      revenue: document.getElementById('metric-revenue').value,
+      signups: document.getElementById('metric-signups').value,
+      posts: document.getElementById('metric-posts').value,
+      commits: document.getElementById('metric-commits').value,
+      hours: document.getElementById('metric-hours').value,
+    },
+    priorities: [0, 1, 2].map(i => ({
+      text: document.getElementById('pri-text-' + i).value,
+      done: document.getElementById('pri-check-' + i).checked,
+    })),
+    ratings: { ...ratings },
+    notes: document.getElementById('quickNotes').value,
+    updatedAt: new Date().toISOString(),
+  };
+  localStorage.setItem(key, JSON.stringify(data));
+}
+
+function loadData() {
+  const key = STORAGE_PREFIX + weekKey(currentWeekStart);
+  const raw = localStorage.getItem(key);
+  const data = raw ? JSON.parse(raw) : null;
+
+  // Clear bullet lists
+  ['wins', 'challenges', 'lessons'].forEach(s => { document.getElementById(s).innerHTML = ''; });
+
+  if (data) {
+    (data.wins || []).forEach(v => addBullet('wins', v, false));
+    (data.challenges || []).forEach(v => addBullet('challenges', v, false));
+    (data.lessons || []).forEach(v => addBullet('lessons', v, false));
+
+    if (data.metrics) {
+      document.getElementById('metric-revenue').value = data.metrics.revenue || '';
+      document.getElementById('metric-signups').value = data.metrics.signups || '';
+      document.getElementById('metric-posts').value = data.metrics.posts || '';
+      document.getElementById('metric-commits').value = data.metrics.commits || '';
+      document.getElementById('metric-hours').value = data.metrics.hours || '';
+    }
+
+    if (data.priorities) {
+      data.priorities.forEach((p, i) => {
+        document.getElementById('pri-text-' + i).value = p.text || '';
+        document.getElementById('pri-check-' + i).checked = p.done || false;
+      });
+    } else {
+      [0, 1, 2].forEach(i => {
+        document.getElementById('pri-text-' + i).value = '';
+        document.getElementById('pri-check-' + i).checked = false;
+      });
+    }
+
+    if (data.ratings) {
+      Object.assign(ratings, data.ratings);
+    } else {
+      Object.keys(ratings).forEach(k => ratings[k] = 0);
+    }
+
+    document.getElementById('quickNotes').value = data.notes || '';
+  } else {
+    // Empty state — add one empty bullet per section
+    ['wins', 'challenges', 'lessons'].forEach(s => addBullet(s, '', false));
+    ['metric-revenue', 'metric-signups', 'metric-posts', 'metric-commits', 'metric-hours'].forEach(id => {
+      document.getElementById(id).value = '';
+    });
+    [0, 1, 2].forEach(i => {
+      document.getElementById('pri-text-' + i).value = '';
+      document.getElementById('pri-check-' + i).checked = false;
+    });
+    Object.keys(ratings).forEach(k => ratings[k] = 0);
+    document.getElementById('quickNotes').value = '';
+  }
+
+  buildRatingButtons();
+  updateRadar();
+  renderTrends();
+}
+
+// ---- Trends ----
+const trendCharts = {};
+
+function getWeekHistory(count) {
+  const weeks = [];
+  for (let i = count - 1; i >= 0; i--) {
+    const d = new Date(currentWeekStart);
+    d.setDate(d.getDate() - i * 7);
+    const key = STORAGE_PREFIX + weekKey(d);
+    const raw = localStorage.getItem(key);
+    const data = raw ? JSON.parse(raw) : null;
+    weeks.push({
+      label: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+      metrics: data?.metrics || {},
+    });
+  }
+  return weeks;
+}
+
+function renderTrend(canvasId, weeks, metricKey, color) {
+  const ctx = document.getElementById(canvasId);
+  if (!ctx) return;
+  if (trendCharts[canvasId]) trendCharts[canvasId].destroy();
+  trendCharts[canvasId] = new Chart(ctx.getContext('2d'), {
+    type: 'line',
+    data: {
+      labels: weeks.map(w => w.label),
+      datasets: [{
+        data: weeks.map(w => parseFloat(w.metrics[metricKey]) || 0),
+        borderColor: color,
+        backgroundColor: color + '20',
+        fill: true,
+        tension: 0.3,
+        borderWidth: 2,
+        pointRadius: 3,
+        pointBackgroundColor: color,
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      scales: {
+        x: { grid: { display: false }, ticks: { font: { size: 10, family: 'Inter' }, color: '#9ca3af' } },
+        y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { font: { size: 10 }, color: '#9ca3af' } },
+      },
+      plugins: { legend: { display: false } },
+    }
+  });
+}
+
+function renderTrends() {
+  const weeks = getWeekHistory(8);
+  renderTrend('trendRevenue', weeks, 'revenue', '#10b981');
+  renderTrend('trendSignups', weeks, 'signups', '#3b82f6');
+  renderTrend('trendCommits', weeks, 'commits', '#f59e0b');
+  renderTrend('trendHours', weeks, 'hours', '#8b5cf6');
+}
+
+// ---- Export ----
+function generateMarkdown() {
+  const end = getWeekEnd(currentWeekStart);
+  let md = `# Weekly Review: ${formatDate(currentWeekStart)} - ${formatDate(end)}\n\n`;
+
+  const wins = getBullets('wins');
+  if (wins.length) { md += `## Wins This Week\n${wins.map(w => `- ${w}`).join('\n')}\n\n`; }
+
+  const challenges = getBullets('challenges');
+  if (challenges.length) { md += `## Challenges\n${challenges.map(c => `- ${c}`).join('\n')}\n\n`; }
+
+  const lessons = getBullets('lessons');
+  if (lessons.length) { md += `## Lessons Learned\n${lessons.map(l => `- ${l}`).join('\n')}\n\n`; }
+
+  md += `## Key Metrics\n`;
+  md += `- Revenue: $${document.getElementById('metric-revenue').value || '0'}\n`;
+  md += `- New Signups: ${document.getElementById('metric-signups').value || '0'}\n`;
+  md += `- Blog Posts: ${document.getElementById('metric-posts').value || '0'}\n`;
+  md += `- Commits: ${document.getElementById('metric-commits').value || '0'}\n`;
+  md += `- Side Project Hours: ${document.getElementById('metric-hours').value || '0'}\n\n`;
+
+  md += `## Next Week Priorities\n`;
+  [0, 1, 2].forEach(i => {
+    const text = document.getElementById('pri-text-' + i).value;
+    const done = document.getElementById('pri-check-' + i).checked;
+    if (text) md += `${i + 1}. [${done ? 'x' : ' '}] ${text}\n`;
+  });
+  md += '\n';
+
+  md += `## Energy & Focus\n`;
+  md += `- Energy: ${ratings.energy}/5\n`;
+  md += `- Focus: ${ratings.focus}/5\n`;
+  md += `- Motivation: ${ratings.motivation}/5\n`;
+  md += `- Work-Life Balance: ${ratings.balance}/5\n\n`;
+
+  const notes = document.getElementById('quickNotes').value;
+  if (notes.trim()) { md += `## Quick Notes\n${notes}\n`; }
+
+  return md;
+}
+
+function exportMarkdown() {
+  const md = generateMarkdown();
+  const blob = new Blob([md], { type: 'text/markdown' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `weekly-review-${weekKey(currentWeekStart)}.md`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  showToast('Markdown exported');
+}
+
+function copyToClipboard() {
+  const md = generateMarkdown();
+  navigator.clipboard.writeText(md).then(() => showToast('Copied to clipboard'));
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+// ---- Init ----
+updateWeekDisplay();
+loadData();
+</script>
+</body>
+</html>

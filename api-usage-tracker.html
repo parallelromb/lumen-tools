@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>API Usage Tracker — Lumen Analytics</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #f8f9fc;
+    color: #1a1a2e;
+    min-height: 100vh;
+    padding: 1.5rem;
+  }
+  a { color: #3b82f6; text-decoration: none; }
+  .nav { margin-bottom: 1.5rem; font-size: 0.85rem; }
+  h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 0.25rem; }
+  .subtitle { color: #6b7280; font-size: 0.9rem; margin-bottom: 1.5rem; }
+  .glass {
+    background: rgba(255,255,255,0.72);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.6);
+    border-radius: 16px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+  }
+  .glass h2 { font-size: 1rem; font-weight: 600; margin-bottom: 1rem; }
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+  }
+  .stat-card {
+    background: rgba(255,255,255,0.72);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.6);
+    border-radius: 12px;
+    padding: 1.25rem;
+    text-align: center;
+  }
+  .stat-card .value { font-size: 1.75rem; font-weight: 700; }
+  .stat-card .label { font-size: 0.75rem; color: #6b7280; margin-top: 0.25rem; }
+  .v-blue { color: #3b82f6; }
+  .v-red { color: #ef4444; }
+  .v-green { color: #10b981; }
+  .v-amber { color: #f59e0b; }
+  .chart-container { position: relative; height: 280px; margin-bottom: 1rem; }
+  .form-row { display: flex; flex-wrap: wrap; gap: 0.75rem; align-items: flex-end; margin-bottom: 1rem; }
+  .form-group { display: flex; flex-direction: column; gap: 0.25rem; }
+  .form-group label { font-size: 0.75rem; color: #6b7280; font-weight: 500; }
+  .form-group input, .form-group select, .form-group textarea {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.85rem;
+    background: #fff;
+    outline: none;
+  }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+  }
+  button {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 8px;
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+  .btn-primary { background: #3b82f6; color: #fff; }
+  .btn-primary:hover { background: #2563eb; }
+  .btn-danger { background: #fee2e2; color: #ef4444; }
+  .btn-danger:hover { background: #fecaca; }
+  .btn-secondary { background: #e5e7eb; color: #374151; }
+  .btn-secondary:hover { background: #d1d5db; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+  th { text-align: left; padding: 0.5rem; color: #6b7280; font-weight: 500; border-bottom: 1px solid #e5e7eb; }
+  td { padding: 0.5rem; border-bottom: 1px solid #f3f4f6; }
+  .badge {
+    display: inline-block;
+    padding: 0.15rem 0.5rem;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 500;
+  }
+  .badge-smara { background: #dbeafe; color: #1d4ed8; }
+  .badge-mcp { background: #dcfce7; color: #166534; }
+  .badge-scoper { background: #fef3c7; color: #92400e; }
+  .badge-lumen { background: #ede9fe; color: #5b21b6; }
+  .badge-other { background: #f3f4f6; color: #374151; }
+  .tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+  .tab {
+    padding: 0.4rem 0.75rem;
+    border-radius: 8px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    background: transparent;
+    color: #6b7280;
+    border: 1px solid transparent;
+  }
+  .tab.active { background: #fff; color: #1a1a2e; border-color: #e5e7eb; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+  .actions { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+  @media (max-width: 640px) {
+    body { padding: 1rem; }
+    .chart-container { height: 200px; }
+  }
+</style>
+</head>
+<body>
+  <div class="nav"><a href="index.html">&larr; Lumen Analytics</a></div>
+  <h1>API Usage Tracker</h1>
+  <p class="subtitle">Track requests, errors, and response times across all services</p>
+
+  <div class="stats-row" id="stats-row"></div>
+
+  <div class="glass">
+    <h2>Requests Per Day</h2>
+    <div class="tabs" id="chart-tabs"></div>
+    <div class="chart-container"><canvas id="requestsChart"></canvas></div>
+  </div>
+
+  <div class="glass">
+    <h2>Error Rate &amp; Response Time</h2>
+    <div class="chart-container"><canvas id="errorChart"></canvas></div>
+  </div>
+
+  <div class="glass">
+    <h2>Add Entry</h2>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Date</label>
+        <input type="date" id="entry-date">
+      </div>
+      <div class="form-group">
+        <label>Service</label>
+        <select id="entry-service">
+          <option value="smara">Smara</option>
+          <option value="mcp">MCP Doctor</option>
+          <option value="scoper">Scoper</option>
+          <option value="lumen">Lumen</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Requests</label>
+        <input type="number" id="entry-requests" placeholder="0" min="0" style="width:90px">
+      </div>
+      <div class="form-group">
+        <label>Errors</label>
+        <input type="number" id="entry-errors" placeholder="0" min="0" style="width:80px">
+      </div>
+      <div class="form-group">
+        <label>Avg Response (ms)</label>
+        <input type="number" id="entry-response" placeholder="0" min="0" style="width:100px">
+      </div>
+      <button class="btn-primary" onclick="addEntry()">Add</button>
+    </div>
+  </div>
+
+  <div class="glass">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem; flex-wrap:wrap; gap:0.5rem;">
+      <h2 style="margin:0">Log</h2>
+      <div class="actions">
+        <button class="btn-secondary" onclick="loadSampleData()">Load Sample Data</button>
+        <button class="btn-secondary" onclick="exportData()">Export JSON</button>
+        <button class="btn-danger" onclick="clearData()">Clear All</button>
+      </div>
+    </div>
+    <div style="overflow-x:auto">
+      <table>
+        <thead><tr><th>Date</th><th>Service</th><th>Requests</th><th>Errors</th><th>Error %</th><th>Avg ms</th><th></th></tr></thead>
+        <tbody id="log-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="glass">
+    <h2>Parse Nginx Access Log</h2>
+    <p style="font-size:0.8rem;color:#6b7280;margin-bottom:0.75rem;">Paste nginx combined-format log lines. Each line is parsed for date, status, and upstream response time.</p>
+    <div class="form-group" style="margin-bottom:0.75rem;">
+      <textarea id="log-input" rows="6" style="width:100%;font-family:'SF Mono',monospace;font-size:0.75rem;" placeholder='192.168.1.1 - - [29/Apr/2026:10:15:32 +0000] "GET /api/memories HTTP/1.1" 200 1234 "-" "curl" 0.045'></textarea>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Map to Service</label>
+        <select id="log-service">
+          <option value="smara">Smara</option>
+          <option value="mcp">MCP Doctor</option>
+          <option value="scoper">Scoper</option>
+          <option value="lumen">Lumen</option>
+          <option value="other">Other</option>
+        </select>
+      </div>
+      <button class="btn-primary" onclick="parseLog()">Parse &amp; Import</button>
+    </div>
+  </div>
+
+<script>
+const STORAGE_KEY = 'lumen_api_usage';
+const SERVICES = ['smara','mcp','scoper','lumen','other'];
+const SERVICE_LABELS = { smara:'Smara', mcp:'MCP Doctor', scoper:'Scoper', lumen:'Lumen', other:'Other' };
+const SERVICE_COLORS = { smara:'#3b82f6', mcp:'#10b981', scoper:'#f59e0b', lumen:'#8b5cf6', other:'#6b7280' };
+
+function load() { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+function save(d) { localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); }
+
+let requestsChart, errorChart, activeFilter = 'all';
+
+function init() {
+  document.getElementById('entry-date').value = new Date().toISOString().slice(0,10);
+  buildTabs();
+  render();
+}
+
+function buildTabs() {
+  const container = document.getElementById('chart-tabs');
+  const tabs = [{ key:'all', label:'All Services' }, ...SERVICES.map(s => ({ key:s, label:SERVICE_LABELS[s] }))];
+  container.innerHTML = tabs.map(t =>
+    `<div class="tab ${t.key === activeFilter ? 'active' : ''}" onclick="setFilter('${t.key}')">${t.label}</div>`
+  ).join('');
+}
+
+function setFilter(f) { activeFilter = f; buildTabs(); render(); }
+
+function render() {
+  const data = load().sort((a,b) => a.date.localeCompare(b.date));
+  renderStats(data);
+  renderCharts(data);
+  renderTable(data);
+}
+
+function renderStats(data) {
+  const filtered = activeFilter === 'all' ? data : data.filter(d => d.service === activeFilter);
+  const totalReqs = filtered.reduce((s,d) => s + d.requests, 0);
+  const totalErrs = filtered.reduce((s,d) => s + d.errors, 0);
+  const errRate = totalReqs ? ((totalErrs / totalReqs) * 100).toFixed(1) : '0.0';
+  const avgMs = filtered.length ? Math.round(filtered.reduce((s,d) => s + d.response, 0) / filtered.length) : 0;
+  document.getElementById('stats-row').innerHTML = `
+    <div class="stat-card"><div class="value v-blue">${totalReqs.toLocaleString()}</div><div class="label">Total Requests</div></div>
+    <div class="stat-card"><div class="value v-red">${totalErrs.toLocaleString()}</div><div class="label">Total Errors</div></div>
+    <div class="stat-card"><div class="value v-amber">${errRate}%</div><div class="label">Error Rate</div></div>
+    <div class="stat-card"><div class="value v-green">${avgMs}ms</div><div class="label">Avg Response</div></div>
+  `;
+}
+
+function renderCharts(data) {
+  const filtered = activeFilter === 'all' ? data : data.filter(d => d.service === activeFilter);
+  // group by date
+  const byDate = {};
+  filtered.forEach(d => {
+    if (!byDate[d.date]) byDate[d.date] = { requests: 0, errors: 0, response: 0, count: 0 };
+    byDate[d.date].requests += d.requests;
+    byDate[d.date].errors += d.errors;
+    byDate[d.date].response += d.response;
+    byDate[d.date].count += 1;
+  });
+  const dates = Object.keys(byDate).sort();
+  const last30 = dates.slice(-30);
+
+  // requests chart - stacked by service if "all"
+  const rCtx = document.getElementById('requestsChart').getContext('2d');
+  if (requestsChart) requestsChart.destroy();
+
+  if (activeFilter === 'all') {
+    const datasets = SERVICES.map(svc => {
+      const svcData = data.filter(d => d.service === svc);
+      const svcByDate = {};
+      svcData.forEach(d => { svcByDate[d.date] = (svcByDate[d.date] || 0) + d.requests; });
+      return {
+        label: SERVICE_LABELS[svc],
+        data: last30.map(dt => svcByDate[dt] || 0),
+        backgroundColor: SERVICE_COLORS[svc] + '88',
+        borderColor: SERVICE_COLORS[svc],
+        borderWidth: 1
+      };
+    }).filter(ds => ds.data.some(v => v > 0));
+    requestsChart = new Chart(rCtx, {
+      type: 'bar',
+      data: { labels: last30, datasets },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, scales: { x: { stacked: true }, y: { stacked: true, beginAtZero: true } } }
+    });
+  } else {
+    requestsChart = new Chart(rCtx, {
+      type: 'bar',
+      data: {
+        labels: last30,
+        datasets: [{ label: 'Requests', data: last30.map(dt => byDate[dt]?.requests || 0), backgroundColor: SERVICE_COLORS[activeFilter] + '88', borderColor: SERVICE_COLORS[activeFilter], borderWidth: 1 }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+    });
+  }
+
+  // error + response chart
+  const eCtx = document.getElementById('errorChart').getContext('2d');
+  if (errorChart) errorChart.destroy();
+  errorChart = new Chart(eCtx, {
+    type: 'line',
+    data: {
+      labels: last30,
+      datasets: [
+        { label: 'Error %', data: last30.map(dt => byDate[dt] ? ((byDate[dt].errors / byDate[dt].requests) * 100).toFixed(1) : 0), borderColor: '#ef4444', backgroundColor: 'rgba(239,68,68,0.1)', fill: true, yAxisID: 'y', tension: 0.3 },
+        { label: 'Avg Response (ms)', data: last30.map(dt => byDate[dt] ? Math.round(byDate[dt].response / byDate[dt].count) : 0), borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.1)', fill: true, yAxisID: 'y1', tension: 0.3 }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom' } },
+      scales: {
+        y: { type: 'linear', position: 'left', beginAtZero: true, title: { display: true, text: 'Error %' } },
+        y1: { type: 'linear', position: 'right', beginAtZero: true, title: { display: true, text: 'ms' }, grid: { drawOnChartArea: false } }
+      }
+    }
+  });
+}
+
+function renderTable(data) {
+  const sorted = [...data].sort((a,b) => b.date.localeCompare(a.date));
+  document.getElementById('log-body').innerHTML = sorted.map((d, i) => {
+    const errPct = d.requests ? ((d.errors / d.requests) * 100).toFixed(1) : '0.0';
+    const cls = `badge-${d.service}`;
+    return `<tr>
+      <td>${d.date}</td>
+      <td><span class="badge ${cls}">${SERVICE_LABELS[d.service]}</span></td>
+      <td>${d.requests.toLocaleString()}</td>
+      <td>${d.errors}</td>
+      <td>${errPct}%</td>
+      <td>${d.response}ms</td>
+      <td><button class="btn-danger" style="padding:0.2rem 0.5rem;font-size:0.75rem" onclick="deleteEntry(${i})">Del</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function addEntry() {
+  const date = document.getElementById('entry-date').value;
+  const service = document.getElementById('entry-service').value;
+  const requests = parseInt(document.getElementById('entry-requests').value) || 0;
+  const errors = parseInt(document.getElementById('entry-errors').value) || 0;
+  const response = parseInt(document.getElementById('entry-response').value) || 0;
+  if (!date) return;
+  const data = load();
+  data.push({ date, service, requests, errors, response });
+  save(data);
+  document.getElementById('entry-requests').value = '';
+  document.getElementById('entry-errors').value = '';
+  document.getElementById('entry-response').value = '';
+  render();
+}
+
+function deleteEntry(displayIdx) {
+  const data = load().sort((a,b) => b.date.localeCompare(a.date));
+  data.splice(displayIdx, 1);
+  save(data);
+  render();
+}
+
+function clearData() {
+  if (!confirm('Clear all API usage data?')) return;
+  localStorage.removeItem(STORAGE_KEY);
+  render();
+}
+
+function exportData() {
+  const blob = new Blob([JSON.stringify(load(), null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'api-usage-' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+}
+
+function parseLog() {
+  const raw = document.getElementById('log-input').value.trim();
+  if (!raw) return;
+  const service = document.getElementById('log-service').value;
+  const lines = raw.split('\n').filter(l => l.trim());
+  const byDate = {};
+  const dateRe = /\[(\d{2})\/(\w{3})\/(\d{4})/;
+  const statusRe = /"\s(\d{3})\s/;
+  const timeRe = /\s([\d.]+)$/;
+  const months = { Jan:'01',Feb:'02',Mar:'03',Apr:'04',May:'05',Jun:'06',Jul:'07',Aug:'08',Sep:'09',Oct:'10',Nov:'11',Dec:'12' };
+
+  lines.forEach(line => {
+    const dm = line.match(dateRe);
+    if (!dm) return;
+    const date = `${dm[3]}-${months[dm[2]] || '01'}-${dm[1]}`;
+    if (!byDate[date]) byDate[date] = { requests: 0, errors: 0, totalTime: 0 };
+    byDate[date].requests++;
+    const sm = line.match(statusRe);
+    if (sm && parseInt(sm[1]) >= 400) byDate[date].errors++;
+    const tm = line.match(timeRe);
+    if (tm) byDate[date].totalTime += parseFloat(tm[1]) * 1000;
+  });
+
+  const data = load();
+  Object.entries(byDate).forEach(([date, v]) => {
+    data.push({ date, service, requests: v.requests, errors: v.errors, response: Math.round(v.totalTime / v.requests) || 0 });
+  });
+  save(data);
+  document.getElementById('log-input').value = '';
+  render();
+  alert(`Imported ${Object.keys(byDate).length} date(s) of log data.`);
+}
+
+function loadSampleData() {
+  if (load().length > 0 && !confirm('This will add sample data to existing entries. Continue?')) return;
+  const data = load();
+  const today = new Date();
+  for (let i = 13; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    const ds = d.toISOString().slice(0,10);
+    data.push({ date: ds, service: 'smara', requests: 40 + Math.floor(Math.random()*80), errors: Math.floor(Math.random()*5), response: 80 + Math.floor(Math.random()*120) });
+    data.push({ date: ds, service: 'lumen', requests: 100 + Math.floor(Math.random()*200), errors: Math.floor(Math.random()*8), response: 30 + Math.floor(Math.random()*60) });
+    if (Math.random() > 0.3) data.push({ date: ds, service: 'mcp', requests: 5 + Math.floor(Math.random()*20), errors: Math.floor(Math.random()*2), response: 100 + Math.floor(Math.random()*200) });
+    if (Math.random() > 0.5) data.push({ date: ds, service: 'scoper', requests: Math.floor(Math.random()*10), errors: 0, response: 200 + Math.floor(Math.random()*300) });
+  }
+  save(data);
+  render();
+}
+
+init();
+</script>
+</body>
+</html>

@@ -1,0 +1,754 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fitness & Water Tracker - Lumen Analytics</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: #f8f9fc;
+  color: #1a1a2e;
+  min-height: 100vh;
+  padding: 1.5rem;
+}
+a { color: #3b82f6; text-decoration: none; }
+.back { display: inline-flex; align-items: center; gap: 0.4rem; font-size: 0.85rem; font-weight: 500; margin-bottom: 1.5rem; }
+.header { text-align: center; margin-bottom: 2rem; }
+.header h1 { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; display: flex; align-items: center; justify-content: center; gap: 0.5rem; }
+.header p { color: #6b7280; font-size: 0.9rem; margin-top: 0.25rem; }
+
+.tabs { display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; margin-bottom: 1.5rem; }
+.tab { padding: 0.5rem 1rem; border-radius: 10px; border: 1px solid rgba(0,0,0,0.08); background: rgba(255,255,255,0.5); cursor: pointer; font-size: 0.82rem; font-weight: 500; transition: all 0.2s; }
+.tab:hover { background: rgba(255,255,255,0.9); }
+.tab.active { background: #1a1a2e; color: white; border-color: #1a1a2e; }
+
+.container { max-width: 1100px; margin: 0 auto; }
+.grid { display: grid; gap: 1.25rem; }
+.grid-2 { grid-template-columns: 1fr 1fr; }
+.grid-3 { grid-template-columns: 1fr 1fr 1fr; }
+.grid-4 { grid-template-columns: repeat(4, 1fr); }
+
+@media (max-width: 768px) {
+  .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+}
+
+.card {
+  background: rgba(255,255,255,0.72);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255,255,255,0.6);
+  border-radius: 16px;
+  padding: 1.5rem;
+}
+.card h3 { font-size: 0.95rem; font-weight: 600; margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem; }
+.card-sm { padding: 1rem 1.25rem; text-align: center; }
+.card-sm .stat-val { font-size: 1.75rem; font-weight: 700; }
+.card-sm .stat-lbl { font-size: 0.75rem; color: #6b7280; margin-top: 0.15rem; }
+
+.section { display: none; }
+.section.active { display: block; }
+
+/* Water */
+.water-ring-wrap { display: flex; justify-content: center; margin-bottom: 1.25rem; }
+.water-ring { position: relative; width: 180px; height: 180px; }
+.water-ring svg { transform: rotate(-90deg); }
+.water-ring .center-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center; }
+.water-ring .center-text .num { font-size: 2rem; font-weight: 700; color: #3b82f6; }
+.water-ring .center-text .sub { font-size: 0.7rem; color: #6b7280; }
+
+.glasses { display: flex; gap: 0.5rem; justify-content: center; flex-wrap: wrap; margin-bottom: 1rem; }
+.glass { width: 44px; height: 56px; border: 2px solid #dbeafe; border-radius: 6px 6px 10px 10px; cursor: pointer; display: flex; align-items: flex-end; justify-content: center; transition: all 0.2s; position: relative; overflow: hidden; }
+.glass:hover { border-color: #3b82f6; }
+.glass.filled { border-color: #3b82f6; }
+.glass .fill { position: absolute; bottom: 0; left: 0; right: 0; background: linear-gradient(to top, #3b82f6, #60a5fa); border-radius: 0 0 8px 8px; transition: height 0.3s; }
+.glass .icon { position: relative; z-index: 1; font-size: 1.1rem; margin-bottom: 4px; }
+
+/* Exercise */
+.exercise-form { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+.exercise-form .full { grid-column: 1 / -1; }
+label { font-size: 0.78rem; font-weight: 500; color: #6b7280; display: block; margin-bottom: 0.25rem; }
+input, select, textarea {
+  width: 100%; padding: 0.5rem 0.75rem; border: 1px solid rgba(0,0,0,0.1); border-radius: 8px;
+  font-family: inherit; font-size: 0.85rem; background: rgba(255,255,255,0.6); transition: border 0.2s;
+}
+input:focus, select:focus, textarea:focus { outline: none; border-color: #3b82f6; }
+textarea { resize: vertical; min-height: 60px; }
+
+.btn {
+  padding: 0.5rem 1.25rem; border-radius: 8px; border: none; cursor: pointer;
+  font-family: inherit; font-size: 0.82rem; font-weight: 600; transition: all 0.2s;
+}
+.btn-primary { background: #1a1a2e; color: white; }
+.btn-primary:hover { background: #2d2d4e; }
+.btn-danger { background: #fee2e2; color: #dc2626; }
+.btn-danger:hover { background: #fecaca; }
+.btn-sm { padding: 0.35rem 0.75rem; font-size: 0.75rem; }
+
+.exercise-list { margin-top: 1rem; }
+.exercise-item {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.75rem; border-radius: 10px; background: rgba(0,0,0,0.02); margin-bottom: 0.5rem;
+}
+.exercise-item .info { flex: 1; }
+.exercise-item .type { font-weight: 600; font-size: 0.88rem; }
+.exercise-item .meta { font-size: 0.75rem; color: #6b7280; }
+.exercise-item .cals { font-weight: 600; font-size: 0.85rem; color: #f59e0b; }
+
+/* Steps */
+.step-bar-wrap { margin: 1rem 0; }
+.step-bar { height: 20px; background: #f3f4f6; border-radius: 10px; overflow: hidden; }
+.step-bar-fill { height: 100%; background: linear-gradient(90deg, #10b981, #34d399); border-radius: 10px; transition: width 0.4s; }
+.step-input { display: flex; gap: 0.5rem; align-items: center; margin-top: 0.75rem; }
+
+/* Weight chart */
+.chart-wrap { position: relative; height: 220px; }
+
+/* Measurements */
+.meas-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.5rem; }
+.meas-item { padding: 0.5rem; border-radius: 8px; background: rgba(0,0,0,0.02); text-align: center; }
+.meas-item .val { font-size: 1.1rem; font-weight: 700; }
+.meas-item .lbl { font-size: 0.7rem; color: #6b7280; }
+.meas-item .delta { font-size: 0.7rem; }
+.delta-pos { color: #ef4444; }
+.delta-neg { color: #10b981; }
+
+/* Streaks */
+.streak-row { display: flex; align-items: center; gap: 0.75rem; padding: 0.6rem 0; border-bottom: 1px solid rgba(0,0,0,0.04); }
+.streak-row:last-child { border: none; }
+.streak-icon { font-size: 1.5rem; }
+.streak-num { font-size: 1.5rem; font-weight: 700; }
+.streak-lbl { font-size: 0.78rem; color: #6b7280; }
+
+.empty-state { text-align: center; padding: 2rem; color: #9ca3af; font-size: 0.85rem; }
+.footer { text-align: center; margin-top: 2rem; color: #9ca3af; font-size: 0.78rem; }
+</style>
+</head>
+<body>
+
+<a href="index.html" class="back">&larr; Back to Analytics</a>
+
+<div class="header">
+  <h1>
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg>
+    Fitness & Water Tracker
+  </h1>
+  <p>Hydration, workouts, steps, weight, and body measurements</p>
+</div>
+
+<div class="container">
+  <div class="tabs">
+    <div class="tab active" data-tab="today">Today</div>
+    <div class="tab" data-tab="water">Water</div>
+    <div class="tab" data-tab="exercise">Exercise</div>
+    <div class="tab" data-tab="steps">Steps</div>
+    <div class="tab" data-tab="weight">Weight</div>
+    <div class="tab" data-tab="measurements">Measurements</div>
+    <div class="tab" data-tab="weekly">Weekly</div>
+    <div class="tab" data-tab="export">Export</div>
+  </div>
+
+  <!-- TODAY -->
+  <div class="section active" id="sec-today">
+    <div class="grid grid-4" style="margin-bottom:1.25rem;" id="quick-stats"></div>
+    <div class="grid grid-2">
+      <div class="card">
+        <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><circle cx="9" cy="9" r="0.5" fill="#3b82f6"/><circle cx="15" cy="9" r="0.5" fill="#3b82f6"/></svg> Water Today</h3>
+        <div class="water-ring-wrap">
+          <div class="water-ring">
+            <svg width="180" height="180"><circle cx="90" cy="90" r="78" fill="none" stroke="#f3f4f6" stroke-width="12"/><circle id="water-arc-today" cx="90" cy="90" r="78" fill="none" stroke="#3b82f6" stroke-width="12" stroke-linecap="round" stroke-dasharray="490" stroke-dashoffset="490"/></svg>
+            <div class="center-text"><div class="num" id="water-count-today">0</div><div class="sub">of 8 glasses</div></div>
+          </div>
+        </div>
+        <div class="glasses" id="glasses-today"></div>
+      </div>
+      <div class="card">
+        <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M5 8H4a4 4 0 000 8h1"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="8" y1="6" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="18"/></svg> Exercises Today</h3>
+        <div id="today-exercises"></div>
+        <div style="margin-top:1rem; display:flex; justify-content:space-between; font-size:0.82rem; color:#6b7280;">
+          <span>Total: <strong id="today-ex-mins">0</strong> min</span>
+          <span>Calories: <strong id="today-ex-cals">0</strong></span>
+        </div>
+      </div>
+    </div>
+    <div class="grid grid-2" style="margin-top:1.25rem;">
+      <div class="card">
+        <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><path d="M13 2L3 14h9l-1 10 10-12h-9l1-10z"/></svg> Streaks</h3>
+        <div id="streaks-display"></div>
+      </div>
+      <div class="card">
+        <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg> Steps Today</h3>
+        <div id="steps-today-display"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- WATER -->
+  <div class="section" id="sec-water">
+    <div class="card" style="max-width:500px;margin:0 auto;">
+      <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3b82f6" stroke-width="2"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/></svg> Log Water</h3>
+      <div class="water-ring-wrap">
+        <div class="water-ring">
+          <svg width="180" height="180"><circle cx="90" cy="90" r="78" fill="none" stroke="#f3f4f6" stroke-width="12"/><circle id="water-arc" cx="90" cy="90" r="78" fill="none" stroke="#3b82f6" stroke-width="12" stroke-linecap="round" stroke-dasharray="490" stroke-dashoffset="490"/></svg>
+          <div class="center-text"><div class="num" id="water-count">0</div><div class="sub">of 8 glasses</div></div>
+        </div>
+      </div>
+      <div class="glasses" id="glasses-main"></div>
+      <div style="display:flex; gap:0.5rem; justify-content:center; margin-top:0.75rem;">
+        <button class="btn btn-primary btn-sm" onclick="addWater(1)">+ 1 Glass</button>
+        <button class="btn btn-danger btn-sm" onclick="addWater(-1)">- 1 Glass</button>
+        <button class="btn btn-sm" style="background:#f3f4f6;" onclick="resetWater()">Reset</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- EXERCISE -->
+  <div class="section" id="sec-exercise">
+    <div class="grid grid-2">
+      <div class="card">
+        <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 010 8h-1"/><path d="M5 8H4a4 4 0 000 8h1"/><line x1="6" y1="12" x2="18" y2="12"/><line x1="8" y1="6" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="18"/></svg> Add Workout</h3>
+        <div class="exercise-form">
+          <div>
+            <label>Type</label>
+            <select id="ex-type">
+              <option>Walking</option><option>Running</option><option>Cycling</option>
+              <option>Gym</option><option>Yoga</option><option>Swimming</option>
+              <option>Sports</option><option>Other</option>
+            </select>
+          </div>
+          <div>
+            <label>Duration (min)</label>
+            <input type="number" id="ex-duration" min="1" value="30">
+          </div>
+          <div>
+            <label>Intensity</label>
+            <select id="ex-intensity">
+              <option>Light</option><option>Moderate</option><option>Intense</option>
+            </select>
+          </div>
+          <div>
+            <label>Calories (est.)</label>
+            <input type="number" id="ex-calories" min="0" placeholder="auto">
+          </div>
+          <div class="full">
+            <label>Notes</label>
+            <textarea id="ex-notes" rows="2" placeholder="Optional notes..."></textarea>
+          </div>
+          <div class="full"><button class="btn btn-primary" onclick="addExercise()">Add Workout</button></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Today's Workouts</h3>
+        <div id="exercise-list"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEPS -->
+  <div class="section" id="sec-steps">
+    <div class="card" style="max-width:500px;margin:0 auto;">
+      <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><path d="M13 2L3 14h9l-1 10 10-12h-9l1-10z"/></svg> Step Counter</h3>
+      <div style="text-align:center; margin:1rem 0;">
+        <div style="font-size:2.5rem; font-weight:700;" id="step-count">0</div>
+        <div style="font-size:0.8rem; color:#6b7280;">of 10,000 steps</div>
+      </div>
+      <div class="step-bar-wrap">
+        <div class="step-bar"><div class="step-bar-fill" id="step-fill" style="width:0%"></div></div>
+      </div>
+      <div class="step-input">
+        <input type="number" id="step-input" min="0" placeholder="Enter steps" style="flex:1;">
+        <button class="btn btn-primary" onclick="setSteps()">Update</button>
+        <button class="btn btn-sm" style="background:#f3f4f6;" onclick="addStepsQuick(1000)">+1K</button>
+        <button class="btn btn-sm" style="background:#f3f4f6;" onclick="addStepsQuick(2500)">+2.5K</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- WEIGHT -->
+  <div class="section" id="sec-weight">
+    <div class="card" style="max-width:600px;margin:0 auto;">
+      <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2"><rect x="2" y="7" width="20" height="14" rx="2"/><path d="M12 7V3m-4 4V5m8 2V5"/></svg> Weight Log</h3>
+      <div style="display:flex; gap:0.75rem; align-items:end; margin-bottom:1.25rem;">
+        <div style="flex:1;"><label>Date</label><input type="date" id="weight-date"></div>
+        <div style="flex:1;"><label>Weight (kg)</label><input type="number" id="weight-val" step="0.1" min="0" placeholder="e.g. 72.5"></div>
+        <button class="btn btn-primary" onclick="addWeight()">Log</button>
+      </div>
+      <div class="chart-wrap"><canvas id="weight-chart"></canvas></div>
+      <div id="weight-list" style="margin-top:1rem; max-height:200px; overflow-y:auto;"></div>
+    </div>
+  </div>
+
+  <!-- MEASUREMENTS -->
+  <div class="section" id="sec-measurements">
+    <div class="card" style="max-width:600px;margin:0 auto;">
+      <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#ec4899" stroke-width="2"><path d="M21 3H3v18h18V3z"/><path d="M3 9h18M3 15h18M9 3v18M15 3v18"/></svg> Body Measurements</h3>
+      <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:0.5rem; margin-bottom:1rem;">
+        <div><label>Date</label><input type="date" id="meas-date"></div>
+        <div><label>Waist (cm)</label><input type="number" id="meas-waist" step="0.1"></div>
+        <div><label>Chest (cm)</label><input type="number" id="meas-chest" step="0.1"></div>
+        <div><label>Hips (cm)</label><input type="number" id="meas-hips" step="0.1"></div>
+        <div><label>Bicep (cm)</label><input type="number" id="meas-bicep" step="0.1"></div>
+        <div><label>Thigh (cm)</label><input type="number" id="meas-thigh" step="0.1"></div>
+      </div>
+      <button class="btn btn-primary" onclick="addMeasurement()">Save Measurements</button>
+      <div id="meas-display" style="margin-top:1.25rem;"></div>
+    </div>
+  </div>
+
+  <!-- WEEKLY -->
+  <div class="section" id="sec-weekly">
+    <div class="card">
+      <h3><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#6366f1" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="3" x2="9" y2="21"/></svg> Weekly Overview</h3>
+      <div class="chart-wrap" style="height:300px;"><canvas id="weekly-chart"></canvas></div>
+    </div>
+  </div>
+
+  <!-- EXPORT -->
+  <div class="section" id="sec-export">
+    <div class="card" style="max-width:500px;margin:0 auto;text-align:center;">
+      <h3 style="justify-content:center;">Export & Backup</h3>
+      <p style="color:#6b7280; font-size:0.85rem; margin-bottom:1.25rem;">Download all your fitness data as a JSON file for backup or migration.</p>
+      <button class="btn btn-primary" onclick="exportData()">Download JSON Backup</button>
+      <div style="margin-top:1.5rem;">
+        <label style="cursor:pointer;" class="btn btn-sm" style="background:#f3f4f6;">
+          Import Backup
+          <input type="file" accept=".json" onchange="importData(event)" style="display:none;">
+        </label>
+      </div>
+      <div style="margin-top:1.5rem;">
+        <button class="btn btn-danger btn-sm" onclick="if(confirm('Clear ALL fitness data? This cannot be undone.')){localStorage.removeItem('fitness_data');location.reload();}">Reset All Data</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">Lumen Analytics &middot; Fitness & Water Tracker &middot; Data stored in localStorage</div>
+
+<script>
+const STORAGE_KEY = 'fitness_data';
+const WATER_TARGET = 8;
+const STEP_TARGET = 10000;
+const CALORIE_RATES = {
+  Walking: { Light: 3, Moderate: 4.5, Intense: 6.5 },
+  Running: { Light: 7, Moderate: 10, Intense: 13 },
+  Cycling: { Light: 4, Moderate: 7, Intense: 11 },
+  Gym: { Light: 4, Moderate: 6, Intense: 9 },
+  Yoga: { Light: 2.5, Moderate: 4, Intense: 6 },
+  Swimming: { Light: 5, Moderate: 8, Intense: 11 },
+  Sports: { Light: 4, Moderate: 7, Intense: 10 },
+  Other: { Light: 3, Moderate: 5, Intense: 8 }
+};
+
+function today() { return new Date().toISOString().slice(0, 10); }
+function dateKey(d) { return d || today(); }
+
+function loadData() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || initData(); }
+  catch { return initData(); }
+}
+
+function saveData(data) { localStorage.setItem(STORAGE_KEY, JSON.stringify(data)); }
+
+function initData() {
+  const data = { water: {}, exercises: {}, steps: {}, weights: [], measurements: [] };
+  // Pre-load 7 days of sample data
+  const now = new Date();
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(now); d.setDate(d.getDate() - i);
+    const key = d.toISOString().slice(0, 10);
+    data.water[key] = Math.floor(Math.random() * 4) + 5; // 5-8
+    data.steps[key] = Math.floor(Math.random() * 8000) + 4000; // 4000-12000
+    const types = ['Walking', 'Running', 'Cycling', 'Gym', 'Yoga', 'Swimming'];
+    const type = types[Math.floor(Math.random() * types.length)];
+    const intensity = ['Light', 'Moderate', 'Intense'][Math.floor(Math.random() * 3)];
+    const duration = [20, 30, 45, 60][Math.floor(Math.random() * 4)];
+    const cals = Math.round(CALORIE_RATES[type][intensity] * duration);
+    data.exercises[key] = [{ type, duration, intensity, calories: cals, notes: '', id: Date.now() - i * 86400000 }];
+    if (i % 2 === 0) {
+      const type2 = types[Math.floor(Math.random() * types.length)];
+      const int2 = ['Light', 'Moderate'][Math.floor(Math.random() * 2)];
+      const dur2 = [15, 20, 30][Math.floor(Math.random() * 3)];
+      data.exercises[key].push({ type: type2, duration: dur2, intensity: int2, calories: Math.round(CALORIE_RATES[type2][int2] * dur2), notes: '', id: Date.now() - i * 86400000 + 1 });
+    }
+  }
+  // Sample weights
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(now); d.setDate(d.getDate() - i);
+    if (i % 2 === 0) data.weights.push({ date: d.toISOString().slice(0, 10), weight: 74.5 - i * 0.15 + (Math.random() * 0.4 - 0.2) });
+  }
+  // Sample measurement
+  const weekAgo = new Date(now); weekAgo.setDate(weekAgo.getDate() - 7);
+  data.measurements.push({ date: weekAgo.toISOString().slice(0, 10), waist: 82, chest: 96, hips: 94, bicep: 33, thigh: 54 });
+  data.measurements.push({ date: today(), waist: 81.5, chest: 96.5, hips: 93.5, bicep: 33.5, thigh: 54 });
+  saveData(data);
+  return data;
+}
+
+let data = loadData();
+let weightChart = null;
+let weeklyChart = null;
+
+// Tabs
+document.querySelectorAll('.tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.querySelectorAll('.tab').forEach(x => x.classList.remove('active'));
+    document.querySelectorAll('.section').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    document.getElementById('sec-' + t.dataset.tab).classList.add('active');
+    render();
+  });
+});
+
+// Water
+function getWater(d) { return data.water[dateKey(d)] || 0; }
+function setWaterVal(val, d) { data.water[dateKey(d)] = Math.max(0, Math.min(20, val)); saveData(data); }
+
+function addWater(n) { setWaterVal(getWater() + n); render(); }
+function resetWater() { setWaterVal(0); render(); }
+
+function renderWaterRing(arcId, countId, glassesId) {
+  const count = getWater();
+  const pct = Math.min(count / WATER_TARGET, 1);
+  const circ = 2 * Math.PI * 78;
+  const offset = circ * (1 - pct);
+  const arc = document.getElementById(arcId);
+  const countEl = document.getElementById(countId);
+  if (arc) arc.setAttribute('stroke-dashoffset', offset);
+  if (countEl) countEl.textContent = count;
+
+  const container = document.getElementById(glassesId);
+  if (!container) return;
+  container.innerHTML = '';
+  for (let i = 0; i < WATER_TARGET; i++) {
+    const g = document.createElement('div');
+    g.className = 'glass' + (i < count ? ' filled' : '');
+    g.innerHTML = `<div class="fill" style="height:${i < count ? '100' : '0'}%"></div><span class="icon">${i < count ? '💧' : '🥛'}</span>`;
+    g.onclick = () => { setWaterVal(i < count && i === count - 1 ? i : i + 1); render(); };
+    container.appendChild(g);
+  }
+}
+
+// Exercise
+function addExercise() {
+  const type = document.getElementById('ex-type').value;
+  const duration = parseInt(document.getElementById('ex-duration').value) || 0;
+  const intensity = document.getElementById('ex-intensity').value;
+  let calories = parseInt(document.getElementById('ex-calories').value);
+  if (!calories) calories = Math.round(CALORIE_RATES[type][intensity] * duration);
+  const notes = document.getElementById('ex-notes').value;
+  if (duration <= 0) return;
+  if (!data.exercises[today()]) data.exercises[today()] = [];
+  data.exercises[today()].push({ type, duration, intensity, calories, notes, id: Date.now() });
+  saveData(data);
+  document.getElementById('ex-notes').value = '';
+  document.getElementById('ex-calories').value = '';
+  render();
+}
+
+function deleteExercise(id) {
+  const exs = data.exercises[today()];
+  if (exs) { data.exercises[today()] = exs.filter(e => e.id !== id); saveData(data); render(); }
+}
+
+function renderExercises(containerId) {
+  const container = document.getElementById(containerId);
+  const exs = data.exercises[today()] || [];
+  if (!exs.length) { container.innerHTML = '<div class="empty-state">No workouts logged today</div>'; return; }
+  container.innerHTML = exs.map(e => `
+    <div class="exercise-item">
+      <div class="info">
+        <div class="type">${getTypeEmoji(e.type)} ${e.type}</div>
+        <div class="meta">${e.duration} min &middot; ${e.intensity}${e.notes ? ' &middot; ' + e.notes : ''}</div>
+      </div>
+      <div class="cals">${e.calories} cal</div>
+      ${containerId === 'exercise-list' ? `<button class="btn btn-danger btn-sm" style="margin-left:0.5rem;" onclick="deleteExercise(${e.id})">x</button>` : ''}
+    </div>
+  `).join('');
+}
+
+function getTypeEmoji(t) {
+  return { Walking: '🚶', Running: '🏃', Cycling: '🚴', Gym: '🏋️', Yoga: '🧘', Swimming: '🏊', Sports: '⚽', Other: '💪' }[t] || '💪';
+}
+
+// Steps
+function getSteps(d) { return data.steps[dateKey(d)] || 0; }
+
+function setSteps() {
+  const val = parseInt(document.getElementById('step-input').value);
+  if (isNaN(val) || val < 0) return;
+  data.steps[today()] = val;
+  saveData(data);
+  document.getElementById('step-input').value = '';
+  render();
+}
+
+function addStepsQuick(n) {
+  data.steps[today()] = (data.steps[today()] || 0) + n;
+  saveData(data);
+  render();
+}
+
+function renderSteps() {
+  const steps = getSteps();
+  const pct = Math.min(steps / STEP_TARGET * 100, 100);
+  const el = document.getElementById('step-count');
+  const fill = document.getElementById('step-fill');
+  if (el) el.textContent = steps.toLocaleString();
+  if (fill) fill.style.width = pct + '%';
+
+  const disp = document.getElementById('steps-today-display');
+  if (disp) {
+    disp.innerHTML = `
+      <div style="text-align:center;">
+        <div style="font-size:1.75rem;font-weight:700;">${steps.toLocaleString()}</div>
+        <div style="font-size:0.75rem;color:#6b7280;">of 10,000 steps</div>
+        <div class="step-bar-wrap"><div class="step-bar"><div class="step-bar-fill" style="width:${pct}%"></div></div></div>
+      </div>
+    `;
+  }
+}
+
+// Weight
+function addWeight() {
+  const date = document.getElementById('weight-date').value || today();
+  const weight = parseFloat(document.getElementById('weight-val').value);
+  if (!weight) return;
+  data.weights = data.weights.filter(w => w.date !== date);
+  data.weights.push({ date, weight: Math.round(weight * 10) / 10 });
+  data.weights.sort((a, b) => a.date.localeCompare(b.date));
+  saveData(data);
+  document.getElementById('weight-val').value = '';
+  render();
+}
+
+function renderWeightChart() {
+  const ctx = document.getElementById('weight-chart');
+  if (!ctx) return;
+  if (weightChart) weightChart.destroy();
+  const entries = data.weights.slice(-20);
+  weightChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: entries.map(e => e.date.slice(5)),
+      datasets: [{
+        label: 'Weight (kg)',
+        data: entries.map(e => e.weight),
+        borderColor: '#8b5cf6',
+        backgroundColor: 'rgba(139,92,246,0.1)',
+        fill: true,
+        tension: 0.3,
+        pointRadius: 4,
+        pointBackgroundColor: '#8b5cf6'
+      }]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: { y: { beginAtZero: false } }
+    }
+  });
+
+  const list = document.getElementById('weight-list');
+  if (list) {
+    list.innerHTML = entries.slice().reverse().map(e =>
+      `<div style="display:flex;justify-content:space-between;padding:0.35rem 0;border-bottom:1px solid rgba(0,0,0,0.04);font-size:0.82rem;">
+        <span>${e.date}</span><span style="font-weight:600;">${e.weight} kg</span>
+      </div>`
+    ).join('');
+  }
+}
+
+// Measurements
+function addMeasurement() {
+  const date = document.getElementById('meas-date').value || today();
+  const m = {
+    date,
+    waist: parseFloat(document.getElementById('meas-waist').value) || null,
+    chest: parseFloat(document.getElementById('meas-chest').value) || null,
+    hips: parseFloat(document.getElementById('meas-hips').value) || null,
+    bicep: parseFloat(document.getElementById('meas-bicep').value) || null,
+    thigh: parseFloat(document.getElementById('meas-thigh').value) || null
+  };
+  data.measurements = data.measurements.filter(x => x.date !== date);
+  data.measurements.push(m);
+  data.measurements.sort((a, b) => a.date.localeCompare(b.date));
+  saveData(data);
+  render();
+}
+
+function renderMeasurements() {
+  const disp = document.getElementById('meas-display');
+  if (!disp) return;
+  const ms = data.measurements;
+  if (!ms.length) { disp.innerHTML = '<div class="empty-state">No measurements logged</div>'; return; }
+  const latest = ms[ms.length - 1];
+  const prev = ms.length > 1 ? ms[ms.length - 2] : null;
+  const fields = ['waist', 'chest', 'hips', 'bicep', 'thigh'];
+  disp.innerHTML = `
+    <div style="font-size:0.78rem;color:#6b7280;margin-bottom:0.75rem;">Latest: ${latest.date}</div>
+    <div class="meas-grid">
+      ${fields.map(f => {
+        const val = latest[f];
+        if (!val) return '';
+        let delta = '';
+        if (prev && prev[f]) {
+          const diff = (val - prev[f]).toFixed(1);
+          if (diff > 0) delta = `<div class="delta delta-pos">+${diff}</div>`;
+          else if (diff < 0) delta = `<div class="delta delta-neg">${diff}</div>`;
+          else delta = `<div class="delta" style="color:#6b7280;">0</div>`;
+        }
+        return `<div class="meas-item"><div class="val">${val}</div><div class="lbl">${f} (cm)</div>${delta}</div>`;
+      }).join('')}
+    </div>
+  `;
+}
+
+// Weekly chart
+function renderWeeklyChart() {
+  const ctx = document.getElementById('weekly-chart');
+  if (!ctx) return;
+  if (weeklyChart) weeklyChart.destroy();
+  const days = [];
+  const now = new Date();
+  for (let i = 6; i >= 0; i--) {
+    const d = new Date(now); d.setDate(d.getDate() - i);
+    days.push(d.toISOString().slice(0, 10));
+  }
+  const labels = days.map(d => { const dt = new Date(d + 'T12:00:00'); return dt.toLocaleDateString('en', { weekday: 'short' }); });
+  const waterData = days.map(d => data.water[d] || 0);
+  const exMins = days.map(d => (data.exercises[d] || []).reduce((s, e) => s + e.duration, 0));
+  const stepData = days.map(d => (data.steps[d] || 0) / 1000);
+
+  weeklyChart = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [
+        { label: 'Water (glasses)', data: waterData, backgroundColor: 'rgba(59,130,246,0.5)', borderRadius: 6, order: 2 },
+        { label: 'Exercise (min)', data: exMins, type: 'line', borderColor: '#f59e0b', backgroundColor: 'rgba(245,158,11,0.1)', tension: 0.3, pointRadius: 4, pointBackgroundColor: '#f59e0b', yAxisID: 'y1', order: 1 },
+        { label: 'Steps (K)', data: stepData, type: 'line', borderColor: '#10b981', backgroundColor: 'rgba(16,185,129,0.1)', tension: 0.3, pointRadius: 4, pointBackgroundColor: '#10b981', yAxisID: 'y1', order: 0, borderDash: [5, 3] }
+      ]
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'top', labels: { usePointStyle: true, padding: 16 } } },
+      scales: {
+        y: { beginAtZero: true, title: { display: true, text: 'Glasses' } },
+        y1: { beginAtZero: true, position: 'right', grid: { drawOnChartArea: false }, title: { display: true, text: 'Minutes / Steps(K)' } }
+      }
+    }
+  });
+}
+
+// Streaks
+function renderStreaks() {
+  const disp = document.getElementById('streaks-display');
+  if (!disp) return;
+  let waterStreak = 0, exStreak = 0;
+  const now = new Date();
+  for (let i = 0; i < 365; i++) {
+    const d = new Date(now); d.setDate(d.getDate() - i);
+    const key = d.toISOString().slice(0, 10);
+    if ((data.water[key] || 0) >= WATER_TARGET) waterStreak++; else break;
+  }
+  let exCount = 0;
+  for (let i = 0; i < 365; i++) {
+    const d = new Date(now); d.setDate(d.getDate() - i);
+    const key = d.toISOString().slice(0, 10);
+    if ((data.exercises[key] || []).length > 0) exCount++; else break;
+  }
+  exStreak = exCount;
+  disp.innerHTML = `
+    <div class="streak-row"><span class="streak-icon">💧</span><div><div class="streak-num">${waterStreak}</div><div class="streak-lbl">days meeting water goal</div></div></div>
+    <div class="streak-row"><span class="streak-icon">🏋️</span><div><div class="streak-num">${exStreak}</div><div class="streak-lbl">consecutive exercise days</div></div></div>
+  `;
+}
+
+// Quick stats
+function renderQuickStats() {
+  const container = document.getElementById('quick-stats');
+  if (!container) return;
+  const now = new Date();
+  let waterSum = 0, exMins = 0, exCals = 0, activeDays = 0;
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(now); d.setDate(d.getDate() - i);
+    const key = d.toISOString().slice(0, 10);
+    waterSum += data.water[key] || 0;
+    const dayEx = data.exercises[key] || [];
+    const mins = dayEx.reduce((s, e) => s + e.duration, 0);
+    const cals = dayEx.reduce((s, e) => s + e.calories, 0);
+    exMins += mins;
+    exCals += cals;
+    if (mins > 0) activeDays++;
+  }
+  container.innerHTML = `
+    <div class="card card-sm"><div class="stat-val" style="color:#3b82f6;">${(waterSum / 7).toFixed(1)}</div><div class="stat-lbl">Avg Water/Day</div></div>
+    <div class="card card-sm"><div class="stat-val" style="color:#f59e0b;">${exMins}</div><div class="stat-lbl">Exercise Min (7d)</div></div>
+    <div class="card card-sm"><div class="stat-val" style="color:#ef4444;">${exCals.toLocaleString()}</div><div class="stat-lbl">Calories (7d)</div></div>
+    <div class="card card-sm"><div class="stat-val" style="color:#10b981;">${activeDays}/7</div><div class="stat-lbl">Active Days</div></div>
+  `;
+}
+
+// Export/Import
+function exportData() {
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a'); a.href = url; a.download = `fitness-backup-${today()}.json`;
+  a.click(); URL.revokeObjectURL(url);
+}
+
+function importData(e) {
+  const file = e.target.files[0]; if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const imported = JSON.parse(reader.result);
+      if (imported.water && imported.exercises) {
+        data = imported; saveData(data); render();
+        alert('Data imported successfully!');
+      } else { alert('Invalid backup file.'); }
+    } catch { alert('Failed to parse file.'); }
+  };
+  reader.readAsText(file);
+}
+
+// Auto-calc calories
+document.getElementById('ex-type').addEventListener('change', autoCalc);
+document.getElementById('ex-duration').addEventListener('input', autoCalc);
+document.getElementById('ex-intensity').addEventListener('change', autoCalc);
+function autoCalc() {
+  const t = document.getElementById('ex-type').value;
+  const d = parseInt(document.getElementById('ex-duration').value) || 0;
+  const i = document.getElementById('ex-intensity').value;
+  document.getElementById('ex-calories').placeholder = Math.round(CALORIE_RATES[t][i] * d) + ' (auto)';
+}
+
+// Init dates
+document.getElementById('weight-date').value = today();
+document.getElementById('meas-date').value = today();
+
+function render() {
+  renderWaterRing('water-arc-today', 'water-count-today', 'glasses-today');
+  renderWaterRing('water-arc', 'water-count', 'glasses-main');
+  renderExercises('today-exercises');
+  renderExercises('exercise-list');
+  renderSteps();
+  renderStreaks();
+  renderQuickStats();
+  renderWeightChart();
+  renderMeasurements();
+  renderWeeklyChart();
+  // Today totals
+  const exs = data.exercises[today()] || [];
+  document.getElementById('today-ex-mins').textContent = exs.reduce((s, e) => s + e.duration, 0);
+  document.getElementById('today-ex-cals').textContent = exs.reduce((s, e) => s + e.calories, 0);
+  autoCalc();
+}
+
+render();
+</script>
+</body>
+</html>

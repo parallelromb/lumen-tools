@@ -1,0 +1,1192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>REST API Tester</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: #f8f9fc;
+    color: #1a1a2e;
+    min-height: 100vh;
+    padding: 1.5rem;
+    font-size: 14px;
+  }
+  .glass {
+    background: rgba(255,255,255,0.72);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.6);
+    border-radius: 16px;
+    padding: 1.25rem;
+  }
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 1.25rem;
+  }
+  .header h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .header h1 svg { flex-shrink: 0; }
+  .header a {
+    color: #6b7280;
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 500;
+  }
+  .header a:hover { color: #3b82f6; }
+  .layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 1rem;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  @media (max-width: 900px) {
+    .layout { grid-template-columns: 1fr; }
+  }
+
+  /* Sidebar */
+  .sidebar { display: flex; flex-direction: column; gap: 1rem; }
+  .sidebar-section h3 {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #6b7280;
+    margin-bottom: 0.5rem;
+  }
+  .sidebar-tabs {
+    display: flex;
+    gap: 0.25rem;
+    margin-bottom: 0.75rem;
+  }
+  .sidebar-tab {
+    flex: 1;
+    padding: 0.35rem 0.5rem;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-family: inherit;
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: #6b7280;
+    border-radius: 6px;
+    transition: all 0.15s;
+  }
+  .sidebar-tab.active {
+    background: rgba(59,130,246,0.1);
+    color: #3b82f6;
+  }
+  .sidebar-list { list-style: none; }
+  .sidebar-list li {
+    padding: 0.5rem 0.6rem;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    transition: background 0.15s;
+    font-size: 0.8rem;
+  }
+  .sidebar-list li:hover { background: rgba(0,0,0,0.04); }
+  .sidebar-list .method-badge {
+    font-size: 0.6rem;
+    font-weight: 700;
+    padding: 0.15rem 0.35rem;
+    border-radius: 4px;
+    min-width: 36px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .sidebar-list .item-info {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+  }
+  .sidebar-list .item-name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: 500;
+  }
+  .sidebar-list .item-meta {
+    font-size: 0.65rem;
+    color: #9ca3af;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .sidebar-list .item-status {
+    font-size: 0.65rem;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  .sidebar-list .item-actions {
+    display: flex;
+    gap: 0.25rem;
+    opacity: 0;
+    transition: opacity 0.15s;
+    flex-shrink: 0;
+  }
+  .sidebar-list li:hover .item-actions { opacity: 1; }
+  .sidebar-list .item-actions button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #9ca3af;
+    font-size: 0.7rem;
+    padding: 0.15rem;
+    border-radius: 4px;
+  }
+  .sidebar-list .item-actions button:hover { color: #ef4444; background: rgba(239,68,68,0.1); }
+  .collection-folder {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #374151;
+    padding: 0.4rem 0.6rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    border-radius: 8px;
+  }
+  .collection-folder:hover { background: rgba(0,0,0,0.04); }
+  .collection-folder .arrow { transition: transform 0.15s; font-size: 0.6rem; }
+  .collection-folder .arrow.open { transform: rotate(90deg); }
+  .collection-items { padding-left: 1rem; }
+  .env-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 0.35rem;
+    margin-bottom: 0.35rem;
+  }
+  .env-row input {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.75rem;
+    padding: 0.3rem 0.5rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.8);
+    outline: none;
+  }
+  .env-row input:focus { border-color: #3b82f6; }
+  .btn-icon {
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #9ca3af;
+    font-size: 0.8rem;
+    padding: 0.2rem 0.35rem;
+    border-radius: 4px;
+  }
+  .btn-icon:hover { background: rgba(0,0,0,0.06); color: #374151; }
+
+  /* Main area */
+  .main { display: flex; flex-direction: column; gap: 1rem; }
+
+  /* Request bar */
+  .request-bar {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+  .method-select {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 0.6rem 0.5rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    background: white;
+    cursor: pointer;
+    outline: none;
+    min-width: 100px;
+  }
+  .method-select:focus { border-color: #3b82f6; }
+  .url-input {
+    flex: 1;
+    font-family: 'Inter', monospace;
+    font-size: 0.85rem;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    background: white;
+    outline: none;
+  }
+  .url-input:focus { border-color: #3b82f6; }
+  .send-btn {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    padding: 0.6rem 1.5rem;
+    border: none;
+    border-radius: 10px;
+    background: #3b82f6;
+    color: white;
+    cursor: pointer;
+    transition: background 0.15s;
+    white-space: nowrap;
+  }
+  .send-btn:hover { background: #2563eb; }
+  .send-btn:active { background: #1d4ed8; }
+  .send-btn:disabled { background: #93c5fd; cursor: not-allowed; }
+  .save-btn {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    background: white;
+    cursor: pointer;
+    color: #6b7280;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .save-btn:hover { border-color: #3b82f6; color: #3b82f6; }
+
+  /* Tabs */
+  .tabs {
+    display: flex;
+    gap: 0;
+    border-bottom: 1px solid #e5e7eb;
+    margin-bottom: 0.75rem;
+  }
+  .tab-btn {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 500;
+    padding: 0.5rem 1rem;
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: #6b7280;
+    border-bottom: 2px solid transparent;
+    transition: all 0.15s;
+  }
+  .tab-btn.active {
+    color: #3b82f6;
+    border-bottom-color: #3b82f6;
+  }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* KV editor */
+  .kv-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr auto;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    align-items: center;
+  }
+  .kv-row input {
+    font-family: 'Inter', monospace;
+    font-size: 0.8rem;
+    padding: 0.4rem 0.6rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.8);
+    outline: none;
+  }
+  .kv-row input:focus { border-color: #3b82f6; }
+  .add-row-btn {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 500;
+    padding: 0.35rem 0.75rem;
+    border: 1px dashed #d1d5db;
+    border-radius: 8px;
+    background: none;
+    cursor: pointer;
+    color: #6b7280;
+  }
+  .add-row-btn:hover { border-color: #3b82f6; color: #3b82f6; }
+
+  /* Body editor */
+  .body-textarea {
+    width: 100%;
+    min-height: 180px;
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    font-size: 0.8rem;
+    padding: 0.75rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.8);
+    outline: none;
+    resize: vertical;
+    line-height: 1.5;
+    tab-size: 2;
+  }
+  .body-textarea:focus { border-color: #3b82f6; }
+
+  /* Response */
+  .response-header {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.75rem;
+  }
+  .status-badge {
+    font-size: 0.8rem;
+    font-weight: 700;
+    padding: 0.3rem 0.75rem;
+    border-radius: 8px;
+  }
+  .status-2xx { background: rgba(34,197,94,0.12); color: #16a34a; }
+  .status-3xx { background: rgba(245,158,11,0.12); color: #d97706; }
+  .status-4xx { background: rgba(239,68,68,0.12); color: #dc2626; }
+  .status-5xx { background: rgba(239,68,68,0.15); color: #991b1b; }
+  .status-0xx { background: rgba(107,114,128,0.12); color: #6b7280; }
+  .response-meta {
+    font-size: 0.75rem;
+    color: #6b7280;
+    display: flex;
+    gap: 1rem;
+  }
+  .response-meta span { white-space: nowrap; }
+  .response-actions {
+    margin-left: auto;
+    display: flex;
+    gap: 0.35rem;
+  }
+  .toggle-btn {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.7rem;
+    font-weight: 500;
+    padding: 0.25rem 0.6rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 6px;
+    background: white;
+    cursor: pointer;
+    color: #6b7280;
+  }
+  .toggle-btn.active { background: rgba(59,130,246,0.1); color: #3b82f6; border-color: rgba(59,130,246,0.3); }
+  .response-body {
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    font-size: 0.78rem;
+    line-height: 1.6;
+    padding: 1rem;
+    border-radius: 10px;
+    background: #1e1e2e;
+    color: #cdd6f4;
+    overflow: auto;
+    max-height: 500px;
+    white-space: pre-wrap;
+    word-break: break-all;
+  }
+  .response-body .json-key { color: #89b4fa; }
+  .response-body .json-string { color: #a6e3a1; }
+  .response-body .json-number { color: #fab387; }
+  .response-body .json-bool { color: #cba6f7; }
+  .response-body .json-null { color: #6c7086; }
+  .response-headers-list {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 0.75rem;
+    line-height: 1.8;
+    padding: 0.75rem;
+    background: rgba(0,0,0,0.03);
+    border-radius: 8px;
+    max-height: 250px;
+    overflow: auto;
+  }
+  .response-headers-list .hdr-key { color: #3b82f6; font-weight: 500; }
+
+  .empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: #9ca3af;
+  }
+  .empty-state svg { margin-bottom: 0.75rem; }
+  .empty-state p { font-size: 0.85rem; }
+
+  .curl-box {
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    font-size: 0.75rem;
+    padding: 0.75rem;
+    background: #1e1e2e;
+    color: #cdd6f4;
+    border-radius: 10px;
+    white-space: pre-wrap;
+    word-break: break-all;
+    line-height: 1.5;
+    max-height: 200px;
+    overflow: auto;
+  }
+
+  .cors-note {
+    font-size: 0.7rem;
+    color: #9ca3af;
+    text-align: center;
+    margin-top: 1rem;
+    padding: 0.5rem;
+  }
+
+  /* Method colors */
+  .m-GET { background: rgba(34,197,94,0.12); color: #16a34a; }
+  .m-POST { background: rgba(59,130,246,0.12); color: #2563eb; }
+  .m-PUT { background: rgba(245,158,11,0.12); color: #d97706; }
+  .m-PATCH { background: rgba(168,85,247,0.12); color: #7c3aed; }
+  .m-DELETE { background: rgba(239,68,68,0.12); color: #dc2626; }
+  .m-HEAD { background: rgba(107,114,128,0.12); color: #6b7280; }
+  .m-OPTIONS { background: rgba(107,114,128,0.12); color: #6b7280; }
+
+  /* Modal */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.3);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: white;
+    border-radius: 16px;
+    padding: 1.5rem;
+    width: 90%;
+    max-width: 420px;
+    box-shadow: 0 24px 80px rgba(0,0,0,0.15);
+  }
+  .modal h3 { font-size: 1rem; margin-bottom: 1rem; }
+  .modal label { font-size: 0.8rem; font-weight: 500; color: #374151; display: block; margin-bottom: 0.25rem; }
+  .modal input, .modal select {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.85rem;
+    padding: 0.5rem 0.75rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 8px;
+    width: 100%;
+    margin-bottom: 0.75rem;
+    outline: none;
+  }
+  .modal input:focus, .modal select:focus { border-color: #3b82f6; }
+  .modal-actions {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+    margin-top: 0.5rem;
+  }
+  .modal-actions button {
+    font-family: 'Inter', sans-serif;
+    font-size: 0.8rem;
+    font-weight: 500;
+    padding: 0.45rem 1rem;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 1px solid #e5e7eb;
+    background: white;
+    color: #374151;
+  }
+  .modal-actions .primary {
+    background: #3b82f6;
+    color: white;
+    border-color: #3b82f6;
+  }
+</style>
+</head>
+<body>
+  <div class="header" style="max-width:1400px;margin:0 auto 1.25rem;">
+    <h1>
+      <svg width="28" height="28" fill="none" stroke="#3b82f6" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+      REST API Tester
+    </h1>
+    <a href="index.html">&larr; Back to Analytics</a>
+  </div>
+
+  <div class="layout">
+    <!-- Sidebar -->
+    <div class="sidebar">
+      <div class="glass sidebar-section">
+        <div class="sidebar-tabs">
+          <button class="sidebar-tab active" onclick="switchSidebarTab('history')">History</button>
+          <button class="sidebar-tab" onclick="switchSidebarTab('saved')">Saved</button>
+          <button class="sidebar-tab" onclick="switchSidebarTab('collections')">Collections</button>
+          <button class="sidebar-tab" onclick="switchSidebarTab('env')">Env</button>
+        </div>
+
+        <div id="sidebar-history" class="sidebar-panel">
+          <ul class="sidebar-list" id="history-list"></ul>
+          <div class="empty-state" id="history-empty" style="padding:1.5rem 0.5rem">
+            <p>No requests yet</p>
+          </div>
+        </div>
+
+        <div id="sidebar-saved" class="sidebar-panel" style="display:none">
+          <ul class="sidebar-list" id="saved-list"></ul>
+          <div class="empty-state" id="saved-empty" style="padding:1.5rem 0.5rem">
+            <p>No saved requests</p>
+          </div>
+        </div>
+
+        <div id="sidebar-collections" class="sidebar-panel" style="display:none">
+          <div id="collections-list"></div>
+          <div class="empty-state" id="collections-empty" style="padding:1.5rem 0.5rem">
+            <p>No collections yet</p>
+          </div>
+          <button class="add-row-btn" style="width:100%;margin-top:0.5rem" onclick="createCollection()">+ New Collection</button>
+        </div>
+
+        <div id="sidebar-env" class="sidebar-panel" style="display:none">
+          <div id="env-list"></div>
+          <button class="add-row-btn" style="width:100%;margin-top:0.5rem" onclick="addEnvVar()">+ Add Variable</button>
+        </div>
+      </div>
+
+      <div class="glass" style="padding:0.75rem 1rem">
+        <h3 style="font-size:0.7rem;font-weight:600;text-transform:uppercase;letter-spacing:0.05em;color:#6b7280;margin-bottom:0.5rem">Examples</h3>
+        <ul class="sidebar-list" id="examples-list"></ul>
+      </div>
+    </div>
+
+    <!-- Main -->
+    <div class="main">
+      <!-- Request bar -->
+      <div class="glass">
+        <div class="request-bar">
+          <select class="method-select" id="method-select" onchange="onMethodChange()">
+            <option value="GET">GET</option>
+            <option value="POST">POST</option>
+            <option value="PUT">PUT</option>
+            <option value="PATCH">PATCH</option>
+            <option value="DELETE">DELETE</option>
+            <option value="HEAD">HEAD</option>
+            <option value="OPTIONS">OPTIONS</option>
+          </select>
+          <input class="url-input" id="url-input" type="text" placeholder="Enter request URL or paste cURL..." value="">
+          <button class="send-btn" id="send-btn" onclick="sendRequest()">Send</button>
+          <button class="save-btn" onclick="openSaveModal()">Save</button>
+        </div>
+      </div>
+
+      <!-- Request options -->
+      <div class="glass">
+        <div class="tabs">
+          <button class="tab-btn active" onclick="switchTab(this,'params')">Params</button>
+          <button class="tab-btn" onclick="switchTab(this,'headers')">Headers</button>
+          <button class="tab-btn" id="body-tab-btn" onclick="switchTab(this,'body')" style="display:none">Body</button>
+          <button class="tab-btn" onclick="switchTab(this,'curl')">cURL</button>
+        </div>
+        <div class="tab-content active" id="tab-params">
+          <div id="params-editor"></div>
+          <button class="add-row-btn" onclick="addParamRow()">+ Add Parameter</button>
+        </div>
+        <div class="tab-content" id="tab-headers">
+          <div id="headers-editor"></div>
+          <button class="add-row-btn" onclick="addHeaderRow()">+ Add Header</button>
+        </div>
+        <div class="tab-content" id="tab-body">
+          <textarea class="body-textarea" id="body-editor" placeholder='{\n  "key": "value"\n}'></textarea>
+        </div>
+        <div class="tab-content" id="tab-curl">
+          <div class="curl-box" id="curl-output">Select a method and URL to see the cURL command</div>
+          <button class="toggle-btn" style="margin-top:0.5rem" onclick="copyCurl()">Copy to clipboard</button>
+        </div>
+      </div>
+
+      <!-- Response -->
+      <div class="glass">
+        <div id="response-empty" class="empty-state">
+          <svg width="48" height="48" fill="none" stroke="#d1d5db" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M38 4L20 22"/><path d="M38 4l-12 34-6.5-15.5L4 16 38 4z"/></svg>
+          <p>Send a request to see the response</p>
+        </div>
+        <div id="response-area" style="display:none">
+          <div class="response-header">
+            <span class="status-badge" id="resp-status"></span>
+            <div class="response-meta">
+              <span id="resp-time"></span>
+              <span id="resp-size"></span>
+            </div>
+            <div class="response-actions">
+              <button class="toggle-btn active" id="btn-pretty" onclick="togglePretty(true)">Pretty</button>
+              <button class="toggle-btn" id="btn-raw" onclick="togglePretty(false)">Raw</button>
+            </div>
+          </div>
+          <div class="tabs">
+            <button class="tab-btn active" onclick="switchRespTab(this,'resp-body')">Body</button>
+            <button class="tab-btn" onclick="switchRespTab(this,'resp-headers')">Headers</button>
+          </div>
+          <div class="tab-content active" id="tab-resp-body">
+            <div class="response-body" id="resp-body"></div>
+          </div>
+          <div class="tab-content" id="tab-resp-headers">
+            <div class="response-headers-list" id="resp-headers"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cors-note">
+        Note: This tool uses browser fetch(). Requests to APIs that do not send CORS headers (Access-Control-Allow-Origin) will fail.
+        Use APIs that support CORS, or test against localhost / same-origin servers.
+      </div>
+    </div>
+  </div>
+
+  <!-- Save Modal -->
+  <div class="modal-overlay" id="save-modal">
+    <div class="modal">
+      <h3>Save Request</h3>
+      <label>Name</label>
+      <input type="text" id="save-name" placeholder="My API request">
+      <label>Collection (optional)</label>
+      <select id="save-collection">
+        <option value="">None</option>
+      </select>
+      <div class="modal-actions">
+        <button onclick="closeSaveModal()">Cancel</button>
+        <button class="primary" onclick="saveRequest()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Collection Modal -->
+  <div class="modal-overlay" id="collection-modal">
+    <div class="modal">
+      <h3>New Collection</h3>
+      <label>Name</label>
+      <input type="text" id="collection-name" placeholder="My Collection">
+      <div class="modal-actions">
+        <button onclick="closeCollectionModal()">Cancel</button>
+        <button class="primary" onclick="saveCollection()">Create</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+// State
+let state = {
+  history: JSON.parse(localStorage.getItem('apiTester_history') || '[]'),
+  saved: JSON.parse(localStorage.getItem('apiTester_saved') || '[]'),
+  collections: JSON.parse(localStorage.getItem('apiTester_collections') || '[]'),
+  envVars: JSON.parse(localStorage.getItem('apiTester_env') || '[]'),
+};
+
+let currentResponse = null;
+let prettyMode = true;
+
+// Examples
+const examples = [
+  { name: 'Smara Health', method: 'GET', url: 'https://smara.up.railway.app/health', headers: [], body: '' },
+  { name: 'Smara Store', method: 'POST', url: 'https://smara.up.railway.app/api/v1/memory', headers: [{ key: 'Content-Type', value: 'application/json' }], body: JSON.stringify({ content: 'Test memory', metadata: { source: 'api-tester' } }, null, 2) },
+  { name: 'Smara Search', method: 'POST', url: 'https://smara.up.railway.app/api/v1/memory/search', headers: [{ key: 'Content-Type', value: 'application/json' }], body: JSON.stringify({ query: 'test', top_k: 5 }, null, 2) },
+  { name: 'JSONPlaceholder', method: 'GET', url: 'https://jsonplaceholder.typicode.com/posts/1', headers: [], body: '' },
+  { name: 'httpbin POST', method: 'POST', url: 'https://httpbin.org/post', headers: [{ key: 'Content-Type', value: 'application/json' }], body: JSON.stringify({ hello: 'world', timestamp: new Date().toISOString() }, null, 2) },
+];
+
+// Init
+function init() {
+  addHeaderRow('Content-Type', 'application/json');
+  addParamRow();
+  renderHistory();
+  renderSaved();
+  renderCollections();
+  renderEnv();
+  renderExamples();
+  onMethodChange();
+  updateCurl();
+}
+
+// Sidebar tabs
+function switchSidebarTab(name) {
+  document.querySelectorAll('.sidebar-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.sidebar-panel').forEach(p => p.style.display = 'none');
+  event.target.classList.add('active');
+  document.getElementById('sidebar-' + name).style.display = 'block';
+}
+
+// Request tabs
+function switchTab(btn, id) {
+  const parent = btn.closest('.glass');
+  parent.querySelectorAll('.tab-btn').forEach(t => t.classList.remove('active'));
+  parent.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-' + id).classList.add('active');
+  if (id === 'curl') updateCurl();
+}
+
+function switchRespTab(btn, id) {
+  const parent = btn.closest('.glass');
+  parent.querySelectorAll('.tabs .tab-btn').forEach(t => t.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-resp-body').classList.remove('active');
+  document.getElementById('tab-resp-headers').classList.remove('active');
+  document.getElementById('tab-' + id).classList.add('active');
+}
+
+// Method change
+function onMethodChange() {
+  const method = document.getElementById('method-select').value;
+  const bodyTab = document.getElementById('body-tab-btn');
+  const hasBody = ['POST', 'PUT', 'PATCH'].includes(method);
+  bodyTab.style.display = hasBody ? '' : 'none';
+  if (!hasBody) {
+    const activeTab = bodyTab.closest('.glass').querySelector('.tab-btn.active');
+    if (activeTab === bodyTab) {
+      switchTab(bodyTab.closest('.glass').querySelector('.tab-btn'), 'params');
+    }
+  }
+  updateCurl();
+}
+
+// KV editors
+function addHeaderRow(key, value) {
+  const container = document.getElementById('headers-editor');
+  const row = document.createElement('div');
+  row.className = 'kv-row';
+  row.innerHTML = `<input type="text" placeholder="Header name" value="${key || ''}" oninput="updateCurl()">
+    <input type="text" placeholder="Value" value="${value || ''}" oninput="updateCurl()">
+    <button class="btn-icon" onclick="this.parentElement.remove();updateCurl()">&times;</button>`;
+  container.appendChild(row);
+}
+
+function addParamRow(key, value) {
+  const container = document.getElementById('params-editor');
+  const row = document.createElement('div');
+  row.className = 'kv-row';
+  row.innerHTML = `<input type="text" placeholder="Key" value="${key || ''}" oninput="updateQueryString()">
+    <input type="text" placeholder="Value" value="${value || ''}" oninput="updateQueryString()">
+    <button class="btn-icon" onclick="this.parentElement.remove();updateQueryString()">&times;</button>`;
+  container.appendChild(row);
+}
+
+function getKV(containerId) {
+  const rows = document.querySelectorAll('#' + containerId + ' .kv-row');
+  const result = [];
+  rows.forEach(row => {
+    const inputs = row.querySelectorAll('input');
+    if (inputs[0].value.trim()) result.push({ key: inputs[0].value.trim(), value: inputs[1].value });
+  });
+  return result;
+}
+
+function updateQueryString() {
+  updateCurl();
+}
+
+function buildUrl() {
+  let url = document.getElementById('url-input').value.trim();
+  url = replaceEnvVars(url);
+  const params = getKV('params-editor');
+  if (params.length > 0) {
+    const base = url.split('?')[0];
+    const qs = params.map(p => encodeURIComponent(replaceEnvVars(p.key)) + '=' + encodeURIComponent(replaceEnvVars(p.value))).join('&');
+    url = base + '?' + qs;
+  }
+  return url;
+}
+
+// Environment variables
+function replaceEnvVars(str) {
+  state.envVars.forEach(v => {
+    if (v.key) {
+      str = str.replace(new RegExp('\\{\\{' + v.key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\}\\}', 'g'), v.value || '');
+    }
+  });
+  return str;
+}
+
+function addEnvVar(key, value) {
+  state.envVars.push({ key: key || '', value: value || '' });
+  saveState('env');
+  renderEnv();
+}
+
+function renderEnv() {
+  const container = document.getElementById('env-list');
+  container.innerHTML = '';
+  state.envVars.forEach((v, i) => {
+    const row = document.createElement('div');
+    row.className = 'env-row';
+    row.innerHTML = `<input type="text" placeholder="Variable name" value="${escHtml(v.key)}" oninput="state.envVars[${i}].key=this.value;saveState('env')">
+      <input type="text" placeholder="Value" value="${escHtml(v.value)}" oninput="state.envVars[${i}].value=this.value;saveState('env')">
+      <button class="btn-icon" onclick="state.envVars.splice(${i},1);saveState('env');renderEnv()">&times;</button>`;
+    container.appendChild(row);
+  });
+}
+
+// Send request
+async function sendRequest() {
+  const method = document.getElementById('method-select').value;
+  const url = buildUrl();
+  if (!url) return;
+
+  const headers = {};
+  getKV('headers-editor').forEach(h => { headers[replaceEnvVars(h.key)] = replaceEnvVars(h.value); });
+
+  const hasBody = ['POST', 'PUT', 'PATCH'].includes(method);
+  let body = null;
+  if (hasBody) {
+    body = replaceEnvVars(document.getElementById('body-editor').value);
+  }
+
+  const sendBtn = document.getElementById('send-btn');
+  sendBtn.disabled = true;
+  sendBtn.textContent = 'Sending...';
+
+  const startTime = performance.now();
+  let status = 0, statusText = '', respHeaders = {}, respBody = '', respSize = 0;
+
+  try {
+    const resp = await fetch(url, { method, headers, body, mode: 'cors' });
+    status = resp.status;
+    statusText = resp.statusText;
+    resp.headers.forEach((val, key) => { respHeaders[key] = val; });
+    respBody = await resp.text();
+    respSize = new Blob([respBody]).size;
+  } catch (err) {
+    status = 0;
+    statusText = 'Error';
+    respBody = err.message + '\n\nThis likely means the server does not allow CORS requests from this origin.';
+  }
+
+  const elapsed = Math.round(performance.now() - startTime);
+
+  currentResponse = { status, statusText, headers: respHeaders, body: respBody, size: respSize, time: elapsed };
+
+  // Add to history
+  const entry = {
+    method,
+    url: document.getElementById('url-input').value,
+    status,
+    time: elapsed,
+    timestamp: Date.now(),
+    headers: getKV('headers-editor'),
+    params: getKV('params-editor'),
+    body: hasBody ? document.getElementById('body-editor').value : '',
+  };
+  state.history.unshift(entry);
+  if (state.history.length > 20) state.history = state.history.slice(0, 20);
+  saveState('history');
+  renderHistory();
+
+  displayResponse();
+  sendBtn.disabled = false;
+  sendBtn.textContent = 'Send';
+}
+
+function displayResponse() {
+  if (!currentResponse) return;
+  document.getElementById('response-empty').style.display = 'none';
+  document.getElementById('response-area').style.display = 'block';
+
+  const r = currentResponse;
+  const statusEl = document.getElementById('resp-status');
+  statusEl.textContent = r.status ? `${r.status} ${r.statusText}` : 'Network Error';
+  statusEl.className = 'status-badge ' + getStatusClass(r.status);
+
+  document.getElementById('resp-time').textContent = r.time + ' ms';
+  document.getElementById('resp-size').textContent = formatBytes(r.size);
+
+  renderResponseBody();
+  renderResponseHeaders();
+}
+
+function renderResponseBody() {
+  const el = document.getElementById('resp-body');
+  if (!currentResponse) return;
+  if (prettyMode) {
+    try {
+      const parsed = JSON.parse(currentResponse.body);
+      el.innerHTML = syntaxHighlight(JSON.stringify(parsed, null, 2));
+    } catch {
+      el.textContent = currentResponse.body;
+    }
+  } else {
+    el.textContent = currentResponse.body;
+  }
+}
+
+function renderResponseHeaders() {
+  const el = document.getElementById('resp-headers');
+  if (!currentResponse) return;
+  const entries = Object.entries(currentResponse.headers);
+  if (entries.length === 0) {
+    el.textContent = 'No headers available (CORS may restrict header visibility)';
+    return;
+  }
+  el.innerHTML = entries.map(([k, v]) => `<span class="hdr-key">${escHtml(k)}</span>: ${escHtml(v)}`).join('\n');
+}
+
+function togglePretty(on) {
+  prettyMode = on;
+  document.getElementById('btn-pretty').classList.toggle('active', on);
+  document.getElementById('btn-raw').classList.toggle('active', !on);
+  renderResponseBody();
+}
+
+function getStatusClass(s) {
+  if (s >= 200 && s < 300) return 'status-2xx';
+  if (s >= 300 && s < 400) return 'status-3xx';
+  if (s >= 400 && s < 500) return 'status-4xx';
+  if (s >= 500) return 'status-5xx';
+  return 'status-0xx';
+}
+
+function syntaxHighlight(json) {
+  return escHtml(json).replace(
+    /("(\\u[\da-fA-F]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g,
+    match => {
+      let cls = 'json-number';
+      if (/^"/.test(match)) {
+        cls = /:$/.test(match) ? 'json-key' : 'json-string';
+      } else if (/true|false/.test(match)) {
+        cls = 'json-bool';
+      } else if (/null/.test(match)) {
+        cls = 'json-null';
+      }
+      return `<span class="${cls}">${match}</span>`;
+    }
+  );
+}
+
+function formatBytes(bytes) {
+  if (bytes === 0) return '0 B';
+  if (bytes < 1024) return bytes + ' B';
+  if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
+  return (bytes / 1048576).toFixed(1) + ' MB';
+}
+
+// cURL export
+function updateCurl() {
+  const method = document.getElementById('method-select').value;
+  const url = buildUrl() || '<url>';
+  const headers = getKV('headers-editor');
+  const hasBody = ['POST', 'PUT', 'PATCH'].includes(method);
+  const body = hasBody ? document.getElementById('body-editor').value.trim() : '';
+
+  let cmd = `curl -X ${method}`;
+  headers.forEach(h => {
+    cmd += ` \\\n  -H '${replaceEnvVars(h.key)}: ${replaceEnvVars(h.value)}'`;
+  });
+  if (body) {
+    cmd += ` \\\n  -d '${replaceEnvVars(body).replace(/'/g, "'\\''")}'`;
+  }
+  cmd += ` \\\n  '${url}'`;
+
+  document.getElementById('curl-output').textContent = cmd;
+}
+
+function copyCurl() {
+  navigator.clipboard.writeText(document.getElementById('curl-output').textContent);
+  const btn = event.target;
+  btn.textContent = 'Copied!';
+  setTimeout(() => btn.textContent = 'Copy to clipboard', 1500);
+}
+
+// History
+function renderHistory() {
+  const list = document.getElementById('history-list');
+  const empty = document.getElementById('history-empty');
+  list.innerHTML = '';
+  if (state.history.length === 0) { empty.style.display = ''; return; }
+  empty.style.display = 'none';
+  state.history.forEach((h, i) => {
+    const li = document.createElement('li');
+    li.onclick = () => loadRequest(h);
+    li.innerHTML = `<span class="method-badge m-${h.method}">${h.method}</span>
+      <div class="item-info">
+        <div class="item-name">${escHtml(h.url.replace(/^https?:\/\//, ''))}</div>
+        <div class="item-meta">${h.time}ms &middot; ${timeAgo(h.timestamp)}</div>
+      </div>
+      <span class="item-status" style="color:${h.status >= 200 && h.status < 300 ? '#16a34a' : h.status >= 400 ? '#dc2626' : '#6b7280'}">${h.status || 'Err'}</span>
+      <div class="item-actions"><button onclick="event.stopPropagation();state.history.splice(${i},1);saveState('history');renderHistory()">&times;</button></div>`;
+    list.appendChild(li);
+  });
+}
+
+// Saved
+function renderSaved() {
+  const list = document.getElementById('saved-list');
+  const empty = document.getElementById('saved-empty');
+  list.innerHTML = '';
+  if (state.saved.length === 0) { empty.style.display = ''; return; }
+  empty.style.display = 'none';
+  state.saved.forEach((s, i) => {
+    const li = document.createElement('li');
+    li.onclick = () => loadRequest(s);
+    li.innerHTML = `<span class="method-badge m-${s.method}">${s.method}</span>
+      <div class="item-info">
+        <div class="item-name">${escHtml(s.name || s.url)}</div>
+        <div class="item-meta">${escHtml(s.url.replace(/^https?:\/\//, ''))}</div>
+      </div>
+      <div class="item-actions"><button onclick="event.stopPropagation();state.saved.splice(${i},1);saveState('saved');renderSaved();renderCollections()">&times;</button></div>`;
+    list.appendChild(li);
+  });
+}
+
+// Collections
+function renderCollections() {
+  const container = document.getElementById('collections-list');
+  const empty = document.getElementById('collections-empty');
+  container.innerHTML = '';
+  if (state.collections.length === 0) { empty.style.display = ''; return; }
+  empty.style.display = 'none';
+  state.collections.forEach((col, ci) => {
+    const items = state.saved.filter(s => s.collection === col.name);
+    const folder = document.createElement('div');
+    folder.innerHTML = `<div class="collection-folder" onclick="this.nextElementSibling.style.display=this.nextElementSibling.style.display==='none'?'block':'none';this.querySelector('.arrow').classList.toggle('open')">
+      <span class="arrow">&#9656;</span> ${escHtml(col.name)} <span style="color:#9ca3af;font-weight:400;font-size:0.65rem;margin-left:auto">${items.length}</span>
+      <button class="btn-icon" style="margin-left:0.25rem" onclick="event.stopPropagation();state.collections.splice(${ci},1);saveState('collections');renderCollections()">&times;</button>
+    </div>
+    <div class="collection-items" style="display:none"><ul class="sidebar-list"></ul></div>`;
+    const ul = folder.querySelector('ul');
+    items.forEach(s => {
+      const li = document.createElement('li');
+      li.onclick = () => loadRequest(s);
+      li.innerHTML = `<span class="method-badge m-${s.method}">${s.method}</span>
+        <div class="item-info"><div class="item-name">${escHtml(s.name || s.url)}</div></div>`;
+      ul.appendChild(li);
+    });
+    container.appendChild(folder);
+  });
+  updateCollectionDropdown();
+}
+
+function createCollection() {
+  document.getElementById('collection-modal').classList.add('show');
+  document.getElementById('collection-name').value = '';
+  document.getElementById('collection-name').focus();
+}
+function closeCollectionModal() {
+  document.getElementById('collection-modal').classList.remove('show');
+}
+function saveCollection() {
+  const name = document.getElementById('collection-name').value.trim();
+  if (!name) return;
+  state.collections.push({ name });
+  saveState('collections');
+  renderCollections();
+  closeCollectionModal();
+}
+
+function updateCollectionDropdown() {
+  const select = document.getElementById('save-collection');
+  const current = select.value;
+  select.innerHTML = '<option value="">None</option>';
+  state.collections.forEach(c => {
+    select.innerHTML += `<option value="${escHtml(c.name)}">${escHtml(c.name)}</option>`;
+  });
+  select.value = current;
+}
+
+// Save request
+function openSaveModal() {
+  document.getElementById('save-modal').classList.add('show');
+  updateCollectionDropdown();
+  const url = document.getElementById('url-input').value;
+  document.getElementById('save-name').value = url ? url.replace(/^https?:\/\//, '').split('/').pop() || url : '';
+  document.getElementById('save-name').focus();
+}
+function closeSaveModal() {
+  document.getElementById('save-modal').classList.remove('show');
+}
+function saveRequest() {
+  const name = document.getElementById('save-name').value.trim();
+  const collection = document.getElementById('save-collection').value;
+  if (!name) return;
+  const method = document.getElementById('method-select').value;
+  const entry = {
+    name,
+    method,
+    url: document.getElementById('url-input').value,
+    headers: getKV('headers-editor'),
+    params: getKV('params-editor'),
+    body: ['POST', 'PUT', 'PATCH'].includes(method) ? document.getElementById('body-editor').value : '',
+    collection: collection || null,
+  };
+  state.saved.push(entry);
+  saveState('saved');
+  renderSaved();
+  renderCollections();
+  closeSaveModal();
+}
+
+// Load request
+function loadRequest(req) {
+  document.getElementById('method-select').value = req.method;
+  document.getElementById('url-input').value = req.url;
+  onMethodChange();
+
+  // Headers
+  document.getElementById('headers-editor').innerHTML = '';
+  if (req.headers && req.headers.length) {
+    req.headers.forEach(h => addHeaderRow(h.key, h.value));
+  } else {
+    addHeaderRow('Content-Type', 'application/json');
+  }
+
+  // Params
+  document.getElementById('params-editor').innerHTML = '';
+  if (req.params && req.params.length) {
+    req.params.forEach(p => addParamRow(p.key, p.value));
+  } else {
+    addParamRow();
+  }
+
+  // Body
+  if (req.body) document.getElementById('body-editor').value = req.body;
+
+  updateCurl();
+}
+
+// Examples
+function renderExamples() {
+  const list = document.getElementById('examples-list');
+  examples.forEach(ex => {
+    const li = document.createElement('li');
+    li.onclick = () => loadRequest(ex);
+    li.innerHTML = `<span class="method-badge m-${ex.method}">${ex.method}</span>
+      <div class="item-info"><div class="item-name">${escHtml(ex.name)}</div></div>`;
+    list.appendChild(li);
+  });
+}
+
+// Persistence
+function saveState(key) {
+  localStorage.setItem('apiTester_' + key, JSON.stringify(state[key]));
+}
+
+// Helpers
+function escHtml(s) {
+  if (!s) return '';
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function timeAgo(ts) {
+  const diff = Date.now() - ts;
+  if (diff < 60000) return 'just now';
+  if (diff < 3600000) return Math.floor(diff / 60000) + 'm ago';
+  if (diff < 86400000) return Math.floor(diff / 3600000) + 'h ago';
+  return Math.floor(diff / 86400000) + 'd ago';
+}
+
+// Keyboard
+document.addEventListener('keydown', e => {
+  if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+    e.preventDefault();
+    sendRequest();
+  }
+});
+
+// Close modals on overlay click
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if (e.target === m) m.classList.remove('show'); });
+});
+
+init();
+</script>
+</body>
+</html>
