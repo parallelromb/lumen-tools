@@ -633,15 +633,16 @@ function generateImageURLs() {
   const w = parseInt(document.getElementById('imgWidth').value) || 800;
   const h = parseInt(document.getElementById('imgHeight').value) || 600;
   const services = [
-    { name: 'placeholder.com', url: `https://via.placeholder.com/${w}x${h}` },
-    { name: 'picsum.photos', url: `https://picsum.photos/${w}/${h}` },
-    { name: 'placehold.co', url: `https://placehold.co/${w}x${h}` },
+    { name: 'placehold.co',    url: `https://placehold.co/${w}x${h}`,    note: 'Plain grey placeholder, fast' },
+    { name: 'picsum.photos',   url: `https://picsum.photos/${w}/${h}`,   note: 'Random Lorem Picsum photo' },
+    { name: 'dummyimage.com',  url: `https://dummyimage.com/${w}x${h}`,  note: 'Custom color/text placeholder' },
+    { name: 'loremflickr.com', url: `https://loremflickr.com/${w}/${h}`, note: 'Random photo from Flickr' },
   ];
 
   const container = document.getElementById('imageResults');
   container.innerHTML = services.map(s =>
     `<div class="image-row">
-      <span class="svc">${s.name}</span>
+      <span class="svc"><div>${s.name}</div><div style="font-size:11px;font-weight:400;color:#9ca3af;margin-top:2px">${s.note || ''}</div></span>
       <span class="url">${s.url}</span>
       <button class="btn btn-secondary btn-sm" onclick="copyText('${s.url}')">Copy</button>
     </div>`
