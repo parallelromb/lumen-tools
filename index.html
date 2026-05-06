@@ -106,6 +106,67 @@ h1 .gradient{background:linear-gradient(135deg,#0071e3 0%,#003d99 100%);
 .empty code{font-family:var(--mono);background:var(--accent-light);color:var(--accent);
   padding:2px 6px;border-radius:4px;font-size:12px}
 
+/* Rate button + count on cards */
+.tool{position:relative}
+.rate-btn{position:absolute;bottom:8px;right:10px;display:inline-flex;align-items:center;gap:4px;
+  padding:3px 8px;border-radius:999px;font-size:11px;font-weight:600;color:var(--muted);
+  background:rgba(0,0,0,0.03);border:0;cursor:pointer;transition:all .15s;font-family:inherit}
+.rate-btn:hover{background:rgba(0,113,227,0.12);color:var(--accent)}
+.rate-btn.rated{background:rgba(52,199,89,0.15);color:var(--green)}
+.rate-btn .heart{font-size:13px;line-height:1}
+
+/* Suggest CTA */
+.suggest-cta{margin:60px 0 30px;padding:32px 36px;text-align:center;
+  background:var(--surface);backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);
+  border:1px solid var(--border);border-radius:18px}
+.suggest-cta h3{font-size:20px;font-weight:700;letter-spacing:-0.01em;margin-bottom:6px}
+.suggest-cta p{color:var(--muted);font-size:14px;margin-bottom:18px;max-width:520px;margin-left:auto;margin-right:auto}
+.suggest-cta button{padding:10px 22px;border-radius:10px;background:var(--accent);color:#fff;
+  border:0;font-size:14px;font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s}
+.suggest-cta button:hover{background:#0077ED;transform:translateY(-1px);box-shadow:0 4px 12px rgba(0,113,227,0.25)}
+
+/* Suggest modal */
+.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,0.4);backdrop-filter:blur(8px);
+  z-index:100;display:none;align-items:center;justify-content:center;padding:20px}
+.modal-backdrop.open{display:flex}
+.modal{background:#fff;border-radius:18px;padding:28px 30px;max-width:520px;width:100%;
+  box-shadow:0 20px 60px rgba(0,0,0,0.25);max-height:90vh;overflow-y:auto}
+.modal h3{font-size:20px;font-weight:700;margin-bottom:6px}
+.modal p.sub{color:var(--muted);font-size:13.5px;margin-bottom:18px}
+.modal label{display:block;font-size:11px;font-weight:600;color:var(--muted);
+  text-transform:uppercase;letter-spacing:0.06em;margin-top:12px;margin-bottom:4px}
+.modal input,.modal textarea{width:100%;padding:9px 12px;border:1px solid var(--border);
+  border-radius:8px;font-family:inherit;font-size:14px;outline:none;background:#fafafa;color:var(--text)}
+.modal input:focus,.modal textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(0,113,227,0.1)}
+.modal textarea{min-height:90px;resize:vertical}
+.modal .row{display:flex;gap:10px;margin-top:20px;justify-content:flex-end}
+.modal .row button{padding:9px 18px;border-radius:8px;border:0;font-size:13.5px;
+  font-weight:600;cursor:pointer;font-family:inherit;transition:all .15s}
+.modal .row button.cancel{background:rgba(0,0,0,0.05);color:var(--text)}
+.modal .row button.submit{background:var(--accent);color:#fff}
+.modal .row button.cancel:hover{background:rgba(0,0,0,0.08)}
+.modal .row button.submit:hover{background:#0077ED}
+.modal .msg{margin-top:14px;padding:10px 14px;border-radius:8px;font-size:13px;display:none}
+.modal .msg.ok{background:rgba(52,199,89,0.12);color:#0a8754;display:block}
+.modal .msg.err{background:rgba(255,59,48,0.1);color:var(--red);display:block}
+.modal .hp{position:absolute;left:-9999px;width:1px;height:1px;opacity:0}
+
+/* Star CTA after first rating */
+.star-cta{position:fixed;bottom:24px;right:24px;background:#1a1a2e;color:#fff;
+  border-radius:14px;padding:14px 18px;max-width:320px;z-index:90;
+  box-shadow:0 10px 30px rgba(0,0,0,0.25);display:none;animation:slideUp .3s ease}
+.star-cta.show{display:block}
+.star-cta .title{font-size:14px;font-weight:600;margin-bottom:4px}
+.star-cta .body{font-size:12.5px;color:rgba(255,255,255,0.7);margin-bottom:10px;line-height:1.5}
+.star-cta .actions{display:flex;gap:8px}
+.star-cta .actions a,.star-cta .actions button{padding:6px 12px;border-radius:8px;font-size:12px;
+  font-weight:600;text-decoration:none;border:0;cursor:pointer;font-family:inherit}
+.star-cta .actions a{background:#fff;color:#1a1a2e;display:inline-flex;align-items:center;gap:4px}
+.star-cta .actions a:hover{background:#f0f0f0}
+.star-cta .actions button{background:transparent;color:rgba(255,255,255,0.6)}
+.star-cta .actions button:hover{color:#fff}
+@keyframes slideUp{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+
 /* ── Story / about ──────────────────────────── */
 .about{margin:80px 0 60px;padding:40px 44px;background:var(--surface);
   backdrop-filter:var(--blur);-webkit-backdrop-filter:var(--blur);
@@ -160,6 +221,42 @@ footer a:hover{color:var(--accent)}
 
 <div id="cats" class="cats"></div>
 <div id="results"></div>
+
+<section class="suggest-cta">
+  <h3>Have an idea for a tool?</h3>
+  <p>If there's a small daily friction we haven't covered yet — tell me. If it's a fit, I'll build it and add it to the bundle, free for everyone.</p>
+  <button onclick="openSuggest()">💡 Suggest a tool</button>
+</section>
+
+<div class="modal-backdrop" id="suggestModal" onclick="if(event.target===this)closeSuggest()">
+  <div class="modal">
+    <h3>Suggest a tool</h3>
+    <p class="sub">What would help you, and how would you use it? Email is optional — only fill it in if you want a reply.</p>
+    <form id="suggestForm" onsubmit="submitSuggest(event)">
+      <label for="sg-name">Your name (optional)</label>
+      <input id="sg-name" type="text" maxlength="80" autocomplete="name">
+      <label for="sg-email">Email (optional, for reply)</label>
+      <input id="sg-email" type="email" maxlength="100" autocomplete="email">
+      <label for="sg-idea">Your idea *</label>
+      <textarea id="sg-idea" required minlength="10" maxlength="2000" placeholder="A tool that does..."></textarea>
+      <input class="hp" name="website" tabindex="-1" autocomplete="off" type="text">
+      <div class="msg" id="sg-msg"></div>
+      <div class="row">
+        <button type="button" class="cancel" onclick="closeSuggest()">Cancel</button>
+        <button type="submit" class="submit">Send</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="star-cta" id="starCta">
+  <div class="title">⭐ Loved it?</div>
+  <div class="body">If this saved you a few minutes, a star on GitHub helps others find it.</div>
+  <div class="actions">
+    <a href="https://github.com/parallelromb/lumen-tools" target="_blank" rel="noopener" onclick="document.getElementById('starCta').classList.remove('show')">⭐ Star on GitHub</a>
+    <button onclick="document.getElementById('starCta').classList.remove('show');localStorage.setItem('lumen_starcta_dismissed','1')">Maybe later</button>
+  </div>
+</div>
 
 <section class="about">
   <h2>Why this exists</h2>
@@ -308,9 +405,15 @@ function render() {
 }
 
 function toolCard(t) {
+  const count = RATINGS[t.href] || 0;
+  const rated = LOCAL_RATED.has(t.href);
+  const countDisplay = count > 0 ? `<span>${count}</span>` : '';
   return `<a class="tool" href="${t.href}">
     <div class="name"><span>${escapeHtml(t.name)}</span><span class="cat-tag">${t.category || ''}</span></div>
     <div class="desc">${escapeHtml(t.desc)}</div>
+    <button class="rate-btn ${rated?'rated':''}" data-tool="${t.href}" onclick="event.preventDefault();event.stopPropagation();vote('${t.href}',this)" title="${rated?'Already rated, thanks!':'Find this useful?'}">
+      <span class="heart">${rated?'❤':'♡'}</span>${countDisplay}
+    </button>
   </a>`;
 }
 
@@ -329,7 +432,93 @@ document.addEventListener('keydown', e => {
   }
 });
 
+// ── Ratings ────────────────────────────────────
+let RATINGS = {};
+const LOCAL_RATED = new Set(JSON.parse(localStorage.getItem('lumen_rated') || '[]'));
+
+async function loadRatings() {
+  try {
+    const r = await fetch('/api/rate');
+    const d = await r.json();
+    RATINGS = d.counts || {};
+    render();
+  } catch {}
+}
+
+async function vote(tool, btn) {
+  if (LOCAL_RATED.has(tool)) return;
+  // Optimistic UI
+  LOCAL_RATED.add(tool);
+  localStorage.setItem('lumen_rated', JSON.stringify([...LOCAL_RATED]));
+  RATINGS[tool] = (RATINGS[tool] || 0) + 1;
+  btn.classList.add('rated');
+  btn.querySelector('.heart').textContent = '❤';
+  const cur = btn.querySelector('span:last-child');
+  if (cur && cur.tagName === 'SPAN' && cur.classList.length === 0) cur.textContent = RATINGS[tool];
+  else btn.insertAdjacentHTML('beforeend', `<span>${RATINGS[tool]}</span>`);
+
+  try {
+    const r = await fetch('/api/rate', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({tool})
+    });
+    const d = await r.json();
+    if (d.count) RATINGS[tool] = d.count;
+    render();
+  } catch {}
+
+  // Show GitHub star CTA after first thumbs-up of the session, unless dismissed
+  if (LOCAL_RATED.size === 1 && !localStorage.getItem('lumen_starcta_dismissed')) {
+    setTimeout(() => document.getElementById('starCta').classList.add('show'), 600);
+  }
+}
+
+// ── Suggest ────────────────────────────────────
+function openSuggest() {
+  document.getElementById('suggestModal').classList.add('open');
+  document.getElementById('sg-idea').focus();
+}
+function closeSuggest() {
+  document.getElementById('suggestModal').classList.remove('open');
+  document.getElementById('sg-msg').className = 'msg';
+  document.getElementById('sg-msg').textContent = '';
+}
+async function submitSuggest(e) {
+  e.preventDefault();
+  const msg = document.getElementById('sg-msg');
+  const name = document.getElementById('sg-name').value.trim();
+  const email = document.getElementById('sg-email').value.trim();
+  const idea = document.getElementById('sg-idea').value.trim();
+  const honeypot = document.querySelector('.hp').value;
+  if (idea.length < 10) { msg.className='msg err'; msg.textContent='Please give a bit more detail (10+ chars).'; return; }
+  msg.className='msg'; msg.textContent='Sending...';
+  try {
+    const r = await fetch('/api/suggest', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify({name, email, idea, honeypot})
+    });
+    const d = await r.json();
+    if (d.ok) {
+      msg.className='msg ok'; msg.textContent='Thank you! I\'ll take a look soon.';
+      document.getElementById('suggestForm').reset();
+      setTimeout(closeSuggest, 1800);
+    } else {
+      msg.className='msg err'; msg.textContent=d.error || 'Something went wrong. Try again later.';
+    }
+  } catch {
+    msg.className='msg err'; msg.textContent='Network error. Try again later.';
+  }
+}
+
+// Esc closes modal
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeSuggest();
+});
+
 render();
+loadRatings();
 </script>
 </body>
 </html>

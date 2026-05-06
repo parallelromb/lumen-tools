@@ -330,24 +330,25 @@ async function fetchMyIP() {
     const r = await fetch('https://api.ipify.org?format=json');
     const d = await r.json();
     const ip = d.ip;
-    // Now get location info
-    const r2 = await fetch(`http://ip-api.com/json/${ip}`);
+    // Now get location info — using ip2location.io (HTTPS, free, no key)
+    const r2 = await fetch(`https://api.ip2location.io/?ip=${ip}`);
     const d2 = await r2.json();
     const rows = [
       ['IP Address', ip],
-      ['Country', `${d2.country || '-'} (${d2.countryCode || ''})`],
-      ['Region', d2.regionName || '-'],
-      ['City', d2.city || '-'],
-      ['ISP', d2.isp || '-'],
-      ['Organization', d2.org || '-'],
-      ['Timezone', d2.timezone || '-'],
-      ['Coordinates', d2.lat && d2.lon ? `${d2.lat}, ${d2.lon}` : '-'],
+      ['Country', `${d2.country_name || '-'} (${d2.country_code || ''})`],
+      ['Region', d2.region_name || '-'],
+      ['City', d2.city_name || '-'],
+      ['ZIP', d2.zip_code || '-'],
+      ['Organization', d2.as || '-'],
+      ['ASN', d2.asn ? 'AS' + d2.asn : '-'],
+      ['Timezone', d2.time_zone || '-'],
+      ['Coordinates', d2.latitude && d2.longitude ? `${d2.latitude}, ${d2.longitude}` : '-'],
     ];
     el.innerHTML = `<div class="result-box" id="myip-data">
       <div class="copy-corner"><button class="btn-copy" onclick="copyText(document.getElementById('myip-data').innerText)">Copy</button></div>
       ${rows.map(([l,v]) => `<div class="result-row"><span class="result-label">${l}</span><span class="result-value">${v}</span></div>`).join('')}
     </div>`;
-    addHistory('My IP', ip, `${d2.city}, ${d2.country}`);
+    addHistory('My IP', ip, `${d2.city_name}, ${d2.country_name}`);
   } catch(e) {
     el.innerHTML = `<div class="result-box" style="color:#ef4444">Failed to fetch IP: ${esc(e.message)}</div>`;
   }
@@ -361,26 +362,25 @@ async function lookupIP() {
   const el = document.getElementById('lookup-result');
   el.innerHTML = '<div style="padding:1rem;text-align:center"><span class="spinner"></span></div>';
   try {
-    const r = await fetch(`http://ip-api.com/json/${ip}?fields=status,message,country,countryCode,region,regionName,city,zip,lat,lon,timezone,isp,org,as,query`);
+    const r = await fetch(`https://api.ip2location.io/?ip=${ip}`);
     const d = await r.json();
-    if (d.status === 'fail') throw new Error(d.message);
+    if (d.error) throw new Error(d.error.error_message || 'Lookup failed');
     const rows = [
-      ['IP', d.query],
-      ['Country', `${d.country} (${d.countryCode})`],
-      ['Region', d.regionName],
-      ['City', d.city],
-      ['ZIP', d.zip || '-'],
-      ['ISP', d.isp],
-      ['Organization', d.org],
-      ['AS', d.as],
-      ['Timezone', d.timezone],
-      ['Coordinates', `${d.lat}, ${d.lon}`],
+      ['IP', d.ip],
+      ['Country', `${d.country_name} (${d.country_code})`],
+      ['Region', d.region_name],
+      ['City', d.city_name],
+      ['ZIP', d.zip_code || '-'],
+      ['ISP', d.as || '-'],
+      ['ASN', d.asn ? 'AS' + d.asn : '-'],
+      ['Timezone', d.time_zone],
+      ['Coordinates', `${d.latitude}, ${d.longitude}`],
     ];
     el.innerHTML = `<div class="result-box" id="lookup-data">
       <div class="copy-corner"><button class="btn-copy" onclick="copyText(document.getElementById('lookup-data').innerText)">Copy</button></div>
       ${rows.map(([l,v]) => `<div class="result-row"><span class="result-label">${l}</span><span class="result-value">${v}</span></div>`).join('')}
     </div>`;
-    addHistory('Lookup', ip, `${d.city}, ${d.country}`);
+    addHistory('Lookup', ip, `${d.city_name}, ${d.country_name}`);
   } catch(e) {
     el.innerHTML = `<div class="result-box" style="color:#ef4444">Error: ${esc(e.message)}</div>`;
   }
@@ -616,5 +616,6 @@ document.getElementById('dns-domain').addEventListener('keydown', e => { if (e.k
 // Init history
 renderHistory();
 </script>
+<script src="/_lumen-footer.js" defer></script>
 </body>
 </html>
