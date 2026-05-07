@@ -6,6 +6,14 @@
 //   include_bots=1                 (default: humans only)
 
 export async function onRequestGet({ request, env }) {
+  // Locked-down — only callers with STATS_SECRET (Lumen dashboard) can read.
+  // The /api/track endpoint stays public so any site can fire pageview beacons.
+  const auth = request.headers.get('Authorization') || '';
+  const expected = `Bearer ${env.STATS_SECRET || ''}`;
+  if (!env.STATS_SECRET || auth !== expected) {
+    return json({ error: 'Forbidden' }, 403);
+  }
+
   const url = new URL(request.url);
   const site = url.searchParams.get('site');
   const days = Math.min(90, Math.max(1, parseInt(url.searchParams.get('days') || '7', 10)));
