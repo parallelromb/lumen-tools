@@ -378,16 +378,14 @@
   <div class="notification" id="notification"></div>
 
 <script>
-// Replace these with your own services. Click "+ Add Service" to manage.
-// Note: only services that send `Access-Control-Allow-Origin: *` work cross-origin.
-// CORS-blocked services will show as "down" even when they're up — set up your own
-// services on the same origin or behind a CORS-permissive proxy.
+// Default services — all CORS-friendly so they show green out of the box.
+// To monitor your own services, click "+ Add Service". CORS-blocked URLs
+// (most non-status endpoints) will show as amber (CORS) — that's usually
+// fine, it still tells you the service is reachable.
 const DEFAULT_SERVICES = [
-  { id: 'github-api',     name: 'GitHub API',     url: 'https://api.github.com/zen' },
-  { id: 'github-status',  name: 'GitHub Status',  url: 'https://www.githubstatus.com/api/v2/status.json' },
-  { id: 'ipify',          name: 'ipify',          url: 'https://api.ipify.org?format=json' },
-  { id: 'localhost-dev',  name: 'Local Dev (3000)',  url: 'http://localhost:3000' },
-  { id: 'localhost-api',  name: 'Local API (8000)',  url: 'http://localhost:8000' },
+  { id: 'github-api',    name: 'GitHub API',    url: 'https://api.github.com/zen' },
+  { id: 'github-status', name: 'GitHub Status', url: 'https://www.githubstatus.com/api/v2/status.json' },
+  { id: 'ipify',         name: 'ipify',         url: 'https://api.ipify.org?format=json' },
 ];
 
 const STORAGE_KEY = 'lumen-health-services';
