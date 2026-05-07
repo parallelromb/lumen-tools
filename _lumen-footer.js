@@ -1,9 +1,14 @@
 // Shared widget injected into every Lumen tool — adds a small footer link
-// for filing a GitHub issue scoped to this tool. Auto-detects the tool name
-// from the document title and the current path.
+// for filing a GitHub issue scoped to this tool, plus fires the analytics pixel.
 (function () {
   if (window.__lumenFooterInjected) return;
   window.__lumenFooterInjected = true;
+
+  // Load analytics pixel (privacy-friendly, no cookies, see _lumen-analytics.js)
+  const aScript = document.createElement('script');
+  aScript.src = '/_lumen-analytics.js';
+  aScript.async = true;
+  document.head.appendChild(aScript);
 
   const path = location.pathname.split('/').pop() || 'index.html';
   const slug = path.replace(/\.html$/, '');
