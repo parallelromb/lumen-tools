@@ -1,0 +1,45 @@
+# Lumen Tools
+
+> A free, open-source bundle of 58 single-file browser tools for everyday developer and life tasks.
+> Each tool is one HTML file. No backend, no signup, no tracking, no telemetry.
+> All data lives in the user's browser. MIT-licensed. Made with care.
+
+## What this is
+
+Lumen Tools is a curated set of 58 browser tools covering the full working day: code formatting and validation utilities (JSON, regex, cron, encoders), productivity workflows (kanban, planner, standup, retro), strategic planning (OKRs, decisions, ideas), wellness tracking (sleep, gratitude, habits), personal finance (budget, expenses, wealth), and learning (reading list, skill matrix, interview prep).
+
+The project was built in a single overnight session by [Sri Panchavati](https://parallelromb.dev), then polished and released under MIT. Each tool is a self-contained HTML file — fork the repo, deploy to GitHub Pages or Cloudflare Pages, or embed any tool as an iframe.
+
+## Key facts
+
+- 58 tools across 7 categories (Dev Tools, Productivity, Strategy, Wellness, Finance, Learning, Operations)
+- Single HTML file per tool — no build step, no framework, no backend
+- All user data stored locally in the browser; nothing sent to any server
+- MIT-licensed, source on [GitHub](https://github.com/parallelromb/lumen-tools)
+- Live at [tools.parallelromb.dev](https://tools.parallelromb.dev/)
+- Hosted on Cloudflare Pages (free tier)
+- Privacy-friendly analytics built in (no cookies, no fingerprinting)
+
+## Highlighted tools
+
+- [Cron Expression Builder](https://tools.parallelromb.dev/cron.html) — visual builder + 22 presets, exports to crontab, launchd, systemd, GitHub Actions, Kubernetes CronJob, and node-cron
+- [JSON Formatter & Validator](https://tools.parallelromb.dev/json.html) — format, validate, minify, tree view, JSONPath, side-by-side diff, convert to YAML/CSV/TypeScript
+- [Regex Tester & Debugger](https://tools.parallelromb.dev/regex.html) — live match highlighting, named groups, replace/split modes, 24 common patterns
+- [Kanban Board](https://tools.parallelromb.dev/kanban.html) — full task management, WIP limits, burndown chart
+- [Pomodoro Timer](https://tools.parallelromb.dev/pomodoro.html) — focus timer with session tracking and weekly stats
+- [Markdown Editor](https://tools.parallelromb.dev/markdown.html) — split-pane editor with live preview, multi-doc tabs
+
+Full list: see [https://tools.parallelromb.dev/](https://tools.parallelromb.dev/)
+
+## Author
+
+Built by Sri Panchavati ([parallelromb.dev](https://parallelromb.dev)) — director of enterprise architecture by day, solo open-source builder by night. Author of [Smara](https://smara.io) (memory-as-a-service for AI agents), MCP Doctor (MCP server compliance testing), Scoper (AI estimation pipelines), and Lumen (self-hosted personal AI system).
+
+## License
+
+MIT — fork, embed, sell, modify. No attribution required, but appreciated.
+
+## Sitemap
+
+- https://tools.parallelromb.dev/sitemap.xml (full machine-readable site map)
+- https://tools.parallelromb.dev/ (landing page with all 58 tools, search, and category filters)

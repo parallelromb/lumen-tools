@@ -1,0 +1,10 @@
+# robots.txt for Lumen Tools
+# Open to all crawlers, including AI engines.
+# Detailed AI summary at /llms.txt
+
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /_lumen-
+
+Sitemap: https://tools.parallelromb.dev/sitemap.xml
