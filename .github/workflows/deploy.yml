@@ -1,0 +1,42 @@
+# Deploy to Cloudflare Pages on every push to main.
+#
+# Replaces the CF Pages git integration that broke in May 2026 — all six
+# parallelromb Pages projects got converted to "Direct Uploads" mode, which
+# blocks API-level reconnection of a git source. This workflow restores the
+# push-to-deploy ergonomic by calling `wrangler pages deploy` from CI.
+#
+# Required repo secrets:
+#   CLOUDFLARE_API_TOKEN   — token with Pages:Edit permission
+#   CLOUDFLARE_ACCOUNT_ID  — Cloudflare account id (7f38d972...)
+#
+# To re-use this workflow in another parallelromb Pages project:
+#   1. Copy this file into that repo at .github/workflows/deploy.yml
+#   2. Update `projectName` below to that project's slug
+#   3. Add the same two secrets via `gh secret set ...`
+
+name: Deploy to Cloudflare Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  deployments: write
+
+concurrency:
+  group: pages-deploy-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy . --project-name=lumen-tools --branch=main --commit-dirty=true
