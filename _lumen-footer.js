@@ -86,6 +86,37 @@
       pointer-events: none; backdrop-filter: blur(10px); }
     .lumen-toast.show { opacity: 1; transform: translateY(0); }
 
+    /* Star nudge — richer post-download prompt */
+    .lumen-nudge { position: fixed; bottom: 70px; right: 12px; z-index: 99997;
+      background: #1d1d1f; color: #fff; border-radius: 12px;
+      padding: 14px 18px; max-width: 340px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.25); backdrop-filter: blur(10px);
+      font: 500 13px -apple-system, BlinkMacSystemFont, 'Inter', sans-serif;
+      transform: translateX(120%); transition: transform .25s cubic-bezier(.2,.8,.2,1);
+      display: flex; flex-direction: column; gap: 10px; }
+    .lumen-nudge.show { transform: translateX(0); }
+    .lumen-nudge .lumen-nudge-row { display: flex; align-items: center; gap: 10px; }
+    .lumen-nudge .lumen-nudge-msg { flex: 1; line-height: 1.4; }
+    .lumen-nudge .lumen-nudge-msg strong { color: #fff; }
+    .lumen-nudge .lumen-nudge-msg .lumen-nudge-sub { display: block; color: rgba(255,255,255,0.65);
+      font-weight: 400; font-size: 12px; margin-top: 2px; }
+    .lumen-nudge .lumen-nudge-x { background: none; border: 0; color: rgba(255,255,255,0.5);
+      font-size: 18px; cursor: pointer; padding: 0; line-height: 1;
+      align-self: flex-start; }
+    .lumen-nudge .lumen-nudge-x:hover { color: #fff; }
+    .lumen-nudge .lumen-nudge-cta { display: inline-flex; align-items: center; gap: 6px;
+      background: #fff; color: #1d1d1f; padding: 8px 12px; border-radius: 8px;
+      text-decoration: none; font-weight: 600; font-size: 12.5px;
+      transition: transform .12s; }
+    .lumen-nudge .lumen-nudge-cta:hover { transform: translateY(-1px); }
+
+    /* Repo stats line in customize modal */
+    .lumen-repo-stats { display: inline-flex; gap: 12px; align-items: center;
+      background: #f5f5f7; padding: 6px 10px; border-radius: 6px;
+      font: 500 12px 'JetBrains Mono','SF Mono',monospace; color: #1d1d1f;
+      margin-left: 8px; vertical-align: middle; }
+    .lumen-repo-stats span { display: inline-flex; align-items: center; gap: 4px; }
+
     @media (max-width: 520px) {
       .lumen-dock { right: 8px; bottom: 8px; gap: 4px; }
       .lumen-dock button, .lumen-dock a { padding: 6px 8px; font-size: 11px; }
@@ -124,7 +155,10 @@
   overlay.innerHTML = `
     <div class="lumen-modal" role="dialog" aria-modal="true" aria-labelledby="lumen-modal-title">
       <button class="lumen-close" aria-label="Close">×</button>
-      <h3 id="lumen-modal-title">Make it yours</h3>
+      <h3 id="lumen-modal-title">Make it yours<span class="lumen-repo-stats" style="display:none">
+        <span class="lumen-repo-stars">⭐ …</span>
+        <span class="lumen-repo-forks">🍴 …</span>
+      </span></h3>
       <p class="lumen-sub">This tool is a single HTML file under MIT. Take it, change the defaults, host it on your own domain — no build step, no backend.</p>
       <ol>
         <li><strong>Grab the file</strong> — click <em>⬇ Download</em> to save the current state, or fetch the latest:
@@ -142,10 +176,25 @@
   `;
 
   // ── Wire up after DOM is ready ──────────────────────────────────
+  // ── Post-download nudge — converts a moment of value-received into a star ask
+  const nudge = document.createElement('div');
+  nudge.className = 'lumen-nudge';
+  nudge.innerHTML = `
+    <div class="lumen-nudge-row">
+      <div class="lumen-nudge-msg">
+        <strong>Saved ✓</strong>
+        <span class="lumen-nudge-sub">Liked it? A ⭐ on GitHub helps others find these.</span>
+      </div>
+      <button class="lumen-nudge-x" aria-label="Dismiss">×</button>
+    </div>
+    <a class="lumen-nudge-cta" href="${repoUrl}" target="_blank" rel="noopener">⭐ Star the repo</a>
+  `;
+
   function mount() {
     document.body.appendChild(dock);
     document.body.appendChild(overlay);
     document.body.appendChild(toast);
+    document.body.appendChild(nudge);
 
     const likeBtn = dock.querySelector('.lumen-like');
     const countEl = dock.querySelector('.lumen-count');
@@ -191,10 +240,10 @@
     dlBtn.addEventListener('click', () => {
       // Save the live DOM so the user keeps whatever they've configured —
       // form fields, presets, notes. Strip the lumen-injected chrome (dock,
-      // modal, toast, our script tags) so the downloaded file boots clean.
+      // modal, toast, nudge, our script tags) so the downloaded file boots clean.
       const clone = document.documentElement.cloneNode(true);
       clone.querySelectorAll(
-        '.lumen-dock, .lumen-overlay, .lumen-toast, ' +
+        '.lumen-dock, .lumen-overlay, .lumen-toast, .lumen-nudge, ' +
         'script[src="/_lumen-footer.js"], script[src="/_lumen-analytics.js"]'
       ).forEach((n) => n.remove());
       const html = '<!DOCTYPE html>\n' + clone.outerHTML;
@@ -206,10 +255,73 @@
       a.click();
       a.remove();
       setTimeout(() => URL.revokeObjectURL(a.href), 1000);
-      showToast(`Saved ${path}`);
+
+      // Show the star nudge — but only if the user hasn't dismissed it
+      // permanently from a prior download, and not on every single download
+      // in a row (cooldown: once per day).
+      const dismissedKey = 'lumen-star-nudge-dismissed';
+      const lastShownKey = 'lumen-star-nudge-last-shown';
+      const oneDay = 24 * 60 * 60 * 1000;
+      const dismissed = localStorage.getItem(dismissedKey) === '1';
+      const lastShown = parseInt(localStorage.getItem(lastShownKey) || '0', 10);
+      if (!dismissed && Date.now() - lastShown > oneDay) {
+        nudge.classList.add('show');
+        localStorage.setItem(lastShownKey, String(Date.now()));
+        // Auto-hide after 10s if no interaction
+        clearTimeout(nudge._t);
+        nudge._t = setTimeout(() => nudge.classList.remove('show'), 10000);
+      } else {
+        // Quieter toast when we suppress the nudge
+        showToast(`Saved ${path}`);
+      }
     });
 
-    customBtn.addEventListener('click', () => overlay.classList.add('open'));
+    nudge.querySelector('.lumen-nudge-x').addEventListener('click', () => {
+      nudge.classList.remove('show');
+      // Permanent dismissal — don't show again on this device
+      localStorage.setItem('lumen-star-nudge-dismissed', '1');
+    });
+    // Clicking the CTA implies engagement; hide the nudge too
+    nudge.querySelector('.lumen-nudge-cta').addEventListener('click', () => {
+      setTimeout(() => nudge.classList.remove('show'), 200);
+    });
+
+    // Lazy-load GitHub stars/forks for the Customize modal. Cache in
+    // localStorage with a 6h TTL so we stay well within GitHub's 60/hr
+    // unauthenticated rate limit even on a busy day.
+    function loadRepoStats() {
+      const cacheKey = 'lumen-repo-stats';
+      const ttl = 6 * 60 * 60 * 1000;
+      try {
+        const cached = JSON.parse(localStorage.getItem(cacheKey) || 'null');
+        if (cached && Date.now() - cached.fetchedAt < ttl) {
+          return Promise.resolve(cached);
+        }
+      } catch { /* fall through to refetch */ }
+      return fetch('https://api.github.com/repos/parallelromb/lumen-tools', {
+        headers: { Accept: 'application/vnd.github+json' },
+      })
+        .then((r) => (r.ok ? r.json() : null))
+        .then((d) => {
+          if (!d) return null;
+          const out = { stars: d.stargazers_count, forks: d.forks_count, fetchedAt: Date.now() };
+          try { localStorage.setItem(cacheKey, JSON.stringify(out)); } catch {}
+          return out;
+        })
+        .catch(() => null);
+    }
+
+    customBtn.addEventListener('click', async () => {
+      overlay.classList.add('open');
+      const stats = await loadRepoStats();
+      if (!stats) return;
+      const wrap = overlay.querySelector('.lumen-repo-stats');
+      const starsEl = overlay.querySelector('.lumen-repo-stars');
+      const forksEl = overlay.querySelector('.lumen-repo-forks');
+      starsEl.textContent = `⭐ ${stats.stars}`;
+      forksEl.textContent = `🍴 ${stats.forks}`;
+      wrap.style.display = 'inline-flex';
+    });
     overlay.addEventListener('click', (e) => {
       if (e.target === overlay || e.target.classList.contains('lumen-close')) {
         overlay.classList.remove('open');
