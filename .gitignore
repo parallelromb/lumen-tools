@@ -5,3 +5,10 @@ node_modules/
 .vscode/
 .idea/
 _old-index.html
+
+# Secrets
+.env
+.env.*
+*.pem
+*.key
+*.p12
