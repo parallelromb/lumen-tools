@@ -7,11 +7,11 @@ const ALLOWED_ORIGINS_RE = /^https?:\/\/([a-z0-9-]+\.)*(parallelromb\.dev|smara\
 export async function onRequestPost({ request, env }) {
   const origin = request.headers.get('Origin') || '';
   if (!ALLOWED_ORIGINS_RE.test(origin) && !origin.startsWith('http://localhost')) {
-    return json({ error: 'Origin not allowed' }, 403);
+    return json({ error: 'Origin not allowed' }, 403, origin);
   }
 
   let body;
-  try { body = await request.json(); } catch { return json({ error: 'Invalid JSON' }, 400); }
+  try { body = await request.json(); } catch { return json({ error: 'Invalid JSON' }, 400, origin); }
 
   // Bot UA classification — server-side check, can't be lied to from client
   const ua = request.headers.get('User-Agent') || '';
@@ -48,27 +48,33 @@ export async function onRequestPost({ request, env }) {
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
   ).bind(Date.now(), site, path, referrer_host, country, device_type, screen_w, tz_offset, hashed.slice(0, 32), ua_class).run();
 
-  return json({ ok: true }, 200);
+  return json({ ok: true }, 200, origin);
 }
 
-export async function onRequestOptions() {
-  return new Response(null, { headers: corsHeaders() });
+export async function onRequestOptions({ request }) {
+  return new Response(null, { status: 204, headers: corsHeaders(request.headers.get('Origin') || '') });
 }
 
 async function sha256Hex(str) {
   const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
   return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
 }
-function json(obj, status = 200) {
+function json(obj, status = 200, origin = '') {
   return new Response(JSON.stringify(obj), {
     status,
-    headers: { 'Content-Type': 'application/json', ...corsHeaders() },
+    headers: { 'Content-Type': 'application/json', ...corsHeaders(origin) },
   });
 }
-function corsHeaders() {
+// sendBeacon is always a credentialed request, and browsers refuse `*` for those —
+// echo the (already allow-listed) origin so beacons from smara.io, mcpdoctor.ai,
+// cron.parallelromb.dev and parallelromb.dev actually land.
+function corsHeaders(origin = '') {
+  const allowed = ALLOWED_ORIGINS_RE.test(origin) || origin.startsWith('http://localhost');
   return {
-    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Origin': allowed ? origin : 'https://tools.parallelromb.dev',
+    'Access-Control-Allow-Credentials': 'true',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type',
+    'Vary': 'Origin',
   };
 }
